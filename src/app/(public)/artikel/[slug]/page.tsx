@@ -1,0 +1,143 @@
+import { Suspense } from "react";
+import { notFound } from "next/navigation";
+import Link from "next/link";
+import Image from "next/image";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import { getPublishedArticleBySlug } from "@/lib/article-queries";
+import { ArrowLeft, Calendar, Share2 } from "lucide-react";
+import { ARTICLE_IMAGE_FALLBACK } from "@/lib/constants";
+
+function SocialShare({ title, slug }: { title: string; slug: string }) {
+  const url = process.env.NEXT_PUBLIC_SITE_URL
+    ? `${process.env.NEXT_PUBLIC_SITE_URL}/artikel/${slug}`
+    : `https://desa-tulungrejo.my.id/artikel/${slug}`;
+  const text = encodeURIComponent(title);
+  const shareUrl = encodeURIComponent(url);
+
+  return (
+    <div
+      className="flex gap-3 items-center pt-8 mt-8"
+      style={{ borderTop: "1px solid rgba(79,112,156,0.2)" }}
+    >
+      <span className="text-[13px] font-bold text-muted-foreground inline-flex items-center gap-1.5">
+        <Share2 size={14} /> Bagikan:
+      </span>
+      <a
+        href={`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="btn btn-outline btn-sm no-underline"
+      >
+        Facebook
+      </a>
+      <a
+        href={`https://wa.me/?text=${text}%20${shareUrl}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="btn btn-outline btn-sm no-underline"
+      >
+        WhatsApp
+      </a>
+      <a
+        href={`https://twitter.com/intent/tweet?text=${text}&url=${shareUrl}`}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="btn btn-outline btn-sm no-underline"
+      >
+        Twitter
+      </a>
+    </div>
+  );
+}
+
+async function ArticleContent({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  const { slug } = await params;
+
+  const article = await getPublishedArticleBySlug(slug);
+  if (!article) notFound();
+
+  return (
+    <div className="container px-6 py-10 flex-1">
+      {/* Breadcrumb */}
+      <nav className="text-[13px] text-muted-foreground mb-6 flex items-center gap-2">
+        <Link href="/artikel" className="text-dark-brown font-semibold">
+          Artikel
+        </Link>
+        <span>/</span>
+        <span>{article.category}</span>
+        <span>/</span>
+        <span style={{ color: "var(--color-dark)" }}>{article.title}</span>
+      </nav>
+
+      {/* Back button */}
+      <div className="mb-6">
+        <Link
+          href="/artikel"
+          className="btn btn-outline btn-sm inline-flex items-center gap-2 cursor-pointer no-underline"
+        >
+          <ArrowLeft size={14} /> Kembali
+        </Link>
+      </div>
+
+      <article className="glass-panel overflow-hidden mb-[60px]">
+        <div className="relative w-full h-[480px]">
+          <Image
+            src={article.image || ARTICLE_IMAGE_FALLBACK}
+            alt={article.title}
+            fill
+            sizes="100vw"
+            className="object-cover"
+          />
+        </div>
+        <div className="detail-article-body p-10">
+          <div className="flex gap-4 text-[13px] text-muted-foreground mb-4 items-center">
+            <span className="inline-block px-[10px] py-[4px] text-[11px] font-bold uppercase tracking-wider rounded-full bg-green-100 text-green-700">
+              {article.category}
+            </span>
+            <span className="inline-flex items-center gap-1">
+              <Calendar size={12} className="align-middle" />
+              {new Date(article.date).toLocaleDateString("id-ID", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+            </span>
+          </div>
+          <h1
+            className="text-[36px] text-dark-brown leading-tight mb-6 font-bold"
+            style={{ fontFamily: "var(--font-heading)" }}
+          >
+            {article.title}
+          </h1>
+          <div className="prose max-w-none text-[16px] leading-[1.8]">
+            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              {article.content}
+            </ReactMarkdown>
+          </div>
+
+          {/* Social share */}
+          <SocialShare title={article.title} slug={article.slug} />
+        </div>
+      </article>
+    </div>
+  );
+}
+
+export default function ArticleDetailPage({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}) {
+  return (
+    <div className="animate-fade-in min-h-[80vh] flex flex-col">
+      <Suspense fallback={null}>
+        <ArticleContent params={params} />
+      </Suspense>
+    </div>
+  );
+}

@@ -1,0 +1,115 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider     = "mysql"
+  relationMode = "prisma"
+}
+
+model User {
+  id           Int      @id @default(autoincrement())
+  email        String   @unique
+  passwordHash String   @map("password_hash")
+  name         String
+  role         Role     @default(pamong_pajak)
+  assignedBlok String?  @map("assigned_blok")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  payments     Payment[]
+
+  @@map("users")
+}
+
+enum Role {
+  kepala_desa
+  pamong_pajak
+  jurnalis
+}
+
+model LandPlot {
+  id           Int      @id @default(autoincrement())
+  nop          String   @unique
+  ownerName    String   @map("owner_name")
+  ownerNik     String?  @map("owner_nik")
+  address      String
+  villageName  String   @default("Tulungrejo") @map("village_name")
+  kecamatan    String   @default("Wates")
+  blok         String
+  latitude     Float?   @map("latitude")
+  longitude    Float?   @map("longitude")
+  landArea     Decimal? @map("land_area") @db.Decimal(10, 2)
+  buildingArea Decimal? @map("building_area") @db.Decimal(10, 2)
+  njopLand     Decimal? @map("njop_land") @db.Decimal(15, 2)
+  njopBuilding Decimal? @map("njop_building") @db.Decimal(15, 2)
+  pbbAmount    Decimal? @map("pbb_amount") @db.Decimal(15, 2)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  payments     Payment[]
+
+  @@index([blok])
+  @@index([ownerNik])
+  @@map("land_plots")
+}
+
+model Payment {
+  id          Int      @id @default(autoincrement())
+  landPlotId  Int      @map("land_plot_id")
+  year        Int
+  month       Int
+  status      String   @default("belum_lunas")
+  paymentDate DateTime? @map("payment_date")
+  markedBy    Int?     @map("marked_by")
+  notes       String?
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  landPlot    LandPlot @relation(fields: [landPlotId], references: [id])
+  marker      User?    @relation(fields: [markedBy], references: [id])
+
+  @@unique([landPlotId, year, month])
+  @@index([status])
+  @@index([year, month, status])
+  @@index([year, month])
+  @@map("payments")
+}
+
+model VillageStats {
+  id             Int      @id @default(autoincrement())
+  jumlahKK       Int      @default(0) @map("jumlah_kk")
+  jumlahPenduduk Int      @default(0) @map("jumlah_penduduk")
+  lakiLaki       Int      @default(0) @map("laki_laki")
+  perempuan      Int      @default(0) @map("perempuan")
+  updatedAt      DateTime @updatedAt @map("updated_at")
+
+  @@map("village_stats")
+}
+
+model VillageProfile {
+  id                 Int      @id @default(autoincrement())
+  visi               String   @default("")
+  misi               String   @db.Text                    // JSON array of strings, default "[]" handled in app
+  strukturOrganisasi String   @db.Text                    // JSON array of {role, name}, default "[]" handled in app
+  tugasFungsi        String   @db.Text                    // JSON array of {jabatan, tugas}, default "[]" handled in app
+  administratif      String   @db.Text                    // JSON object, default "{}" handled in app
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@map("village_profile")
+}
+
+model Article {
+  id        Int      @id @default(autoincrement())
+  title     String
+  slug      String   @unique
+  date      DateTime
+  author    String
+  category  String
+  summary   String
+  image     String?
+  content   String   @db.Text
+  tags      String?  // JSON array
+  published Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("articles")
+}
