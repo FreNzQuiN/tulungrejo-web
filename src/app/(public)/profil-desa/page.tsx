@@ -1,55 +1,33 @@
-// Phase 4: Profile page with DB-backed data + hardcoded fallback
 import { Suspense } from "react";
-import { prisma } from "@/lib/prisma";
-import { VILLAGE_PROFILE_DATA, STATS_SEED } from "@/lib/desa-data";
 import { Compass, School, HeartPulse, Award } from "lucide-react";
-import { safeJsonParse } from "@/lib/utils";
+import { getVillageProfile, getVillageStats } from "@/lib/desa-queries";
+import type { Administratif } from "@/lib/types";
 
 async function ProfileContent() {
-  const dbProfile = await prisma.villageProfile
-    .findFirst({ orderBy: { id: "asc" } })
-    .catch(() => null);
-  const profile = dbProfile
-    ? {
-        visi: dbProfile.visi,
-        misi: safeJsonParse<string[]>(
-          dbProfile.misi,
-          VILLAGE_PROFILE_DATA.misi,
-        ),
-        strukturOrganisasi: safeJsonParse<{ role: string; name: string }[]>(
-          dbProfile.strukturOrganisasi,
-          VILLAGE_PROFILE_DATA.strukturOrganisasi,
-        ),
-        tugasFungsi: safeJsonParse<{ jabatan: string; tugas: string }[]>(
-          dbProfile.tugasFungsi,
-          VILLAGE_PROFILE_DATA.tugasFungsi,
-        ),
-        administratif: safeJsonParse<Record<string, string>>(
-          dbProfile.administratif,
-          VILLAGE_PROFILE_DATA.administratif,
-        ),
-      }
-    : VILLAGE_PROFILE_DATA;
+  const profile = await getVillageProfile();
+  const stats = await getVillageStats();
 
-  return <ProfileDisplay profile={profile} />;
+  return <ProfileDisplay profile={profile} stats={stats} />;
 }
 
 async function ProfileDisplay({
   profile,
+  stats,
 }: {
   profile: {
     visi: string;
     misi: string[];
     strukturOrganisasi: { role: string; name: string }[];
     tugasFungsi: { jabatan: string; tugas: string }[];
-    administratif: Record<string, string>;
+    administratif: Administratif;
+  };
+  stats: {
+    jumlahKK: number;
+    jumlahPenduduk: number;
+    lakiLaki: number;
+    perempuan: number;
   };
 }) {
-  const dbStats = await prisma.villageStats.findFirst({
-    orderBy: { id: "asc" },
-  });
-  const stats = dbStats ?? STATS_SEED;
-
   const kades = profile.strukturOrganisasi.find(
     (p) => p.role.toLowerCase() === "kepala desa",
   );
@@ -68,7 +46,6 @@ async function ProfileDisplay({
 
   return (
     <div className="container">
-      {/* Visi Misi */}
       <section className="visimisi-container">
         <div className="visi-card glass-panel">
           <h3>Visi Desa</h3>
@@ -84,7 +61,6 @@ async function ProfileDisplay({
         </div>
       </section>
 
-      {/* Struktur Organisasi */}
       <section className="org-structure-section">
         <h2>Struktur Organisasi Pemerintah Desa</h2>
         <div className="org-chart-wrapper">
@@ -130,7 +106,6 @@ async function ProfileDisplay({
         </div>
       </section>
 
-      {/* Tugas & Fungsi */}
       <section className="mb-[60px]">
         <h2 className="text-center mb-[35px]">Tugas & Fungsi Pemerintahan</h2>
         <div className="profile-tupoksi-grid">
@@ -146,7 +121,6 @@ async function ProfileDisplay({
         </div>
       </section>
 
-      {/* Data Administratif */}
       <section className="mb-[70px]">
         <h2 className="text-center mb-[35px]">
           Data Administratif & Layanan Desa

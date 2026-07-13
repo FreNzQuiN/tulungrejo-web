@@ -22,7 +22,6 @@ export const DASHBOARD_NAV: Record<
   jurnalis: { label: "CMS Jurnalis", href: "/jurnalis", icon: FileText },
 };
 
-// FE contract categories
 export const CATEGORIES = [
   "Kegiatan Desa",
   "Pembangunan",

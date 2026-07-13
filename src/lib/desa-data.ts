@@ -1,6 +1,3 @@
-// FE contract hardcoded data — seed values sesuai AppContext.jsx
-// Ini sementara dipake untuk fallback display sebelum VillageProfile DB diisi
-
 export const VILLAGE_PROFILE_DATA = {
   visi: "Terwujudnya Desa Tulungrejo yang Mandiri, Sejahtera, Berbudaya, dan Berkeadilan Berlandaskan Gotong Royong.",
   misi: [

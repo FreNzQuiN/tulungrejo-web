@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { PrismaClient } from "@prisma/client";
 import { PrismaMariaDb } from "@prisma/adapter-mariadb";
 
@@ -12,16 +13,32 @@ function createPrismaClient() {
   }
 
   const parsed = new URL(url);
+
+  let ssl;
+  const caB64 = process.env.SSL_CA_BUNDLE_B64;
+  if (caB64) {
+    ssl = {
+      ca: [Buffer.from(caB64, "base64").toString("utf-8")],
+      rejectUnauthorized: true,
+    };
+  } else {
+    const caPath = process.env.SSL_CA_PATH;
+    ssl = caPath
+      ? { ca: [readFileSync(caPath)], rejectUnauthorized: true }
+      : { rejectUnauthorized: true };
+  }
+
   const adapter = new PrismaMariaDb({
     host: parsed.hostname,
     user: decodeURIComponent(parsed.username),
     password: decodeURIComponent(parsed.password),
     database: parsed.pathname.slice(1),
     port: Number(parsed.port) || 4000,
-    ssl: { rejectUnauthorized: false },
-    connectTimeout: 30_000,
-    acquireTimeout: 30_000,
-    connectionLimit: 10,
+    ssl,
+    connectTimeout: 10_000,
+    acquireTimeout: 15_000,
+    socketTimeout: 5_000,
+    connectionLimit: 5,
   });
 
   return new PrismaClient({
@@ -32,16 +49,5 @@ function createPrismaClient() {
 
 const prismaInternal = globalForPrisma.prisma ?? createPrismaClient();
 globalForPrisma.prisma = prismaInternal;
-
-// Dev: jaga koneksi TiDB tetap hangat biar gak cold start
-// Cold start bikin render hang >10s → Next.js dev server trigger reload loop
-if (process.env.NODE_ENV === "development") {
-  // Eager connect: mulai koneksi pas module load, biar request pertama gak nunggu cold start
-  prismaInternal.$connect().catch(() => {});
-  // Keepalive ping tiap 60 detik cegah TiDB spin down
-  setInterval(() => {
-    prismaInternal.$queryRaw`SELECT 1`.catch(() => {});
-  }, 60_000);
-}
 
 export const prisma = prismaInternal;

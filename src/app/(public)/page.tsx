@@ -1,32 +1,16 @@
 import { Suspense } from "react";
-import { STATS_SEED } from "@/lib/desa-data";
-import { prisma } from "@/lib/prisma";
-import { safeJsonParse } from "@/lib/utils";
 import { CountUp } from "@/components/count-up";
 import { HeroScrollButton } from "@/components/hero-scroll-button";
 import { HomeArticles } from "@/components/home-articles";
 import { Users, Home as HomeIcon } from "lucide-react";
 import { connection } from "next/server";
+import { getVillageStats } from "@/lib/desa-queries";
+import { getAllPublishedArticles } from "@/lib/article-queries";
 import type { ArticleFrontmatter } from "@/lib/types";
 
 async function StatsSection() {
   await connection();
-  let stats = STATS_SEED;
-  try {
-    const data = await prisma.villageStats.findFirst({
-      orderBy: { id: "asc" },
-    });
-    if (data) {
-      stats = {
-        jumlahKK: data.jumlahKK,
-        jumlahPenduduk: data.jumlahPenduduk,
-        lakiLaki: data.lakiLaki,
-        perempuan: data.perempuan,
-      };
-    }
-  } catch {
-    // Use seed fallback
-  }
+  const stats = await getVillageStats();
 
   return (
     <section className="stats-section">
@@ -85,21 +69,7 @@ async function ArticlesSection() {
   await connection();
   let articles: ArticleFrontmatter[] = [];
   try {
-    const data = await prisma.article.findMany({
-      where: { published: true },
-      orderBy: { date: "desc" },
-    });
-    articles = data.map((a) => ({
-      title: a.title,
-      slug: a.slug,
-      date: a.date instanceof Date ? a.date.toISOString() : String(a.date),
-      author: a.author,
-      category: a.category,
-      summary: a.summary,
-      image: a.image ?? undefined,
-      tags: a.tags ? safeJsonParse<string[]>(a.tags, []) : undefined,
-      published: a.published,
-    }));
+    articles = await getAllPublishedArticles();
   } catch {
     // No articles
   }
@@ -110,7 +80,6 @@ async function ArticlesSection() {
 export default function HomePage() {
   return (
     <div className="animate-fade-in">
-      {/* Hero Welcome Section */}
       <header className="hero-section">
         <div className="container">
           <p className="hero-subtitle">Portal Resmi Pemerintah Desa</p>
@@ -125,7 +94,6 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Tentang Desa & Google Maps */}
       <section id="about-section" className="home-about-section">
         <div className="container about-map-grid">
           <div className="about-content">
@@ -167,12 +135,10 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Statistics */}
       <Suspense fallback={null}>
         <StatsSection />
       </Suspense>
 
-      {/* Articles */}
       <Suspense fallback={null}>
         <ArticlesSection />
       </Suspense>

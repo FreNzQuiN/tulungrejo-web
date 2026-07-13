@@ -1,12 +1,6 @@
 "use client";
 
-import {
-  Landmark,
-  TrendingUp,
-  AlertCircle,
-  FileText,
-  CheckCircle2,
-} from "lucide-react";
+import { Landmark, FileText, CheckCircle2, Clock } from "lucide-react";
 import { formatCurrency } from "@/lib/utils";
 
 interface StatCardsProps {
@@ -24,135 +18,229 @@ interface StatCardsProps {
 export function StatCards({ overallStats }: StatCardsProps) {
   const paidPercent =
     overallStats.totalPbbAmount > 0
-      ? Math.round(overallStats.realizationPercentage)
+      ? Math.round(
+          (overallStats.totalPaidAmount / overallStats.totalPbbAmount) * 100,
+        )
       : 0;
   const unpaidPercent = 100 - paidPercent;
 
+  const spptPaidPercent =
+    overallStats.totalPlots > 0
+      ? Math.round((overallStats.paidPlots / overallStats.totalPlots) * 100)
+      : 0;
+  const spptUnpaidPercent = 100 - spptPaidPercent;
+
   return (
-    <div className="flex flex-col gap-6">
-      {/* Row 1: Nominal cards */}
-      <div className="kades-dashboard-grid">
-        <div className="kades-stat-card">
-          <h4>Target PBB Total (1 Desa)</h4>
-          <div className="kades-stat-value">
-            {formatCurrency(overallStats.totalPbbAmount)}
+    <div className="space-y-6">
+      {/* ───── Hero Card: Target PBB ───── */}
+      <div className="glass-panel p-6">
+        <div className="flex items-start justify-between mb-4">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <Landmark size={20} className="text-[var(--color-dark-brown)]" />
+              <h3 className="text-lg font-bold text-[var(--color-dark-brown)] font-[family-name:var(--font-heading)]">
+                Target PBB Desa
+              </h3>
+            </div>
+            <p className="text-[13px] text-[var(--color-muted)]">
+              Total kewajiban pajak bumi & bangunan desa Tulungrejo
+            </p>
           </div>
-          <div className="kades-stat-sub text-muted flex items-center gap-1.5">
-            <Landmark size={14} />
-            <span>
-              Total kewajiban dari {overallStats.totalPlots} SPPT terdaftar
+          <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-bold uppercase tracking-wider rounded-full bg-[var(--color-dark-brown)] text-white">
+            <FileText size={12} />
+            SPPT
+          </span>
+        </div>
+
+        <div className="flex items-baseline gap-6 mb-5">
+          <div>
+            <div className="text-[30px] font-extrabold text-[var(--color-dark-brown)]">
+              {formatCurrency(overallStats.totalPbbAmount)}
+            </div>
+            <div className="text-[12px] text-[var(--color-muted)]">
+              Total nominal kewajiban
+            </div>
+          </div>
+          <div className="flex items-baseline gap-1.5">
+            <span className="text-[28px] font-extrabold text-[var(--color-dark-brown)]">
+              {overallStats.totalPlots}
+            </span>
+            <span className="text-[12px] text-[var(--color-muted)] font-medium">
+              lbr
             </span>
           </div>
         </div>
 
-        <div
-          className="kades-stat-card"
-          style={{ borderLeft: "4px solid var(--color-secondary-tan)" }}
-        >
-          <h4>Nominal Pajak Terbayar</h4>
+        {/* Progress bar — nominal */}
+        <div className="mb-2">
+          <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{
+                width: `${paidPercent}%`,
+                backgroundColor: "var(--color-dark-brown)",
+              }}
+            />
+          </div>
+        </div>
+        <div className="flex justify-between text-[12px] font-semibold">
+          <span className="text-[var(--color-dark-brown)]">
+            Realisasi Nominal {paidPercent}%
+          </span>
+          <span className="text-[var(--color-muted)]">
+            SPPT Lunas {overallStats.paidPlots}/{overallStats.totalPlots} (
+            {spptPaidPercent}%)
+          </span>
+        </div>
+      </div>
+
+      {/* ───── 2×2 Mini Cards ───── */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* Nominal Terbayar */}
+        <div className="glass-panel p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <CheckCircle2 size={16} style={{ color: "var(--color-success)" }} />
+            <h4 className="text-[13px] font-bold uppercase text-[var(--color-muted)] tracking-wide">
+              Nominal Terbayar
+            </h4>
+          </div>
           <div
-            className="kades-stat-value"
+            className="text-[22px] font-extrabold mb-3"
             style={{ color: "var(--color-success)" }}
           >
             {formatCurrency(overallStats.totalPaidAmount)}
           </div>
-          <div
-            className="kades-stat-sub font-semibold flex items-center gap-1.5"
-            style={{ color: "var(--color-success)" }}
-          >
-            <TrendingUp size={14} />
-            <span>Sudah terealisasi ({paidPercent}%)</span>
+          <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-1.5">
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{
+                width: `${paidPercent}%`,
+                backgroundColor: "var(--color-success)",
+              }}
+            />
+          </div>
+          <div className="flex justify-between text-[11px]">
+            <span
+              style={{ color: "var(--color-success)" }}
+              className="font-semibold"
+            >
+              {paidPercent}%
+            </span>
+            <span className="text-[var(--color-muted)]">Dari total target</span>
           </div>
         </div>
 
-        <div
-          className="kades-stat-card"
-          style={{ borderLeft: "4px solid var(--color-dark-brown)" }}
-        >
-          <h4>Sisa Piutang PBB</h4>
+        {/* Sisa Piutang */}
+        <div className="glass-panel p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <Clock size={16} style={{ color: "var(--color-danger)" }} />
+            <h4 className="text-[13px] font-bold uppercase text-[var(--color-muted)] tracking-wide">
+              Sisa Piutang
+            </h4>
+          </div>
           <div
-            className="kades-stat-value"
+            className="text-[22px] font-extrabold mb-3"
             style={{ color: "var(--color-danger)" }}
           >
             {formatCurrency(overallStats.totalUnpaidAmount)}
           </div>
-          <div
-            className="kades-stat-sub font-semibold flex items-center gap-1.5"
-            style={{ color: "var(--color-danger)" }}
-          >
-            <AlertCircle size={14} />
-            <span>Sisa tunggakan ({unpaidPercent}%)</span>
+          <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-1.5">
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{
+                width: `${unpaidPercent}%`,
+                backgroundColor: "var(--color-danger)",
+              }}
+            />
           </div>
-        </div>
-      </div>
-
-      {/* Row 2: SPPT cards */}
-      <div className="kades-dashboard-grid">
-        <div className="kades-stat-card flex items-center gap-4 px-6 py-4">
-          <div className="inline-flex p-2 rounded-full bg-[rgba(229,210,131,0.08)] text-[#062c30] m-0">
-            <FileText size={18} />
-          </div>
-          <div>
-            <span className="text-muted text-[11px] block uppercase font-bold">
-              Total Target SPPT
+          <div className="flex justify-between text-[11px]">
+            <span
+              style={{ color: "var(--color-danger)" }}
+              className="font-semibold"
+            >
+              {unpaidPercent}%
             </span>
-            <strong className="text-[18px] text-dark-brown">
-              {overallStats.totalPlots} Lembar
-            </strong>
+            <span className="text-[var(--color-muted)]">Sisa tunggakan</span>
           </div>
         </div>
 
-        <div className="kades-stat-card flex items-center gap-4 px-6 py-4">
-          <div
-            className="inline-flex p-2 rounded-full m-0"
-            style={{
-              color: "var(--color-success)",
-              backgroundColor: "var(--color-success-bg)",
-            }}
-          >
-            <CheckCircle2 size={18} />
+        {/* SPPT Lunas */}
+        <div className="glass-panel p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <CheckCircle2 size={16} style={{ color: "var(--color-success)" }} />
+            <h4 className="text-[13px] font-bold uppercase text-[var(--color-muted)] tracking-wide">
+              SPPT Lunas
+            </h4>
           </div>
-          <div>
-            <span className="text-muted text-[11px] block uppercase font-bold">
-              SPPT Lunas Bayar
-            </span>
-            <strong
-              className="text-[18px]"
+          <div className="flex items-baseline gap-1.5 mb-3">
+            <span
+              className="text-[22px] font-extrabold"
               style={{ color: "var(--color-success)" }}
             >
-              {overallStats.paidPlots} Lembar (
-              {Math.round(
-                (overallStats.paidPlots / overallStats.totalPlots) * 100,
-              )}
-              %)
-            </strong>
+              {overallStats.paidPlots}
+            </span>
+            <span className="text-[12px] text-[var(--color-muted)] font-medium">
+              Lembar
+            </span>
+          </div>
+          <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-1.5">
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{
+                width: `${spptPaidPercent}%`,
+                backgroundColor: "var(--color-success)",
+              }}
+            />
+          </div>
+          <div className="flex justify-between text-[11px]">
+            <span
+              style={{ color: "var(--color-success)" }}
+              className="font-semibold"
+            >
+              {spptPaidPercent}%
+            </span>
+            <span className="text-[var(--color-muted)]">
+              Dari {overallStats.totalPlots} SPPT
+            </span>
           </div>
         </div>
 
-        <div className="kades-stat-card flex items-center gap-4 px-6 py-4">
-          <div
-            className="inline-flex p-2 rounded-full m-0"
-            style={{
-              color: "var(--color-danger)",
-              backgroundColor: "var(--color-danger-bg)",
-            }}
-          >
-            <AlertCircle size={18} />
-          </div>
-          <div>
-            <span className="text-muted text-[11px] block uppercase font-bold">
+        {/* SPPT Tertunggak */}
+        <div className="glass-panel p-5">
+          <div className="flex items-center gap-2 mb-1">
+            <Clock size={16} style={{ color: "var(--color-danger)" }} />
+            <h4 className="text-[13px] font-bold uppercase text-[var(--color-muted)] tracking-wide">
               SPPT Tertunggak
-            </span>
-            <strong
-              className="text-[18px]"
+            </h4>
+          </div>
+          <div className="flex items-baseline gap-1.5 mb-3">
+            <span
+              className="text-[22px] font-extrabold"
               style={{ color: "var(--color-danger)" }}
             >
-              {overallStats.unpaidPlots} Lembar (
-              {Math.round(
-                (overallStats.unpaidPlots / overallStats.totalPlots) * 100,
-              )}
-              %)
-            </strong>
+              {overallStats.unpaidPlots}
+            </span>
+            <span className="text-[12px] text-[var(--color-muted)] font-medium">
+              Lembar
+            </span>
+          </div>
+          <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-1.5">
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{
+                width: `${spptUnpaidPercent}%`,
+                backgroundColor: "var(--color-danger)",
+              }}
+            />
+          </div>
+          <div className="flex justify-between text-[11px]">
+            <span
+              style={{ color: "var(--color-danger)" }}
+              className="font-semibold"
+            >
+              {spptUnpaidPercent}%
+            </span>
+            <span className="text-[var(--color-muted)]">Belum dibayar</span>
           </div>
         </div>
       </div>

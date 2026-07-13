@@ -77,18 +77,24 @@ export default function KadesDashboard() {
   if (!data) return null;
 
   return (
-    <div className="space-y-8">
+    <div>
       <div className="page-header mb-8">
-        <h1>Dashboard Analitik & Realisasi PBB</h1>
-        <p>
-          Otoritas Kepala Desa: Analisis real-time penerimaan Pajak Bumi &
-          Bangunan serta penyelesaian surat ketetapan pajak
-        </p>
+        <div className="container">
+          <h1>Dashboard Analitik & Realisasi PBB</h1>
+          <p>
+            Otoritas Kepala Desa: Analisis real-time penerimaan Pajak Bumi &
+            Bangunan serta penyelesaian surat ketetapan pajak
+          </p>
+        </div>
       </div>
 
-      <StatCards overallStats={data.overallStats} />
-      <PieCharts overallStats={data.overallStats} />
-      <DusunTable blokStats={data.blokStats} />
+      <div className="container">
+        <div className="space-y-8">
+          <StatCards overallStats={data.overallStats} />
+          <PieCharts overallStats={data.overallStats} />
+          <DusunTable blokStats={data.blokStats} />
+        </div>
+      </div>
     </div>
   );
 }

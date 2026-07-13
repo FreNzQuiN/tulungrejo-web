@@ -11,7 +11,7 @@ function getClientIp(req: Request): string {
   );
 }
 
-export default auth((req) => {
+export const proxy = auth((req) => {
   const path = req.nextUrl.pathname;
 
   // Rate limit API routes

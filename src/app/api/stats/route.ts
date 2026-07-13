@@ -11,12 +11,19 @@ export async function GET() {
     if (!stats) {
       return NextResponse.json({ error: "Stats not found" }, { status: 404 });
     }
-    return NextResponse.json({
-      jumlahKK: stats.jumlahKK,
-      jumlahPenduduk: stats.jumlahPenduduk,
-      lakiLaki: stats.lakiLaki,
-      perempuan: stats.perempuan,
-    });
+    return NextResponse.json(
+      {
+        jumlahKK: stats.jumlahKK,
+        jumlahPenduduk: stats.jumlahPenduduk,
+        lakiLaki: stats.lakiLaki,
+        perempuan: stats.perempuan,
+      },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        },
+      },
+    );
   } catch (err) {
     console.error("Stats fetch error:", err);
     return NextResponse.json(

@@ -7,6 +7,7 @@ import remarkGfm from "remark-gfm";
 import { getPublishedArticleBySlug } from "@/lib/article-queries";
 import { ArrowLeft, Calendar, Share2 } from "lucide-react";
 import { ARTICLE_IMAGE_FALLBACK } from "@/lib/constants";
+import { Skeleton } from "@/components/ui/skeleton";
 
 function SocialShare({ title, slug }: { title: string; slug: string }) {
   const url = process.env.NEXT_PUBLIC_SITE_URL
@@ -63,7 +64,6 @@ async function ArticleContent({
 
   return (
     <div className="container px-6 py-10 flex-1">
-      {/* Breadcrumb */}
       <nav className="text-[13px] text-muted-foreground mb-6 flex items-center gap-2">
         <Link href="/artikel" className="text-dark-brown font-semibold">
           Artikel
@@ -74,7 +74,6 @@ async function ArticleContent({
         <span style={{ color: "var(--color-dark)" }}>{article.title}</span>
       </nav>
 
-      {/* Back button */}
       <div className="mb-6">
         <Link
           href="/artikel"
@@ -120,10 +119,29 @@ async function ArticleContent({
             </ReactMarkdown>
           </div>
 
-          {/* Social share */}
           <SocialShare title={article.title} slug={article.slug} />
         </div>
       </article>
+    </div>
+  );
+}
+
+function ArticleSkeleton() {
+  return (
+    <div className="container px-6 py-10 flex-1">
+      <Skeleton className="mb-6 h-4 w-48" />
+      <Skeleton className="mb-8 h-8 w-32" />
+      <div className="glass-panel overflow-hidden mb-[60px]">
+        <Skeleton className="h-[480px] w-full rounded-none" />
+        <div className="p-10">
+          <Skeleton className="mb-4 h-6 w-28" />
+          <Skeleton className="mb-6 h-10 w-3/4" />
+          <Skeleton className="mb-2 h-4 w-full" />
+          <Skeleton className="mb-2 h-4 w-full" />
+          <Skeleton className="mb-2 h-4 w-5/6" />
+          <Skeleton className="mt-8 h-4 w-1/3" />
+        </div>
+      </div>
     </div>
   );
 }
@@ -135,7 +153,7 @@ export default function ArticleDetailPage({
 }) {
   return (
     <div className="animate-fade-in min-h-[80vh] flex flex-col">
-      <Suspense fallback={null}>
+      <Suspense fallback={<ArticleSkeleton />}>
         <ArticleContent params={params} />
       </Suspense>
     </div>

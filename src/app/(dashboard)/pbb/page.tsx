@@ -89,7 +89,6 @@ export default function PBBPage() {
 
   return (
     <div className="animate-fade-in">
-      {/* Page Header */}
       <div className="page-header mb-8">
         <div className="container">
           <h1>Sistem Pemantauan PBB (Pajak Bumi & Bangunan)</h1>
@@ -100,12 +99,9 @@ export default function PBBPage() {
         </div>
       </div>
 
-      {/* Map + List layout */}
       <div className="container">
         <div className="pbb-layout">
-          {/* Left Column: Leaflet Map */}
           <div>
-            {/* Legend bar */}
             <div className="glass-panel p-[15px] flex justify-between items-center text-[13px] mb-[15px]">
               <span className="text-muted">
                 <strong>Pusat Koordinat Peta:</strong> Desa Tulungrejo
@@ -142,9 +138,7 @@ export default function PBBPage() {
             )}
           </div>
 
-          {/* Right Column: Search, Filter, and Citizen list */}
           <div className="map-control-panel">
-            {/* Search & Filters — glass-panel wrapper matching FE layout */}
             <div className="glass-panel p-5 flex flex-col gap-[15px]">
               <div className="relative">
                 <Search
@@ -196,7 +190,6 @@ export default function PBBPage() {
               </div>
             </div>
 
-            {/* Citizen scroll list */}
             {loading ? (
               <div className="glass-panel p-8 text-center">
                 <p className="text-muted-foreground">Memuat data warga...</p>

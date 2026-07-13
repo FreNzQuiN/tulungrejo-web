@@ -31,6 +31,7 @@ export function Header() {
               className="logo-img"
               width={36}
               height={36}
+              unoptimized
             />
           </div>
           <div>
@@ -75,7 +76,7 @@ export function Header() {
             </div>
           ) : (
             <Link href="/login" className="btn btn-primary btn-sm">
-              Masuk Portal
+              <User size={14} /> Masuk Portal
             </Link>
           )}
         </nav>

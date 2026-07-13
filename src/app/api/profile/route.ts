@@ -25,13 +25,20 @@ export async function GET() {
       {},
     );
 
-    return NextResponse.json({
-      visi: profile.visi,
-      misi,
-      strukturOrganisasi,
-      tugasFungsi,
-      administratif,
-    });
+    return NextResponse.json(
+      {
+        visi: profile.visi,
+        misi,
+        strukturOrganisasi,
+        tugasFungsi,
+        administratif,
+      },
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        },
+      },
+    );
   } catch (err) {
     console.error("Profile fetch error:", err);
     return NextResponse.json(

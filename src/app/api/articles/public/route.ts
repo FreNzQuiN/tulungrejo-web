@@ -22,7 +22,11 @@ export async function GET() {
       published: a.published,
     }));
 
-    return NextResponse.json(result);
+    return NextResponse.json(result, {
+      headers: {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+      },
+    });
   } catch (err) {
     console.error("Public articles fetch error:", err);
     return NextResponse.json(

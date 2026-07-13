@@ -29,6 +29,7 @@ export function Footer() {
                   className="logo-img"
                   width={32}
                   height={32}
+                  unoptimized
                 />
               </div>
               <h3>PEMERINTAH DESA TULUNGREJO</h3>

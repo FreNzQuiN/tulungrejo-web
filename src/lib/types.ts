@@ -1,6 +1,5 @@
 export type UserRole = "kepala_desa" | "pamong_pajak" | "jurnalis";
 
-// Internal role (Prisma enum) → FE display role mapping
 export const ROLE_DISPLAY: Record<UserRole, string> = {
   kepala_desa: "kepala desa",
   pamong_pajak: "pamong",
@@ -78,15 +77,14 @@ export interface BlokStats {
   percentage: number;
 }
 
-// Article types matching FE contract
 export interface ArticleFrontmatter {
   title: string;
   slug: string;
   date: string;
   author: string;
   category: string;
-  summary: string; // FE uses "summary", TestLanding used "excerpt"
-  image?: string; // FE uses "image", TestLanding used "coverImage"
+  summary: string;
+  image?: string;
   tags?: string[];
   published: boolean;
 }
@@ -95,7 +93,6 @@ export interface Article extends ArticleFrontmatter {
   content: string;
 }
 
-// Village Profile matching FE contract
 export interface OrgMember {
   role: string;
   name: string;
@@ -106,25 +103,26 @@ export interface TugasFungsi {
   tugas: string;
 }
 
+export interface Administratif {
+  koordinat: string;
+  batasUtara: string;
+  batasSelatan: string;
+  batasTimur: string;
+  batasBarat: string;
+  luasWilayah: string;
+  mataPencaharianUtama: string;
+  saranaPendidikan: string;
+  saranaKesehatan: string;
+}
+
 export interface VillageProfile {
   visi: string;
   misi: string[];
   strukturOrganisasi: OrgMember[];
   tugasFungsi: TugasFungsi[];
-  administratif: {
-    koordinat: string;
-    batasUtara: string;
-    batasSelatan: string;
-    batasTimur: string;
-    batasBarat: string;
-    luasWilayah: string;
-    mataPencaharianUtama: string;
-    saranaPendidikan: string;
-    saranaKesehatan: string;
-  };
+  administratif: Administratif;
 }
 
-// PBB Citizen view — FE expects flat shape
 export interface CitizenView {
   id: number;
   name: string;
@@ -136,7 +134,6 @@ export interface CitizenView {
   status: "Sudah Bayar" | "Belum Bayar";
 }
 
-// Dashboard types
 export interface PamongDashboard {
   assignedBlok: string;
   blokStats: BlokStats;
@@ -166,7 +163,6 @@ export interface MapBlok {
   stats: BlokStats;
 }
 
-// FE categories
 export type Category =
   | "Kegiatan Desa"
   | "Pembangunan"
