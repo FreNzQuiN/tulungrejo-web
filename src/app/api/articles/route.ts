@@ -7,8 +7,11 @@ import {
   checkSlugExists,
 } from "@/lib/article-queries";
 import { CATEGORIES, MAX_IMAGE_SIZE } from "@/lib/constants";
+import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!(await checkApiRateLimit(req))) return rateLimitResponse();
+
   const auth = await requireRole(["jurnalis"]);
   if ("error" in auth) return auth.error;
 
@@ -17,6 +20,8 @@ export async function GET() {
 }
 
 export async function POST(req: NextRequest) {
+  if (!(await checkApiRateLimit(req))) return rateLimitResponse();
+
   const auth = await requireRole(["jurnalis"]);
   if ("error" in auth) return auth.error;
 

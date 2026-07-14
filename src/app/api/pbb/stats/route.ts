@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth-helpers";
 import { fetchPbbStats } from "@/lib/pbb-queries";
+import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
 
 export async function GET(req: NextRequest) {
+  if (!(await checkApiRateLimit(req))) return rateLimitResponse();
+
   const auth = await requireRole(["pamong_pajak", "kepala_desa"]);
   if ("error" in auth) return auth.error;
 

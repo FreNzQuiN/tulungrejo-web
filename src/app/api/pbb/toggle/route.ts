@@ -1,8 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth-helpers";
 import { prisma } from "@/lib/prisma";
+import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
 
 export async function POST(req: NextRequest) {
+  if (!(await checkApiRateLimit(req))) return rateLimitResponse();
+
   const auth = await requireRole(["pamong_pajak"]);
   if ("error" in auth) return auth.error;
 

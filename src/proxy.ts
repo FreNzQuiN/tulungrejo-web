@@ -1,30 +1,9 @@
-// Replaces middleware.ts
+// Replaces middleware.ts — Edge-compatible, no Prisma dependency
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import {
-  checkRateLimit,
-  getClientIp,
-  RATE_LIMIT_PRESETS,
-} from "@/lib/rate-limit";
 
 export const proxy = auth(async (req) => {
   const path = req.nextUrl.pathname;
-
-  if (path.startsWith("/api/")) {
-    const ip = getClientIp(req);
-    if (!ip) {
-      return NextResponse.json({ error: "Bad request" }, { status: 400 });
-    }
-    const rl = await checkRateLimit(`api:${ip}`, RATE_LIMIT_PRESETS.api);
-    if (!rl.allowed) {
-      return NextResponse.json(
-        { error: "Terlalu banyak permintaan. Coba lagi nanti." },
-        { status: 429 },
-      );
-    }
-    return NextResponse.next();
-  }
-
   const session = req.auth;
 
   if (!session) {

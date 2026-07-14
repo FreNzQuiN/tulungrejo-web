@@ -3,8 +3,11 @@ import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth-helpers";
 import { safeJsonParse } from "@/lib/utils";
+import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!(await checkApiRateLimit(req))) return rateLimitResponse();
+
   try {
     const profile = await prisma.villageProfile.findFirst();
     if (!profile) {
@@ -49,6 +52,8 @@ export async function GET() {
 }
 
 export async function PUT(req: NextRequest) {
+  if (!(await checkApiRateLimit(req))) return rateLimitResponse();
+
   const auth = await requireRole(["jurnalis"]);
   if ("error" in auth) return auth.error;
 

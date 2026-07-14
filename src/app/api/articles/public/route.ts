@@ -1,7 +1,10 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getAllPublishedArticles } from "@/lib/article-queries";
+import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
+  if (!(await checkApiRateLimit(req))) return rateLimitResponse();
+
   try {
     const articles = await getAllPublishedArticles();
 
