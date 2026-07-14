@@ -16,7 +16,6 @@ export async function GET(req: NextRequest) {
   try {
     const raw = await fetchPbbStats(year, month);
 
-    // Per-blok nominal amounts
     const [blokSums, paidRecords] = await Promise.all([
       prisma.landPlot.groupBy({
         by: ["blok"],
@@ -33,7 +32,6 @@ export async function GET(req: NextRequest) {
       blokSums.map((b) => [b.blok, Number(b._sum.pbbAmount ?? 0)]),
     );
 
-    // Paid nominal amount per blok
     const allPlotAmts = await prisma.landPlot.findMany({
       select: { id: true, blok: true, pbbAmount: true },
     });
@@ -46,7 +44,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    // Transform to FE-facing field names
+    // Remap to FE field names
     const overallStats = {
       totalPlots: raw.overallStats.totalPlots,
       paidPlots: raw.overallStats.totalPaid,

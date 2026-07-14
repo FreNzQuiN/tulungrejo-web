@@ -19,7 +19,6 @@ export function Footer() {
     <footer className="footer-container">
       <div className="container">
         <div className="footer-grid">
-          {/* Brand Column */}
           <div className="footer-brand-col">
             <div className="footer-logo">
               <div className="footer-logo-badge">
@@ -50,7 +49,6 @@ export function Footer() {
             </a>
           </div>
 
-          {/* Quick Links */}
           <div className="footer-links-col">
             <h4>Navigasi Portal</h4>
             <ul>
@@ -62,7 +60,6 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Contact Info */}
           <div className="footer-contact-col">
             <h4>Hubungi Kami</h4>
             <ul className="contact-list">

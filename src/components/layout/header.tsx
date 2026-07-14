@@ -31,6 +31,7 @@ export function Header() {
               className="logo-img"
               width={36}
               height={36}
+              loading="eager"
               unoptimized
             />
           </div>
@@ -40,7 +41,6 @@ export function Header() {
           </div>
         </Link>
 
-        {/* Desktop Nav */}
         <nav className="navbar-desktop">
           {NAV_ITEMS.map((item) => (
             <Link
@@ -81,7 +81,6 @@ export function Header() {
           )}
         </nav>
 
-        {/* Mobile Toggle */}
         <button
           className="navbar-mobile-toggle"
           onClick={() => setMobileOpen(!mobileOpen)}
@@ -90,7 +89,6 @@ export function Header() {
         </button>
       </div>
 
-      {/* Mobile Panel */}
       {mobileOpen && (
         <div className="navbar-mobile-panel">
           <nav className="mobile-links">

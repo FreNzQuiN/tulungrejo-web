@@ -30,7 +30,7 @@ export function Pagination({
   return (
     <div className="flex justify-center items-center gap-2 mt-8">
       <button
-        className="flex items-center justify-center w-10 h-10 rounded-md border border-gray-300 bg-white text-[#062c30] font-bold cursor-pointer transition-all hover:bg-gray-100 hover:border-[#062c30] disabled:opacity-40 disabled:cursor-not-allowed"
+        className="flex items-center justify-center w-10 h-10 rounded-md border border-gray-300 bg-white text-dark-brown font-bold cursor-pointer transition-all hover:bg-gray-100 hover:border-dark-brown disabled:opacity-40 disabled:cursor-not-allowed"
         disabled={currentPage === 1}
         onClick={() => onPageChange(currentPage - 1)}
         aria-label="Halaman sebelumnya"
@@ -49,7 +49,7 @@ export function Pagination({
         ) : (
           <button
             key={page}
-            className={`flex items-center justify-center w-10 h-10 rounded-md border font-bold cursor-pointer transition-all ${currentPage === page ? "bg-[#062c30] text-white border-[#062c30]" : "border-gray-300 bg-white text-[#062c30] hover:bg-gray-100 hover:border-[#062c30]"}`}
+            className={`flex items-center justify-center w-10 h-10 rounded-md border font-bold cursor-pointer transition-all ${currentPage === page ? "bg-dark-brown text-white border-dark-brown" : "border-gray-300 bg-white text-dark-brown hover:bg-gray-100 hover:border-dark-brown"}`}
             onClick={() => onPageChange(page)}
             aria-label={`Halaman ${page}`}
             aria-current={currentPage === page ? "page" : undefined}
@@ -60,7 +60,7 @@ export function Pagination({
       )}
 
       <button
-        className="flex items-center justify-center w-10 h-10 rounded-md border border-gray-300 bg-white text-[#062c30] font-bold cursor-pointer transition-all hover:bg-gray-100 hover:border-[#062c30] disabled:opacity-40 disabled:cursor-not-allowed"
+        className="flex items-center justify-center w-10 h-10 rounded-md border border-gray-300 bg-white text-dark-brown font-bold cursor-pointer transition-all hover:bg-gray-100 hover:border-dark-brown disabled:opacity-40 disabled:cursor-not-allowed"
         disabled={currentPage === totalPages}
         onClick={() => onPageChange(currentPage + 1)}
         aria-label="Halaman selanjutnya"

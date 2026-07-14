@@ -32,7 +32,6 @@ export function StatCards({ overallStats }: StatCardsProps) {
 
   return (
     <div className="space-y-6">
-      {/* ───── Hero Card: Target PBB ───── */}
       <div className="glass-panel p-6">
         <div className="flex items-start justify-between mb-4">
           <div>
@@ -71,7 +70,6 @@ export function StatCards({ overallStats }: StatCardsProps) {
           </div>
         </div>
 
-        {/* Progress bar — nominal */}
         <div className="mb-2">
           <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
             <div
@@ -94,9 +92,7 @@ export function StatCards({ overallStats }: StatCardsProps) {
         </div>
       </div>
 
-      {/* ───── 2×2 Mini Cards ───── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        {/* Nominal Terbayar */}
         <div className="glass-panel p-5">
           <div className="flex items-center gap-2 mb-1">
             <CheckCircle2 size={16} style={{ color: "var(--color-success)" }} />
@@ -130,7 +126,6 @@ export function StatCards({ overallStats }: StatCardsProps) {
           </div>
         </div>
 
-        {/* Sisa Piutang */}
         <div className="glass-panel p-5">
           <div className="flex items-center gap-2 mb-1">
             <Clock size={16} style={{ color: "var(--color-danger)" }} />
@@ -164,7 +159,6 @@ export function StatCards({ overallStats }: StatCardsProps) {
           </div>
         </div>
 
-        {/* SPPT Lunas */}
         <div className="glass-panel p-5">
           <div className="flex items-center gap-2 mb-1">
             <CheckCircle2 size={16} style={{ color: "var(--color-success)" }} />
@@ -205,7 +199,6 @@ export function StatCards({ overallStats }: StatCardsProps) {
           </div>
         </div>
 
-        {/* SPPT Tertunggak */}
         <div className="glass-panel p-5">
           <div className="flex items-center gap-2 mb-1">
             <Clock size={16} style={{ color: "var(--color-danger)" }} />

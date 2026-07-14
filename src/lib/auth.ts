@@ -2,7 +2,12 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import bcrypt from "bcryptjs";
 import type { UserRole } from "./types";
-import { checkRateLimit } from "./rate-limit";
+import {
+  checkRateLimit,
+  getClientIp,
+  resetRateLimit,
+  RATE_LIMIT_PRESETS,
+} from "./rate-limit";
 
 const VALID_ROLES = new Set<string>([
   "kepala_desa",
@@ -41,24 +46,31 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         if (!email || !password) return null;
 
-        const ip =
-          req?.headers?.get("x-real-ip") ??
-          req?.headers?.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-          "unknown";
-        const rateLimit = checkRateLimit(`login:${ip}`);
-        if (!rateLimit.allowed) {
-          throw new Error("RATE_LIMITED");
-        }
+        const ip = getClientIp(req);
+        if (!ip) throw new Error("RATE_LIMITED");
+
+        const ipLimit = await checkRateLimit(`login:ip:${ip}`);
+        if (!ipLimit.allowed) throw new Error("RATE_LIMITED");
+
+        const normalizedEmail = email.toLowerCase();
+        const emailLimit = await checkRateLimit(
+          `login:email:${normalizedEmail}`,
+          RATE_LIMIT_PRESETS.loginEmail,
+        );
+        if (!emailLimit.allowed) throw new Error("RATE_LIMITED");
 
         const { prisma } = await import("./prisma");
         const user = await prisma.user.findUnique({
-          where: { email },
+          where: { email: normalizedEmail },
         });
 
         if (!user) return null;
 
         const valid = await bcrypt.compare(password, user.passwordHash);
         if (!valid) return null;
+
+        await resetRateLimit(`login:ip:${ip}`);
+        await resetRateLimit(`login:email:${normalizedEmail}`);
 
         return {
           id: String(user.id),

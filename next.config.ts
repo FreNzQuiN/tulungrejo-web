@@ -53,13 +53,18 @@ function getDevOrigins(): string[] {
 }
 
 const nextConfig: NextConfig = {
-  cacheComponents: true,
+  // PPR hanya di production — dev triggers HMR reload loop via proxy component
+  // generation yang gak bisa di-handle Turbopack dengan baik.
+  cacheComponents: !isDev,
+  experimental: {
+    // useCache pisah dari cacheComponents — enable selalu biar cacheTag/cacheLife
+    // jalan, meski PPR mati di dev.
+    useCache: true,
+  },
   allowedDevOrigins: isDev ? getDevOrigins() : [],
   images: {
-    remotePatterns: [{ protocol: "https", hostname: "images.unsplash.com" }],
-  },
-  turbopack: {
-    root: process.cwd(),
+    remotePatterns: [{ protocol: "https", hostname: "**" }],
+    dangerouslyAllowLocalIP: isDev,
   },
   async headers() {
     return [

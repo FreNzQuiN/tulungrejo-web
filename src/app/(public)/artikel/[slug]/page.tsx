@@ -5,52 +5,10 @@ import Image from "next/image";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { getPublishedArticleBySlug } from "@/lib/article-queries";
-import { ArrowLeft, Calendar, Share2 } from "lucide-react";
+import { ArrowLeft, Calendar } from "lucide-react";
 import { ARTICLE_IMAGE_FALLBACK } from "@/lib/constants";
 import { Skeleton } from "@/components/ui/skeleton";
-
-function SocialShare({ title, slug }: { title: string; slug: string }) {
-  const url = process.env.NEXT_PUBLIC_SITE_URL
-    ? `${process.env.NEXT_PUBLIC_SITE_URL}/artikel/${slug}`
-    : `https://desa-tulungrejo.my.id/artikel/${slug}`;
-  const text = encodeURIComponent(title);
-  const shareUrl = encodeURIComponent(url);
-
-  return (
-    <div
-      className="flex gap-3 items-center pt-8 mt-8"
-      style={{ borderTop: "1px solid rgba(79,112,156,0.2)" }}
-    >
-      <span className="text-[13px] font-bold text-muted-foreground inline-flex items-center gap-1.5">
-        <Share2 size={14} /> Bagikan:
-      </span>
-      <a
-        href={`https://www.facebook.com/sharer/sharer.php?u=${shareUrl}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="btn btn-outline btn-sm no-underline"
-      >
-        Facebook
-      </a>
-      <a
-        href={`https://wa.me/?text=${text}%20${shareUrl}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="btn btn-outline btn-sm no-underline"
-      >
-        WhatsApp
-      </a>
-      <a
-        href={`https://twitter.com/intent/tweet?text=${text}&url=${shareUrl}`}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="btn btn-outline btn-sm no-underline"
-      >
-        Twitter
-      </a>
-    </div>
-  );
-}
+import { SocialShare } from "@/components/shared/social-share";
 
 async function ArticleContent({
   params,
@@ -89,6 +47,8 @@ async function ArticleContent({
             src={article.image || ARTICLE_IMAGE_FALLBACK}
             alt={article.title}
             fill
+            unoptimized
+            loading="eager"
             sizes="100vw"
             className="object-cover"
           />

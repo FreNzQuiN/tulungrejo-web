@@ -90,7 +90,6 @@ export function LoginForm() {
         </div>
 
         <form onSubmit={handleSubmit}>
-          {/* Email */}
           <div className="form-group relative mb-5">
             <label className="block mb-2 text-sm font-semibold">
               Alamat Email
@@ -100,11 +99,7 @@ export function LoginForm() {
               placeholder="contoh@tulungrejo.desa.id"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="form-input w-full pl-4 pr-10 py-3"
-              style={{
-                border: "1px solid rgba(79, 112, 156, 0.3)",
-                outline: "none",
-              }}
+              className="form-input form-input--login w-full pl-4 pr-10 py-3"
               required
             />
             <Mail
@@ -113,7 +108,6 @@ export function LoginForm() {
             />
           </div>
 
-          {/* Password */}
           <div className="form-group relative mb-6">
             <label className="block mb-2 text-sm font-semibold">
               Kata Sandi
@@ -123,11 +117,7 @@ export function LoginForm() {
               placeholder="Masukkan kata sandi..."
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="form-input w-full pl-4 pr-10 py-3"
-              style={{
-                border: "1px solid rgba(79, 112, 156, 0.3)",
-                outline: "none",
-              }}
+              className="form-input form-input--login w-full pl-4 pr-10 py-3"
               required
             />
             <Key
@@ -143,7 +133,6 @@ export function LoginForm() {
             </div>
           )}
 
-          {/* Demo Accounts */}
           <div className="admin-desc-box">
             <strong className="block mb-2 text-dark-brown">
               Akun Demo / Prototype:
@@ -158,13 +147,7 @@ export function LoginForm() {
                     setError("");
                   }}
                   title="Klik untuk mengisi otomatis"
-                  className="demo-credential-item cursor-pointer px-3 py-2 text-xs flex justify-between items-center"
-                  style={{
-                    background: "rgba(255,255,255,0.7)",
-                    borderRadius: "6px",
-                    border: "1px solid rgba(79, 112, 156, 0.15)",
-                    transition: "var(--transition)",
-                  }}
+                  className="demo-credential-item demo-credential-card cursor-pointer px-3 py-2 text-xs flex justify-between items-center"
                 >
                   <div>
                     <span className="font-bold text-dark-brown">
@@ -172,10 +155,7 @@ export function LoginForm() {
                     </span>{" "}
                     {acc.email}
                   </div>
-                  <code
-                    className="px-1.5 py-0.5 rounded font-semibold"
-                    style={{ background: "rgba(79, 112, 156, 0.1)" }}
-                  >
+                  <code className="demo-password-badge px-1.5 py-0.5 rounded font-semibold">
                     {acc.password}
                   </code>
                 </div>

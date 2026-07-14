@@ -5,7 +5,6 @@ import bcrypt from "bcryptjs";
 async function main() {
   console.log("Seeding database...");
 
-  // 1. Users
   const passwordPamong = await bcrypt.hash("pamong123", 10);
   const passwordKades = await bcrypt.hash("kades123", 10);
   const passwordJurnalis = await bcrypt.hash("jurnalis123", 10);
@@ -46,7 +45,6 @@ async function main() {
 
   console.log("  ✓ Users seeded");
 
-  // 2. LandPlots (FE citizen data)
   const landPlots = [
     {
       nop: "35.79.010.001.002-0",
@@ -148,7 +146,6 @@ async function main() {
 
   console.log("  ✓ LandPlots seeded");
 
-  // 3. Payments (some paid, some unpaid)
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth() + 1;
   const allPlots = await prisma.landPlot.findMany();
@@ -184,7 +181,6 @@ async function main() {
 
   console.log("  ✓ Payments seeded");
 
-  // 4. VillageStats
   await prisma.villageStats.upsert({
     where: { id: 1 },
     update: {},
@@ -198,7 +194,6 @@ async function main() {
 
   console.log("  ✓ VillageStats seeded");
 
-  // 5. VillageProfile
   await prisma.villageProfile.upsert({
     where: { id: 1 },
     update: {},
@@ -265,7 +260,27 @@ async function main() {
 
   console.log("  ✓ VillageProfile seeded");
 
-  // 6. Articles — inline seed data (no longer from MDX files)
+  function placeholderImg(color: string): string {
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect fill="${color}" width="800" height="600"/></svg>`;
+    return `data:image/svg+xml;base64,${Buffer.from(svg).toString("base64")}`;
+  }
+
+  const SEED_COLORS = [
+    "#059669",
+    "#d97706",
+    "#2563eb",
+    "#475569",
+    "#e11d48",
+    "#7c3aed",
+    "#0891b2",
+    "#65a30d",
+    "#db2777",
+    "#ea580c",
+    "#4f46e5",
+    "#0d9488",
+  ];
+
+  // Inline seed (was MDX)
   const articlesData = [
     {
       title: "Musyawarah Perencanaan Pembangunan Desa Tulungrejo Tahun 2027",
@@ -786,7 +801,7 @@ Desa Tulungrejo menyimpan **potensi sumber daya alam** yang sangat berupa *sumbe
     },
   ];
 
-  for (const article of articlesData) {
+  for (const [i, article] of articlesData.entries()) {
     await prisma.article.upsert({
       where: { slug: article.slug },
       update: {},
@@ -797,7 +812,7 @@ Desa Tulungrejo menyimpan **potensi sumber daya alam** yang sangat berupa *sumbe
         author: article.author,
         category: article.category,
         summary: article.summary,
-        image: article.image,
+        image: placeholderImg(SEED_COLORS[i % SEED_COLORS.length]!),
         content: article.content,
         tags: article.tags,
         published: article.published,

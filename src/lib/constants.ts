@@ -54,5 +54,8 @@ export const PBB_MONTHS = [
 
 export const DUSUN_LIST = ["Junggo", "Wonorejo"] as const;
 
+/** Max length of base64 image string (~5MB encoded, ~3.75MB raw) */
+export const MAX_IMAGE_SIZE = 5_242_880;
+
 export const ARTICLE_IMAGE_FALLBACK =
-  "https://images.unsplash.com/photo-1619546813926-a78fa6372cd2?auto=format&fit=crop&q=80&w=800";
+  "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='800' height='600'%3E%3Crect fill='%23059669' width='800' height='600'/%3E%3C/svg%3E";

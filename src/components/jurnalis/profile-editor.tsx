@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { Save, X } from "lucide-react";
 import type { VillageProfile } from "@/lib/types";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface ProfileForm {
   visi: string;
@@ -36,6 +37,62 @@ const EMPTY_ADMIN = {
   saranaKesehatan: "",
 };
 
+function villageProfileToForm(data: VillageProfile): ProfileForm {
+  const strukturStr = (data.strukturOrganisasi || [])
+    .map((m: { role: string; name: string }) => `${m.role}: ${m.name}`)
+    .join("\n");
+  const tugasFungsiStr = (data.tugasFungsi || [])
+    .map((t: { jabatan: string; tugas: string }) => `${t.jabatan}: ${t.tugas}`)
+    .join("\n");
+
+  return {
+    visi: data.visi || "",
+    misi: (data.misi || []).join("\n"),
+    strukturOrganisasi: strukturStr,
+    tugasFungsi: tugasFungsiStr,
+    administratif: {
+      koordinat: data.administratif?.koordinat || "",
+      batasUtara: data.administratif?.batasUtara || "",
+      batasSelatan: data.administratif?.batasSelatan || "",
+      batasTimur: data.administratif?.batasTimur || "",
+      batasBarat: data.administratif?.batasBarat || "",
+      luasWilayah: data.administratif?.luasWilayah || "",
+      mataPencaharianUtama: data.administratif?.mataPencaharianUtama || "",
+      saranaPendidikan: data.administratif?.saranaPendidikan || "",
+      saranaKesehatan: data.administratif?.saranaKesehatan || "",
+    },
+  };
+}
+
+function ProfileEditorSkeleton() {
+  return (
+    <div className="cms-content-card">
+      <div className="cms-section-header">
+        <Skeleton className="h-6 w-36" />
+      </div>
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="form-group">
+          <Skeleton className="mb-1 h-4 w-32" />
+          <Skeleton className="h-20 w-full rounded" />
+        </div>
+      ))}
+      <Skeleton className="mb-3 mt-6 h-4 w-40" />
+      <div className="cms-grid-inputs-2">
+        {Array.from({ length: 8 }).map((_, i) => (
+          <div key={i} className="form-group">
+            <Skeleton className="mb-1 h-4 w-28" />
+            <Skeleton className="h-10 w-full rounded" />
+          </div>
+        ))}
+      </div>
+      <div className="cms-action-btn-row">
+        <Skeleton className="h-9 w-20 rounded" />
+        <Skeleton className="h-9 w-28 rounded" />
+      </div>
+    </div>
+  );
+}
+
 export function ProfileEditor() {
   const [form, setForm] = useState<ProfileForm>({
     visi: "",
@@ -55,52 +112,9 @@ export function ProfileEditor() {
         return res.json();
       })
       .then((data: VillageProfile) => {
-        const strukturStr = (data.strukturOrganisasi || [])
-          .map((m: { role: string; name: string }) => `${m.role}: ${m.name}`)
-          .join("\n");
-        const tugasFungsiStr = (data.tugasFungsi || [])
-          .map(
-            (t: { jabatan: string; tugas: string }) =>
-              `${t.jabatan}: ${t.tugas}`,
-          )
-          .join("\n");
-
-        setForm({
-          visi: data.visi || "",
-          misi: (data.misi || []).join("\n"),
-          strukturOrganisasi: strukturStr,
-          tugasFungsi: tugasFungsiStr,
-          administratif: {
-            koordinat: data.administratif?.koordinat || "",
-            batasUtara: data.administratif?.batasUtara || "",
-            batasSelatan: data.administratif?.batasSelatan || "",
-            batasTimur: data.administratif?.batasTimur || "",
-            batasBarat: data.administratif?.batasBarat || "",
-            luasWilayah: data.administratif?.luasWilayah || "",
-            mataPencaharianUtama:
-              data.administratif?.mataPencaharianUtama || "",
-            saranaPendidikan: data.administratif?.saranaPendidikan || "",
-            saranaKesehatan: data.administratif?.saranaKesehatan || "",
-          },
-        });
-        setOriginal({
-          visi: data.visi || "",
-          misi: (data.misi || []).join("\n"),
-          strukturOrganisasi: strukturStr,
-          tugasFungsi: tugasFungsiStr,
-          administratif: {
-            koordinat: data.administratif?.koordinat || "",
-            batasUtara: data.administratif?.batasUtara || "",
-            batasSelatan: data.administratif?.batasSelatan || "",
-            batasTimur: data.administratif?.batasTimur || "",
-            batasBarat: data.administratif?.batasBarat || "",
-            luasWilayah: data.administratif?.luasWilayah || "",
-            mataPencaharianUtama:
-              data.administratif?.mataPencaharianUtama || "",
-            saranaPendidikan: data.administratif?.saranaPendidikan || "",
-            saranaKesehatan: data.administratif?.saranaKesehatan || "",
-          },
-        });
+        const profileForm = villageProfileToForm(data);
+        setForm(profileForm);
+        setOriginal(profileForm);
       })
       .catch(() => toast.error("Gagal memuat profil desa"))
       .finally(() => setLoading(false));
@@ -173,52 +187,9 @@ export function ProfileEditor() {
 
       if (res.ok) {
         const updated = await res.json();
-        const updatedStrukturStr = (updated.strukturOrganisasi || [])
-          .map((m: { role: string; name: string }) => `${m.role}: ${m.name}`)
-          .join("\n");
-        const updatedTugasFungsiStr = (updated.tugasFungsi || [])
-          .map(
-            (t: { jabatan: string; tugas: string }) =>
-              `${t.jabatan}: ${t.tugas}`,
-          )
-          .join("\n");
-
-        setForm({
-          visi: updated.visi || "",
-          misi: (updated.misi || []).join("\n"),
-          strukturOrganisasi: updatedStrukturStr,
-          tugasFungsi: updatedTugasFungsiStr,
-          administratif: {
-            koordinat: updated.administratif?.koordinat || "",
-            batasUtara: updated.administratif?.batasUtara || "",
-            batasSelatan: updated.administratif?.batasSelatan || "",
-            batasTimur: updated.administratif?.batasTimur || "",
-            batasBarat: updated.administratif?.batasBarat || "",
-            luasWilayah: updated.administratif?.luasWilayah || "",
-            mataPencaharianUtama:
-              updated.administratif?.mataPencaharianUtama || "",
-            saranaPendidikan: updated.administratif?.saranaPendidikan || "",
-            saranaKesehatan: updated.administratif?.saranaKesehatan || "",
-          },
-        });
-        setOriginal({
-          visi: updated.visi || "",
-          misi: (updated.misi || []).join("\n"),
-          strukturOrganisasi: updatedStrukturStr,
-          tugasFungsi: updatedTugasFungsiStr,
-          administratif: {
-            koordinat: updated.administratif?.koordinat || "",
-            batasUtara: updated.administratif?.batasUtara || "",
-            batasSelatan: updated.administratif?.batasSelatan || "",
-            batasTimur: updated.administratif?.batasTimur || "",
-            batasBarat: updated.administratif?.batasBarat || "",
-            luasWilayah: updated.administratif?.luasWilayah || "",
-            mataPencaharianUtama:
-              updated.administratif?.mataPencaharianUtama || "",
-            saranaPendidikan: updated.administratif?.saranaPendidikan || "",
-            saranaKesehatan: updated.administratif?.saranaKesehatan || "",
-          },
-        });
+        const profileForm = villageProfileToForm(updated);
+        setForm(profileForm);
+        setOriginal(profileForm);
         toast.success("Profil desa berhasil diperbarui");
       } else {
         const err = await res.json();
@@ -251,11 +222,7 @@ export function ProfileEditor() {
   ];
 
   if (loading) {
-    return (
-      <div className="cms-content-card">
-        <p className="text-muted">Memuat...</p>
-      </div>
-    );
+    return <ProfileEditorSkeleton />;
   }
 
   return (
@@ -264,7 +231,6 @@ export function ProfileEditor() {
         <h3>Kelola Profil Desa</h3>
       </div>
 
-      {/* Visi */}
       <div className="form-group">
         <label>Visi</label>
         <textarea
@@ -276,7 +242,6 @@ export function ProfileEditor() {
         />
       </div>
 
-      {/* Misi */}
       <div className="form-group">
         <label>Misi (satu baris per misi)</label>
         <textarea
@@ -288,7 +253,6 @@ export function ProfileEditor() {
         />
       </div>
 
-      {/* Struktur Organisasi - editable */}
       <div className="form-group">
         <label>Struktur Organisasi (satu baris per jabatan: nama)</label>
         <textarea
@@ -302,7 +266,6 @@ export function ProfileEditor() {
         />
       </div>
 
-      {/* Tugas Fungsi - editable */}
       <div className="form-group">
         <label>
           Tugas dan Fungsi (satu baris per jabatan: deskripsi tugas)
@@ -318,7 +281,6 @@ export function ProfileEditor() {
         />
       </div>
 
-      {/* Administratif */}
       <label className="block font-semibold text-sm mb-3 text-dark-brown">
         Data Administratif
       </label>

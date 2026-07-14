@@ -2,9 +2,9 @@
 
 import { useState, useMemo } from "react";
 import type { ArticleFrontmatter } from "@/lib/types";
-import { ArticleCard } from "@/components/article-card";
-import { ArticleSearch } from "@/components/article-search";
-import { Pagination } from "@/components/pagination";
+import { ArticleCard } from "@/components/articles/article-card";
+import { ArticleSearch } from "@/components/articles/article-search";
+import { Pagination } from "@/components/articles/pagination";
 
 const PER_PAGE = 9;
 

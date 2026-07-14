@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Image from "next/image";
 import { Calendar, ArrowRight } from "lucide-react";
 import type { ArticleFrontmatter } from "@/lib/types";
 import { ARTICLE_IMAGE_FALLBACK } from "@/lib/constants";
@@ -7,10 +8,14 @@ export function ArticleCard({ article }: { article: ArticleFrontmatter }) {
   return (
     <article className="article-card">
       <div className="article-img-wrapper" data-alt={article.title}>
-        <img
+        <Image
           src={article.image || ARTICLE_IMAGE_FALLBACK}
           alt={article.title}
           className="article-img"
+          fill
+          unoptimized
+          loading="eager"
+          sizes="(max-width: 768px) 100vw, (max-width: 992px) 50vw, 33vw"
         />
         <span className="article-category">{article.category}</span>
       </div>

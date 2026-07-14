@@ -4,12 +4,36 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Save, X, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface StatsData {
   jumlahKK: number;
   jumlahPenduduk: number;
   lakiLaki: number;
   perempuan: number;
+}
+
+function StatsEditorSkeleton() {
+  return (
+    <div className="cms-content-card">
+      <div className="cms-section-header">
+        <Skeleton className="h-6 w-36" />
+      </div>
+      <Skeleton className="mb-6 h-12 w-full rounded" />
+      <div className="cms-grid-inputs-2">
+        {Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="form-group">
+            <Skeleton className="mb-1 h-4 w-24" />
+            <Skeleton className="h-10 w-full rounded" />
+          </div>
+        ))}
+      </div>
+      <div className="cms-action-btn-row">
+        <Skeleton className="h-9 w-20 rounded" />
+        <Skeleton className="h-9 w-28 rounded" />
+      </div>
+    </div>
+  );
 }
 
 export function StatsEditor() {
@@ -87,11 +111,7 @@ export function StatsEditor() {
   }
 
   if (loading) {
-    return (
-      <div className="cms-content-card">
-        <p className="text-muted">Memuat...</p>
-      </div>
-    );
+    return <StatsEditorSkeleton />;
   }
 
   return (

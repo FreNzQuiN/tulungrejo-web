@@ -56,11 +56,7 @@ export function sanitizeHtml(html: string): string {
   });
 }
 
-/**
- * Detect if content is HTML (from TipTap editor) or plain markdown.
- * Uses specific tag detection to avoid false positives from
- * markdown's angle bracket usage (e.g., <3, <tag> in code blocks).
- */
+/** Detect HTML vs markdown. Specific tags avoid false positives from markdown angled brackets. */
 export function isHtmlContent(content: string): boolean {
   if (!content || content.trim().length === 0) return false;
   return /<(p|h[1-6]|div|span|img|ul|ol|li|table|blockquote|pre|strong|em|br|hr)[\s>]/i.test(

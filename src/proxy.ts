@@ -1,26 +1,21 @@
-// Next.js 16 proxy (replaces middleware.ts)
+// Replaces middleware.ts
 import { auth } from "@/lib/auth";
 import { NextResponse } from "next/server";
-import { checkRateLimit } from "@/lib/rate-limit";
+import {
+  checkRateLimit,
+  getClientIp,
+  RATE_LIMIT_PRESETS,
+} from "@/lib/rate-limit";
 
-function getClientIp(req: Request): string {
-  return (
-    req.headers.get("x-real-ip") ??
-    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    "unknown"
-  );
-}
-
-export const proxy = auth((req) => {
+export const proxy = auth(async (req) => {
   const path = req.nextUrl.pathname;
 
-  // Rate limit API routes
   if (path.startsWith("/api/")) {
     const ip = getClientIp(req);
-    const rl = checkRateLimit(`edge:api:${ip}`, {
-      windowMs: 60_000,
-      maxAttempts: 60,
-    });
+    if (!ip) {
+      return NextResponse.json({ error: "Bad request" }, { status: 400 });
+    }
+    const rl = await checkRateLimit(`api:${ip}`, RATE_LIMIT_PRESETS.api);
     if (!rl.allowed) {
       return NextResponse.json(
         { error: "Terlalu banyak permintaan. Coba lagi nanti." },
@@ -32,7 +27,6 @@ export const proxy = auth((req) => {
 
   const session = req.auth;
 
-  // Redirect unauthenticated users to login
   if (!session) {
     const loginUrl = new URL("/login", req.url);
     loginUrl.searchParams.set("callbackUrl", path);
@@ -41,7 +35,7 @@ export const proxy = auth((req) => {
 
   const role = session.user?.role;
 
-  // Dashboard routes — match FE paths
+  // Match FE dashboard routes
   if (path.startsWith("/pbb") && role !== "pamong_pajak") {
     return NextResponse.redirect(new URL("/unauthorized", req.url));
   }

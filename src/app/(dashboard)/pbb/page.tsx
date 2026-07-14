@@ -2,16 +2,82 @@
 
 import { useState, useEffect } from "react";
 import { useSession } from "next-auth/react";
+import { Skeleton } from "@/components/ui/skeleton";
 import dynamic from "next/dynamic";
 import { Search, MapPin } from "lucide-react";
 import type { CitizenView } from "@/lib/types";
 import { DUSUN_LIST } from "@/lib/constants";
+import { formatCurrency } from "@/lib/utils";
 import { AccessDenied } from "@/components/auth/access-denied";
 
 const PBBMap = dynamic(
   () => import("@/components/pbb/pbb-map").then((m) => m.PBBMap),
   { ssr: false },
 );
+
+function PBBSkeleton() {
+  return (
+    <div className="pbb-layout">
+      <div>
+        <div className="glass-panel p-[15px] flex justify-end items-center mb-[15px]">
+          <div className="flex gap-[15px]">
+            <Skeleton className="h-3 w-24 rounded-full" />
+            <Skeleton className="h-3 w-24 rounded-full" />
+          </div>
+        </div>
+        <div
+          className="glass-panel flex items-center justify-center"
+          style={{ height: 400 }}
+        >
+          <div className="text-center">
+            <Skeleton className="mx-auto mb-3 h-48 w-64 rounded-lg" />
+            <Skeleton className="mx-auto h-4 w-40" />
+          </div>
+        </div>
+      </div>
+      <div className="map-control-panel">
+        <div className="glass-panel p-5 flex flex-col gap-[15px]">
+          <Skeleton className="h-10 w-full rounded" />
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Skeleton className="mb-1 h-3 w-12" />
+              <Skeleton className="h-8 w-full rounded" />
+            </div>
+            <div>
+              <Skeleton className="mb-1 h-3 w-16" />
+              <Skeleton className="h-8 w-full rounded" />
+            </div>
+          </div>
+        </div>
+        <div className="citizen-scroll-list">
+          {Array.from({ length: 5 }).map((_, i) => (
+            <div key={i} className="citizen-card">
+              <div className="citizen-card-header">
+                <div className="flex-1">
+                  <Skeleton className="mb-1 h-5 w-40" />
+                  <Skeleton className="h-3 w-32" />
+                </div>
+                <Skeleton className="h-5 w-20 rounded-full" />
+              </div>
+              <div className="citizen-detail-row">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-3 w-28" />
+              </div>
+              <div className="citizen-detail-row">
+                <Skeleton className="h-3 w-20" />
+                <Skeleton className="h-3 w-24" />
+              </div>
+              <div className="citizen-card-footer">
+                <Skeleton className="h-7 w-20 rounded" />
+                <Skeleton className="h-7 w-28 rounded" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function PBBPage() {
   const { data: session } = useSession();
@@ -102,10 +168,7 @@ export default function PBBPage() {
       <div className="container">
         <div className="pbb-layout">
           <div>
-            <div className="glass-panel p-[15px] flex justify-between items-center text-[13px] mb-[15px]">
-              <span className="text-muted">
-                <strong>Pusat Koordinat Peta:</strong> Desa Tulungrejo
-              </span>
+            <div className="glass-panel p-[15px] flex justify-end items-center text-[13px] mb-[15px]">
               <div className="flex gap-[15px]">
                 <span className="flex items-center gap-1.5">
                   <span
@@ -191,9 +254,7 @@ export default function PBBPage() {
             </div>
 
             {loading ? (
-              <div className="glass-panel p-8 text-center">
-                <p className="text-muted-foreground">Memuat data warga...</p>
-              </div>
+              <PBBSkeleton />
             ) : (
               <div className="citizen-scroll-list">
                 {filtered.length === 0 ? (
@@ -231,7 +292,7 @@ export default function PBBPage() {
                       <div className="citizen-detail-row text-muted-foreground text-xs">
                         <span>Kewajiban PBB:</span>
                         <strong className="text-dark-brown">
-                          Rp {c.nominal.toLocaleString("id-ID")}
+                          {formatCurrency(c.nominal)}
                         </strong>
                       </div>
 

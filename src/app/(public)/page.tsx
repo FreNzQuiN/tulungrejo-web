@@ -1,12 +1,13 @@
 import { Suspense } from "react";
-import { CountUp } from "@/components/count-up";
-import { HeroScrollButton } from "@/components/hero-scroll-button";
-import { HomeArticles } from "@/components/home-articles";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CountUp } from "@/components/shared/count-up";
+import { HeroScrollButton } from "@/components/shared/hero-scroll-button";
+import { HomeArticles } from "@/components/articles/home-articles";
 import { Users, Home as HomeIcon } from "lucide-react";
 import { connection } from "next/server";
 import { getVillageStats } from "@/lib/desa-queries";
 import { getAllPublishedArticles } from "@/lib/article-queries";
-import type { ArticleFrontmatter } from "@/lib/types";
+import { ArticlesError } from "@/components/articles/articles-error";
 
 async function StatsSection() {
   await connection();
@@ -67,14 +68,64 @@ async function StatsSection() {
 
 async function ArticlesSection() {
   await connection();
-  let articles: ArticleFrontmatter[] = [];
   try {
-    articles = await getAllPublishedArticles();
-  } catch {
-    // No articles
+    const articles = await getAllPublishedArticles();
+    if (articles.length === 0) return null;
+    return <HomeArticles articles={articles} />;
+  } catch (e) {
+    console.error("Gagal memuat artikel:", e);
+    return <ArticlesError />;
   }
-  if (articles.length === 0) return null;
-  return <HomeArticles articles={articles} />;
+}
+
+function StatsSkeleton() {
+  return (
+    <section className="stats-section">
+      <div className="container">
+        <div className="section-header">
+          <Skeleton className="mx-auto mb-2 h-8 w-56" />
+          <Skeleton className="mx-auto h-4 w-80" />
+        </div>
+        <div className="stats-grid">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="stat-card">
+              <Skeleton className="mx-auto mb-4 h-12 w-12 rounded-full" />
+              <Skeleton className="mx-auto mb-2 h-8 w-24" />
+              <Skeleton className="mx-auto h-4 w-32" />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function ArticlesSkeleton() {
+  return (
+    <section className="home-articles-section">
+      <div className="container">
+        <div className="section-header">
+          <Skeleton className="mx-auto mb-2 h-8 w-56" />
+          <Skeleton className="mx-auto h-4 w-80" />
+        </div>
+        <div className="articles-grid">
+          {Array.from({ length: 3 }).map((_, i) => (
+            <div key={i} className="article-card">
+              <Skeleton className="h-48 w-full rounded-none" />
+              <div className="article-body">
+                <Skeleton className="mb-3 h-5 w-16" />
+                <Skeleton className="mb-2 h-6 w-full" />
+                <Skeleton className="mb-4 h-6 w-3/4" />
+                <Skeleton className="mb-1 h-4 w-full" />
+                <Skeleton className="mb-1 h-4 w-5/6" />
+                <Skeleton className="h-4 w-2/3" />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
 }
 
 export default function HomePage() {
@@ -135,11 +186,11 @@ export default function HomePage() {
         </div>
       </section>
 
-      <Suspense fallback={null}>
+      <Suspense fallback={<StatsSkeleton />}>
         <StatsSection />
       </Suspense>
 
-      <Suspense fallback={null}>
+      <Suspense fallback={<ArticlesSkeleton />}>
         <ArticlesSection />
       </Suspense>
     </div>

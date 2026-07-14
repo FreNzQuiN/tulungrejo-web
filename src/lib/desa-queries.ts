@@ -11,14 +11,18 @@ export interface VillageStatsData {
   perempuan: number;
 }
 
-/** Public: cached village stats */
 export async function getVillageStats(): Promise<VillageStatsData> {
   "use cache: remote";
   cacheTag("village-stats");
   cacheLife("hours");
 
   const data = await prisma.villageStats.findFirst({ orderBy: { id: "asc" } });
-  if (!data) return STATS_SEED;
+  if (!data) {
+    console.warn(
+      "[desa-queries] getVillageStats: DB kosong, fallback ke STATS_SEED",
+    );
+    return STATS_SEED;
+  }
   return {
     jumlahKK: data.jumlahKK,
     jumlahPenduduk: data.jumlahPenduduk,
@@ -27,7 +31,6 @@ export async function getVillageStats(): Promise<VillageStatsData> {
   };
 }
 
-/** Public: cached village profile */
 export async function getVillageProfile(): Promise<VillageProfile> {
   "use cache: remote";
   cacheTag("village-profile");
@@ -37,6 +40,9 @@ export async function getVillageProfile(): Promise<VillageProfile> {
     orderBy: { id: "asc" },
   });
   if (!dbProfile) {
+    console.warn(
+      "[desa-queries] getVillageProfile: DB kosong, fallback ke VILLAGE_PROFILE_DATA",
+    );
     return {
       visi: VILLAGE_PROFILE_DATA.visi,
       misi: VILLAGE_PROFILE_DATA.misi,

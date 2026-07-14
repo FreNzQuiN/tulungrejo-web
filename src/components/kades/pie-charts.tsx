@@ -2,7 +2,8 @@
 
 import dynamic from "next/dynamic";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
-const COLORS = ["#4F709C", "#E5D283"];
+import { formatCurrency } from "@/lib/utils";
+const COLORS = ["var(--color-chart-blue)", "var(--color-chart-gold)"];
 
 interface PieChartsProps {
   overallStats: {
@@ -58,15 +59,8 @@ function PieChartsInner({ overallStats }: PieChartsProps) {
               </Pie>
               <Tooltip
                 formatter={(value) =>
-                  value
-                    ? [`Rp ${Number(value).toLocaleString("id-ID")}`]
-                    : ["Rp 0"]
+                  value ? [formatCurrency(Number(value))] : [formatCurrency(0)]
                 }
-                contentStyle={{
-                  fontFamily: "var(--font-body)",
-                  fontSize: "12px",
-                  borderRadius: "6px",
-                }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -110,11 +104,6 @@ function PieChartsInner({ overallStats }: PieChartsProps) {
                 formatter={(value) =>
                   value ? [`${Number(value)} Lembar`] : ["0 Lembar"]
                 }
-                contentStyle={{
-                  fontFamily: "var(--font-body)",
-                  fontSize: "12px",
-                  borderRadius: "6px",
-                }}
               />
             </PieChart>
           </ResponsiveContainer>

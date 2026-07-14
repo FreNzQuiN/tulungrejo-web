@@ -6,7 +6,7 @@ import {
   createArticle,
   checkSlugExists,
 } from "@/lib/article-queries";
-import { CATEGORIES } from "@/lib/constants";
+import { CATEGORIES, MAX_IMAGE_SIZE } from "@/lib/constants";
 
 export async function GET() {
   const auth = await requireRole(["jurnalis"]);
@@ -59,6 +59,12 @@ export async function POST(req: NextRequest) {
   }
   if (!content) {
     return NextResponse.json({ error: "Konten harus diisi" }, { status: 400 });
+  }
+  if (image && typeof image === "string" && image.length > MAX_IMAGE_SIZE) {
+    return NextResponse.json(
+      { error: "Ukuran gambar terlalu besar (maks 5MB)" },
+      { status: 400 },
+    );
   }
 
   try {

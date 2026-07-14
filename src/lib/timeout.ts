@@ -16,10 +16,8 @@ export function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
     clearTimeout(timer!),
   );
 
-  // Suppress rejection from orphaned query after timeout fired.
-  // Promise.race doesn't cancel the losing promise; without this,
-  // the underlying Prisma query's eventual rejection would be an
-  // unhandled promise rejection, and its connection would leak.
+  // Suppress orphaned query — Promise.race doesn't cancel loser.
+  // Without this, eventual rejection = unhandled rejection + connection leak.
   void promise.catch(() => {});
 
   return result;

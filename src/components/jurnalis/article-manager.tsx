@@ -2,11 +2,21 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
-import { Trash2, Pencil, Plus, X, Save, ArrowLeft } from "lucide-react";
+import {
+  Trash2,
+  Pencil,
+  Plus,
+  X,
+  Save,
+  ArrowLeft,
+  ImageUp,
+  Trash as TrashIcon,
+} from "lucide-react";
 import type { ArticleFrontmatter } from "@/lib/types";
 import { Button } from "@/components/ui/button";
-import { CATEGORIES } from "@/lib/constants";
-import { toKebab } from "@/lib/utils";
+import { Skeleton } from "@/components/ui/skeleton";
+import { CATEGORIES, MAX_IMAGE_SIZE } from "@/lib/constants";
+import { toKebab, resizeImage } from "@/lib/utils";
 
 interface ArticleForm {
   title: string;
@@ -26,35 +36,95 @@ const EMPTY_FORM: ArticleForm = {
   image: "",
 };
 
+function ArticleManagerSkeleton() {
+  return (
+    <div className="cms-content-card">
+      <div className="cms-section-header">
+        <Skeleton className="h-6 w-36" />
+        <Skeleton className="h-9 w-40 rounded" />
+      </div>
+      <div className="table-container">
+        <table className="custom-table">
+          <thead>
+            <tr>
+              {["Judul", "Tanggal", "Kategori", "Aksi"].map((_, i) => (
+                <th key={i}>
+                  <Skeleton className="h-4 w-16" />
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody>
+            {Array.from({ length: 4 }).map((_, i) => (
+              <tr key={i}>
+                <td>
+                  <Skeleton className="h-5 w-48" />
+                </td>
+                <td>
+                  <Skeleton className="h-4 w-24" />
+                </td>
+                <td>
+                  <Skeleton className="h-5 w-20 rounded-full" />
+                </td>
+                <td>
+                  <div className="flex gap-2">
+                    <Skeleton className="h-8 w-8 rounded" />
+                    <Skeleton className="h-8 w-8 rounded" />
+                  </div>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
 export function ArticleManager() {
   const [articles, setArticles] = useState<ArticleFrontmatter[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
   const [form, setForm] = useState<ArticleForm>(EMPTY_FORM);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  const fetchArticles = useCallback(async () => {
-    try {
-      const res = await fetch("/api/articles");
-      if (res.ok) {
-        setArticles(await res.json());
-      }
-    } catch {
-      toast.error("Gagal memuat daftar artikel");
-    } finally {
-      setLoading(false);
-    }
+  const fetchArticles = useCallback(async (abortSignal?: AbortSignal) => {
+    const res = await fetch("/api/articles", { signal: abortSignal });
+    if (!res.ok) throw new Error("Gagal memuat daftar artikel");
+    return (await res.json()) as ArticleFrontmatter[];
   }, []);
 
   useEffect(() => {
-    // setState only after await — no cascading render
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    fetchArticles();
+    const ac = new AbortController();
+
+    (async () => {
+      try {
+        setArticles(await fetchArticles(ac.signal));
+      } catch (err) {
+        if (ac.signal.aborted) return;
+        toast.error("Gagal memuat daftar artikel");
+      } finally {
+        setLoading(false);
+      }
+    })();
+
+    return () => ac.abort();
   }, [fetchArticles]);
+
+  async function refreshArticles() {
+    try {
+      setArticles(await fetchArticles());
+    } catch {
+      toast.error("Gagal memuat daftar artikel");
+    }
+  }
 
   function resetForm() {
     setForm(EMPTY_FORM);
+    setImagePreview(null);
     setIsAdding(false);
     setEditingSlug(null);
   }
@@ -66,6 +136,36 @@ export function ArticleManager() {
       title,
       slug: editingSlug ? prev.slug : slug,
     }));
+  }
+
+  async function handleImagePick(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > MAX_IMAGE_SIZE) {
+      toast.error("Ukuran gambar maksimal 5MB");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("Hanya file gambar yang diperbolehkan");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const dataUri = await resizeImage(file);
+      setForm((p) => ({ ...p, image: dataUri }));
+      setImagePreview(dataUri);
+    } catch {
+      toast.error("Gagal memproses gambar");
+    } finally {
+      setUploading(false);
+    }
+  }
+
+  function handleRemoveImage() {
+    setForm((p) => ({ ...p, image: "" }));
+    setImagePreview(null);
   }
 
   async function handleCreate() {
@@ -86,7 +186,7 @@ export function ArticleManager() {
       if (res.ok) {
         toast.success("Artikel berhasil diterbitkan");
         resetForm();
-        fetchArticles();
+        refreshArticles();
       } else {
         const data = await res.json();
         toast.error(data.error || "Gagal membuat artikel");
@@ -100,6 +200,7 @@ export function ArticleManager() {
 
   async function handleEdit(article: ArticleFrontmatter) {
     setEditingSlug(article.slug);
+    setImagePreview(article.image || null);
     setForm({
       title: article.title,
       slug: article.slug,
@@ -109,7 +210,6 @@ export function ArticleManager() {
       image: article.image || "",
     });
 
-    // Fetch content for editing
     try {
       const res = await fetch(`/api/articles/${article.slug}`);
       if (res.ok) {
@@ -137,7 +237,7 @@ export function ArticleManager() {
       if (res.ok) {
         toast.success("Artikel berhasil diperbarui");
         resetForm();
-        fetchArticles();
+        refreshArticles();
       } else {
         const data = await res.json();
         toast.error(data.error || "Gagal memperbarui artikel");
@@ -159,7 +259,7 @@ export function ArticleManager() {
 
       if (res.ok) {
         toast.success("Artikel berhasil dihapus");
-        fetchArticles();
+        refreshArticles();
       } else {
         const data = await res.json();
         toast.error(data.error || "Gagal menghapus artikel");
@@ -182,11 +282,7 @@ export function ArticleManager() {
   }
 
   if (loading) {
-    return (
-      <div className="cms-content-card">
-        <p className="text-muted">Memuat...</p>
-      </div>
-    );
+    return <ArticleManagerSkeleton />;
   }
 
   return (
@@ -207,7 +303,6 @@ export function ArticleManager() {
         )}
       </div>
 
-      {/* Create / Edit Form */}
       {(isAdding || editingSlug) && (
         <div className="article-form mb-6">
           <div className="form-group">
@@ -269,15 +364,52 @@ export function ArticleManager() {
           </div>
 
           <div className="form-group">
-            <label>URL Gambar</label>
-            <input
-              className="form-input"
-              value={form.image}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, image: e.target.value }))
-              }
-              placeholder="https://example.com/image.jpg"
-            />
+            <label>Gambar Cover</label>
+            <div className="flex gap-3 items-start">
+              <label
+                className={`cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+                  uploading
+                    ? "opacity-50 pointer-events-none border-muted bg-muted text-muted-foreground"
+                    : "border-input bg-background hover:bg-accent hover:text-accent-foreground"
+                }`}
+              >
+                <ImageUp size={16} />
+                {uploading ? "Memproses..." : "Pilih Gambar"}
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="sr-only"
+                  onChange={handleImagePick}
+                  disabled={uploading}
+                />
+              </label>
+              {imagePreview && (
+                <button
+                  type="button"
+                  onClick={handleRemoveImage}
+                  className="inline-flex items-center gap-1 px-3 py-2 text-sm text-red-600 hover:text-red-700 transition-colors"
+                >
+                  <TrashIcon size={14} />
+                  Hapus
+                </button>
+              )}
+            </div>
+            {imagePreview && (
+              <div className="mt-3 relative w-full max-w-[400px] rounded-lg overflow-hidden border">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imagePreview}
+                  alt="Preview cover"
+                  className="w-full h-auto object-cover max-h-[240px]"
+                />
+              </div>
+            )}
+            {!imagePreview && (
+              <p className="text-[12px] text-muted-foreground mt-1.5">
+                Format: JPG, PNG, WebP. Maks 5MB. Akan diresize otomatis ke
+                1920px.
+              </p>
+            )}
           </div>
 
           <div className="cms-action-btn-row">
@@ -297,7 +429,6 @@ export function ArticleManager() {
         </div>
       )}
 
-      {/* Article List */}
       {!isAdding && !editingSlug && (
         <div className="table-container">
           <table className="custom-table">

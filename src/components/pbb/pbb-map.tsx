@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import { formatCurrency } from "@/lib/utils";
 import type { CitizenView } from "@/lib/types";
 
 interface PBBMapProps {
@@ -34,7 +35,6 @@ export function PBBMap({
     toggleRef.current = onToggle;
   }, [onToggle]);
 
-  // Init map once
   useEffect(() => {
     if (mapRef.current || !containerRef.current) return;
 
@@ -73,14 +73,12 @@ export function PBBMap({
     };
   }, []);
 
-  // FlyTo when activeCoords changes
   useEffect(() => {
     const map = mapRef.current;
     if (!map || !activeCoords) return;
     map.flyTo(activeCoords, 16, { duration: 1.2, easeLinearity: 0.25 });
   }, [activeCoords]);
 
-  // Update markers when data or selection changes
   useEffect(() => {
     const map = mapRef.current;
     const L = LRef.current;
@@ -93,28 +91,13 @@ export function PBBMap({
       if (!c.lat || !c.lng) return;
 
       const isPaid = c.status === "Sudah Bayar";
-      const color = isPaid ? "#2E7D32" : "#C62828";
+      const color = isPaid ? "var(--color-success)" : "var(--color-danger)";
 
-      // Custom divIcon with pulse animation matching FE design
       const icon = L.divIcon({
         html: `
-          <div style="position:relative;display:flex;align-items:center;justify-content:center">
-            <div style="
-              position:absolute;
-              background-color:${color};
-              width:24px;height:24px;
-              border-radius:50%;
-              opacity:0.35;
-              animation:pulse 1.5s infinite ease-in-out;
-            "></div>
-            <div style="
-              background-color:${color};
-              width:14px;height:14px;
-              border-radius:50%;
-              border:2px solid white;
-              box-shadow:0 0 8px rgba(0,0,0,0.3);
-              z-index:10;
-            "></div>
+          <div class="pbb-marker-wrapper">
+            <div class="pbb-marker-pulse" style="background-color:${color}"></div>
+            <div class="pbb-marker-dot" style="background-color:${color}"></div>
           </div>
         `,
         className: "custom-leaflet-pin",
@@ -124,15 +107,15 @@ export function PBBMap({
 
       const marker = L.marker([c.lat, c.lng], { icon });
 
+      const nominalFormatted = formatCurrency(c.nominal);
       const popupHtml = `
-        <div style="min-width:200px;font-family:system-ui,sans-serif;font-size:14px">
-          <strong style="font-size:16px">${c.name}</strong><br/>
-          <span style="color:#666">SPPT: ${c.sppt}</span><br/>
+        <div class="pbb-popup-body">
+          <strong class="pbb-popup-name">${c.name}</strong><br/>
+          <span class="pbb-popup-muted">SPPT: ${c.sppt}</span><br/>
           <span>Dusun: ${c.dusun}</span><br/>
-          Status: <span style="color:${isPaid ? "#2E7D32" : "#C62828"};font-weight:bold">${c.status}</span><br/>
-          <span>Nominal: Rp ${Number(c.nominal).toLocaleString("id-ID")}</span><br/>
-          <button id="popup-pbb-toggle-${c.id}"
-            style="margin-top:8px;padding:6px 14px;background:#062C30;color:white;border:none;border-radius:6px;cursor:pointer;font-size:13px;width:100%">
+          Status: <span style="color:${color};font-weight:bold">${c.status}</span><br/>
+          <span>Nominal: ${nominalFormatted}</span><br/>
+          <button id="popup-pbb-toggle-${c.id}" class="pbb-popup-btn">
             Ubah Status
           </button>
         </div>
@@ -149,7 +132,6 @@ export function PBBMap({
       markersRef.current.push(marker);
     });
 
-    // Fit bounds if markers exist
     if (markersRef.current.length > 0) {
       const group = L.featureGroup(markersRef.current);
       map.fitBounds(group.getBounds().pad(0.1));

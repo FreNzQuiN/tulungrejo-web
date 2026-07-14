@@ -7,6 +7,16 @@ datasource db {
   relationMode = "prisma"
 }
 
+model RateLimit {
+  id        String   @id
+  count     Int
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([expiresAt])
+  @@map("rate_limits")
+}
+
 model User {
   id           Int      @id @default(autoincrement())
   email        String   @unique
@@ -104,7 +114,7 @@ model Article {
   author    String
   category  String
   summary   String
-  image     String?
+  image     String? @db.MediumText
   content   String   @db.Text
   tags      String?  // JSON array
   published Boolean  @default(true)

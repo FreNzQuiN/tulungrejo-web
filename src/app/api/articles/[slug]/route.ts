@@ -7,7 +7,7 @@ import {
   deleteArticle,
   checkSlugExists,
 } from "@/lib/article-queries";
-import { CATEGORIES } from "@/lib/constants";
+import { CATEGORIES, MAX_IMAGE_SIZE } from "@/lib/constants";
 
 export async function GET(
   _req: NextRequest,
@@ -67,6 +67,16 @@ export async function PUT(
   ) {
     return NextResponse.json(
       { error: "Kategori tidak valid" },
+      { status: 400 },
+    );
+  }
+  if (
+    image !== undefined &&
+    typeof image === "string" &&
+    image.length > MAX_IMAGE_SIZE
+  ) {
+    return NextResponse.json(
+      { error: "Ukuran gambar terlalu besar (maks 5MB)" },
       { status: 400 },
     );
   }

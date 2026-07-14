@@ -48,8 +48,18 @@ function toFullArticle(a: {
   };
 }
 
-/** Public: get all published articles, newest first */
 export async function getAllPublishedArticles(): Promise<ArticleFrontmatter[]> {
+  if (process.env.NODE_ENV === "production") {
+    return getAllPublishedArticlesCached();
+  }
+  const articles = await prisma.article.findMany({
+    where: { published: true },
+    orderBy: { date: "desc" },
+  });
+  return articles.map(toFrontmatter);
+}
+
+async function getAllPublishedArticlesCached(): Promise<ArticleFrontmatter[]> {
   "use cache: remote";
   cacheTag("articles");
   cacheLife("hours");
@@ -61,8 +71,18 @@ export async function getAllPublishedArticles(): Promise<ArticleFrontmatter[]> {
   return articles.map(toFrontmatter);
 }
 
-/** Public: get a single published article by slug */
 export async function getPublishedArticleBySlug(
+  slug: string,
+): Promise<Article | null> {
+  if (process.env.NODE_ENV === "production") {
+    return getPublishedArticleBySlugCached(slug);
+  }
+  const article = await prisma.article.findUnique({ where: { slug } });
+  if (!article || !article.published) return null;
+  return toFullArticle(article);
+}
+
+async function getPublishedArticleBySlugCached(
   slug: string,
 ): Promise<Article | null> {
   "use cache: remote";
@@ -74,7 +94,6 @@ export async function getPublishedArticleBySlug(
   return toFullArticle(article);
 }
 
-/** Journalist: get all articles (unfiltered), newest first */
 export async function getAllArticlesForJournalist(): Promise<
   ArticleFrontmatter[]
 > {
@@ -84,7 +103,6 @@ export async function getAllArticlesForJournalist(): Promise<
   return articles.map(toFrontmatter);
 }
 
-/** Journalist: get a single article by slug (any status) */
 export async function getArticleBySlugAll(
   slug: string,
 ): Promise<Article | null> {
@@ -93,7 +111,6 @@ export async function getArticleBySlugAll(
   return toFullArticle(article);
 }
 
-/** Journalist: check if a slug already exists */
 export async function checkSlugExists(
   slug: string,
   excludeSlug?: string,
@@ -117,7 +134,6 @@ export interface CreateArticleInput {
   published: boolean;
 }
 
-/** Journalist: create a new article, returns slug */
 export async function createArticle(data: CreateArticleInput): Promise<string> {
   await prisma.article.create({
     data: {
@@ -137,7 +153,6 @@ export async function createArticle(data: CreateArticleInput): Promise<string> {
   return data.slug;
 }
 
-/** Journalist: update an existing article */
 export async function updateArticle(
   slug: string,
   data: Partial<CreateArticleInput>,
@@ -165,7 +180,6 @@ export async function updateArticle(
   });
 }
 
-/** Journalist: delete an article by slug, returns true if deleted */
 export async function deleteArticle(slug: string): Promise<boolean> {
   try {
     await prisma.article.delete({ where: { slug } });

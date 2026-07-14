@@ -1,9 +1,4 @@
-interface RateLimitEntry {
-  count: number;
-  resetAt: number;
-}
-
-const store = new Map<string, RateLimitEntry>();
+import { prisma } from "./prisma";
 
 export interface RateLimitConfig {
   windowMs: number;
@@ -12,24 +7,10 @@ export interface RateLimitConfig {
 
 export const RATE_LIMIT_PRESETS = {
   login: { windowMs: 15 * 60 * 1000, maxAttempts: 5 },
-  api: { windowMs: 60 * 1000, maxAttempts: 100 },
+  loginEmail: { windowMs: 15 * 60 * 1000, maxAttempts: 10 },
+  api: { windowMs: 60 * 1000, maxAttempts: 60 },
   export: { windowMs: 60 * 60 * 1000, maxAttempts: 10 },
 } as const;
-
-const CLEANUP_INTERVAL = 5 * 60 * 1000;
-let lastCleanup = Date.now();
-
-function cleanup() {
-  const now = Date.now();
-  if (now - lastCleanup < CLEANUP_INTERVAL) return;
-  lastCleanup = now;
-
-  for (const [key, entry] of store) {
-    if (now > entry.resetAt) {
-      store.delete(key);
-    }
-  }
-}
 
 export interface RateLimitResult {
   allowed: boolean;
@@ -37,36 +18,83 @@ export interface RateLimitResult {
   resetAt: number;
 }
 
-export function checkRateLimit(
-  key: string,
-  config: RateLimitConfig = RATE_LIMIT_PRESETS.login,
-): RateLimitResult {
-  cleanup();
+export function getClientIp(req: { headers: Headers }): string {
+  const nfIp = req.headers.get("x-nf-client-connection-ip");
+  if (nfIp) return nfIp;
 
-  const now = Date.now();
-  const entry = store.get(key);
+  const realIp = req.headers.get("x-real-ip");
+  if (realIp) return realIp;
 
-  if (!entry || now > entry.resetAt) {
-    store.set(key, { count: 1, resetAt: now + config.windowMs });
-    return {
-      allowed: true,
-      remaining: config.maxAttempts - 1,
-      resetAt: now + config.windowMs,
-    };
+  const forwardedFor = req.headers.get("x-forwarded-for");
+  if (forwardedFor) {
+    return forwardedFor.split(",")[0]?.trim() ?? "";
   }
 
-  if (entry.count < config.maxAttempts) {
-    entry.count++;
-    return {
-      allowed: true,
-      remaining: config.maxAttempts - entry.count,
-      resetAt: entry.resetAt,
-    };
+  if (process.env.NODE_ENV === "development") {
+    return "127.0.0.1";
   }
 
-  return { allowed: false, remaining: 0, resetAt: entry.resetAt };
+  return "";
 }
 
-export function resetRateLimit(key: string): void {
-  store.delete(key);
+export async function checkRateLimit(
+  key: string,
+  config: RateLimitConfig = RATE_LIMIT_PRESETS.login,
+): Promise<RateLimitResult> {
+  if (Math.random() < 0.01) {
+    prisma.rateLimit
+      .deleteMany({ where: { expiresAt: { lt: new Date() } } })
+      .catch(() => {});
+  }
+
+  try {
+    const now = new Date();
+    const record = await prisma.rateLimit.findUnique({ where: { id: key } });
+
+    if (!record || record.expiresAt < now) {
+      const expiresAt = new Date(Date.now() + config.windowMs);
+      await prisma.rateLimit.upsert({
+        where: { id: key },
+        create: { id: key, count: 1, expiresAt },
+        update: { count: 1, expiresAt },
+      });
+      return {
+        allowed: true,
+        remaining: config.maxAttempts - 1,
+        resetAt: expiresAt.getTime(),
+      };
+    }
+
+    if (record.count < config.maxAttempts) {
+      await prisma.rateLimit.update({
+        where: { id: key },
+        data: { count: { increment: 1 } },
+      });
+      return {
+        allowed: true,
+        remaining: config.maxAttempts - (record.count + 1),
+        resetAt: record.expiresAt.getTime(),
+      };
+    }
+
+    return {
+      allowed: false,
+      remaining: 0,
+      resetAt: record.expiresAt.getTime(),
+    };
+  } catch {
+    return {
+      allowed: false,
+      remaining: 0,
+      resetAt: Date.now() + config.windowMs,
+    };
+  }
+}
+
+export async function resetRateLimit(key: string): Promise<void> {
+  try {
+    await prisma.rateLimit.delete({ where: { id: key } });
+  } catch {
+    // Key might not exist
+  }
 }
