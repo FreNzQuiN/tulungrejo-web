@@ -1694,4 +1694,91 @@
     transform: translateY(-1px);
     box-shadow: var(--shadow-sm);
   }
+
+  .md-editor {
+    border: 1px solid rgba(229, 210, 131, 0.3);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  .md-editor-tab-bar {
+    display: flex;
+    border-bottom: 1px solid rgba(229, 210, 131, 0.3);
+    background-color: rgba(240, 240, 240, 0.5);
+  }
+
+  .md-editor-tab {
+    padding: 8px 20px;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    background: none;
+    color: var(--color-muted);
+    transition: var(--transition);
+    border-bottom: 2px solid transparent;
+    font-family: var(--font-body);
+  }
+
+  .md-editor-tab:hover {
+    color: var(--color-dark-brown);
+  }
+
+  .md-editor-tab-active {
+    color: var(--color-dark-brown);
+    border-bottom-color: var(--color-dark-brown);
+  }
+
+  .md-editor-toolbar {
+    display: flex;
+    gap: 2px;
+    padding: 6px 8px;
+    border-bottom: 1px solid rgba(229, 210, 131, 0.3);
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .md-editor-toolbar-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border: none;
+    background: none;
+    color: var(--color-dark-brown);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    transition: var(--transition);
+  }
+
+  .md-editor-toolbar-btn:hover {
+    background-color: rgba(229, 210, 131, 0.2);
+  }
+
+  .md-editor-toolbar-btn:active {
+    background-color: rgba(229, 210, 131, 0.3);
+  }
+
+  .md-editor-divider {
+    width: 1px;
+    background-color: rgba(229, 210, 131, 0.3);
+    margin: 4px 6px;
+    align-self: stretch;
+  }
+
+  .md-editor-textarea {
+    border: none !important;
+    border-radius: 0 !important;
+    min-height: 300px;
+  }
+
+  .md-editor-textarea:focus {
+    box-shadow: none !important;
+  }
+
+  .md-editor-preview {
+    padding: 16px;
+    min-height: 300px;
+  }
 }

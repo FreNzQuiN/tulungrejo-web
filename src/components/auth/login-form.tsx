@@ -1,9 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { signIn } from "next-auth/react";
 import { useSearchParams } from "next/navigation";
 import { Key, Mail, AlertCircle } from "lucide-react";
+
 const ROLE_REDIRECTS: Record<string, string> = {
   kepala_desa: "/kepala-desa",
   pamong_pajak: "/pbb",
@@ -43,15 +43,16 @@ export function LoginForm() {
       return;
     }
 
-    const result = await signIn("credentials", {
-      email,
-      password,
-      redirect: false,
+    const res = await fetch("/api/auth/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password }),
     });
 
-    if (result?.error) {
+    if (!res.ok) {
       setLoading(false);
-      if (result.error.includes("RATE_LIMITED")) {
+      const data = await res.json().catch(() => ({}));
+      if (data.error?.includes("RATE_LIMITED")) {
         setError("Terlalu banyak percobaan gagal. Coba lagi dalam 15 menit.");
       } else {
         setError(
@@ -75,7 +76,7 @@ export function LoginForm() {
       return;
     }
 
-    const sessionRes = await fetch("/api/auth/session");
+    const sessionRes = await fetch("/api/auth/me");
     const session = await sessionRes.json();
     const role = session?.user?.role as string | undefined;
     window.location.href = ROLE_REDIRECTS[role ?? ""] ?? "/";

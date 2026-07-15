@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/components/providers";
 import { Skeleton } from "@/components/ui/skeleton";
 import dynamic from "next/dynamic";
 import { Search, MapPin } from "lucide-react";
@@ -80,7 +80,7 @@ function PBBSkeleton() {
 }
 
 export default function PBBPage() {
-  const { data: session } = useSession();
+  const { user: sessionUser } = useAuth();
 
   const [citizens, setCitizens] = useState<CitizenView[]>([]);
   const [loading, setLoading] = useState(true);
@@ -94,7 +94,7 @@ export default function PBBPage() {
   const [toggling, setToggling] = useState<number | null>(null);
 
   useEffect(() => {
-    if (session?.user?.role !== "pamong_pajak") return;
+    if (sessionUser?.role !== "pamong_pajak") return;
     fetch("/api/pbb/list")
       .then((r) => r.json())
       .then((data) => {
@@ -102,7 +102,7 @@ export default function PBBPage() {
         setLoading(false);
       })
       .catch(() => setLoading(false));
-  }, [session]);
+  }, [sessionUser]);
 
   async function togglePayment(citizen: CitizenView) {
     setToggling(citizen.id);
@@ -147,7 +147,7 @@ export default function PBBPage() {
     return true;
   });
 
-  if (!session || session.user?.role !== "pamong_pajak") {
+  if (!sessionUser || sessionUser.role !== "pamong_pajak") {
     return (
       <AccessDenied message="Halaman ini hanya dapat diakses oleh petugas Pamong Desa." />
     );

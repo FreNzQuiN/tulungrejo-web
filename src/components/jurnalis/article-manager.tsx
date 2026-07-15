@@ -17,6 +17,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CATEGORIES, MAX_IMAGE_SIZE } from "@/lib/constants";
 import { toKebab, resizeImage } from "@/lib/utils";
+import { MarkdownEditor } from "@/components/jurnalis/markdown-editor";
 
 interface ArticleForm {
   title: string;
@@ -351,15 +352,10 @@ export function ArticleManager() {
           </div>
 
           <div className="form-group">
-            <label>Konten (Markdown)</label>
-            <textarea
-              className="form-textarea"
+            <label>Konten</label>
+            <MarkdownEditor
               value={form.content}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, content: e.target.value }))
-              }
-              placeholder="Tulis konten artikel dalam format Markdown..."
-              rows={12}
+              onChange={(v) => setForm((p) => ({ ...p, content: v }))}
             />
           </div>
 

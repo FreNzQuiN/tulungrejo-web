@@ -7,13 +7,14 @@ import { ArtikelClient } from "./artikel-client";
 async function ArticlesContent() {
   await connection();
 
+  let articles;
   try {
-    const articles = await getAllPublishedArticles();
-    return <ArtikelClient articles={articles} />;
+    articles = await getAllPublishedArticles();
   } catch (e) {
     console.error("Gagal memuat daftar artikel:", e);
     return <ArticlesError message="Gagal memuat daftar artikel" />;
   }
+  return <ArtikelClient articles={articles} />;
 }
 
 export default function ArticlesPage() {

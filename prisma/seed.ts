@@ -250,8 +250,7 @@ async function main() {
         batasTimur: "Berbatasan dengan wilayah Kabupaten Malang.",
         batasBarat: "Berbatasan dengan Kawasan Hutan atau area perkebunan.",
         luasWilayah: "2 Dusun (Junggo & Wonorejo), Total Luas 342,5 Hektar",
-        mataPencaharianUtama:
-          "Petani Hortikultura (Apel & Sayur-sayuran), Peternak Sapi Perah",
+        mataPencaharianUtama: "Petani, Peternak, dan Pengelola Wisata Alam",
         saranaPendidikan: "2 Taman Kanak-Kanak (TK) dan 3 Sekolah Dasar (SD)",
         saranaKesehatan: "1 Pos Kesehatan Desa (Postu) Tulungrejo",
       }),

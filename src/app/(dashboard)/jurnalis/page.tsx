@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/components/providers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CMSLayout } from "@/components/jurnalis/cms-layout";
 import { ArticleManager } from "@/components/jurnalis/article-manager";
@@ -58,7 +58,7 @@ function JurnalisSkeleton() {
 }
 
 export default function JurnalisPage() {
-  const { data: session, status } = useSession();
+  const { user: sessionUser, isLoading: statusLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("articles");
 
   const renderContent = () => {
@@ -74,7 +74,7 @@ export default function JurnalisPage() {
     }
   };
 
-  if (status === "loading") {
+  if (statusLoading) {
     return <JurnalisSkeleton />;
   }
 

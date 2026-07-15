@@ -4,20 +4,17 @@ import Link from "next/link";
 import Image from "next/image";
 import { useState } from "react";
 import { usePathname } from "next/navigation";
-import { useSession } from "next-auth/react";
-import { signOut } from "next-auth/react";
+import { useAuth } from "@/components/providers";
 import { NAV_ITEMS, DASHBOARD_NAV } from "@/lib/constants";
 import { ROLE_DISPLAY, type UserRole } from "@/lib/types";
 import { LogOut, User, Menu, X } from "lucide-react";
 
 export function Header() {
   const pathname = usePathname();
-  const { data: session } = useSession();
+  const { user, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const user = session?.user;
   const role = user?.role as UserRole | undefined;
-
   const dashConfig = role ? DASHBOARD_NAV[role] : null;
 
   return (
@@ -67,7 +64,7 @@ export function Header() {
                 <span className="user-profile-name">{user.name}</span>
               </div>
               <button
-                onClick={() => signOut({ callbackUrl: "/" })}
+                onClick={() => signOut()}
                 className="btn-logout"
                 title="Keluar"
               >
@@ -121,7 +118,7 @@ export function Header() {
                   </Link>
                 )}
                 <button
-                  onClick={() => signOut({ callbackUrl: "/" })}
+                  onClick={() => signOut()}
                   className="btn btn-primary w-full mt-2"
                 >
                   <LogOut size={14} /> Keluar Sesi
@@ -133,7 +130,7 @@ export function Header() {
                 className="btn btn-primary w-full"
                 onClick={() => setMobileOpen(false)}
               >
-                <User size={14} /> Masuk Portal Pamong
+                <User size={14} /> Masuk Portal
               </Link>
             )}
           </nav>

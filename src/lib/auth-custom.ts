@@ -1,0 +1,97 @@
+import { SignJWT, jwtVerify } from "jose";
+import { cookies } from "next/headers";
+import type { UserRole } from "./types";
+
+const SECRET = new TextEncoder().encode(
+  process.env.JWT_SECRET ?? process.env.AUTH_SECRET ?? "",
+);
+
+const COOKIE_NAME = "session-token";
+
+const COOKIE_OPTIONS = {
+  sameSite: "lax" as const,
+  httpOnly: true,
+  secure: process.env.NODE_ENV === "production",
+  path: "/",
+  maxAge: 60 * 60 * 24 * 30,
+};
+
+export interface SessionUser {
+  id: string;
+  email: string;
+  name: string;
+  role: UserRole;
+}
+
+export interface Session {
+  user: SessionUser;
+}
+
+export async function signToken(payload: SessionUser): Promise<string> {
+  return new SignJWT({ ...payload })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt()
+    .setExpirationTime("30d")
+    .setSubject(payload.id)
+    .sign(SECRET);
+}
+
+export async function verifyToken(token: string): Promise<SessionUser | null> {
+  try {
+    const { payload } = await jwtVerify(token, SECRET);
+    const role = payload.role as UserRole;
+    if (!role || !["kepala_desa", "pamong_pajak", "jurnalis"].includes(role))
+      return null;
+    return {
+      id: (payload.sub ?? payload.id) as string,
+      email: payload.email as string,
+      name: payload.name as string,
+      role,
+    };
+  } catch {
+    return null;
+  }
+}
+
+export async function setSessionCookie(user: SessionUser): Promise<void> {
+  const token = await signToken(user);
+  const cookieStore = await cookies();
+  cookieStore.set(COOKIE_NAME, token, COOKIE_OPTIONS);
+}
+
+export async function getSession(): Promise<Session | null> {
+  const cookieStore = await cookies();
+  const token = cookieStore.get(COOKIE_NAME)?.value;
+  if (!token) return null;
+  const user = await verifyToken(token);
+  if (!user) return null;
+  return { user };
+}
+
+export async function clearSession(): Promise<void> {
+  const cookieStore = await cookies();
+  cookieStore.delete(COOKIE_NAME);
+}
+
+export async function getSessionFromRequest(
+  request: Request,
+): Promise<Session | null> {
+  const cookieHeader = request.headers.get("cookie") ?? "";
+  const token = parseCookie(cookieHeader, COOKIE_NAME);
+  if (!token) return null;
+  const user = await verifyToken(token);
+  if (!user) return null;
+  return { user };
+}
+
+function parseCookie(cookie: string, name: string): string | null {
+  for (const part of cookie.split(";")) {
+    const eq = part.indexOf("=");
+    if (eq === -1) continue;
+    const key = part.slice(0, eq).trim();
+    if (key === name) {
+      return part.slice(eq + 1).trim();
+    }
+  }
+  return null;
+}

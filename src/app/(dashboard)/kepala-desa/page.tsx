@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useSession } from "next-auth/react";
+import { useAuth } from "@/components/providers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { StatCards } from "@/components/kades/stat-cards";
 import { PieCharts } from "@/components/kades/pie-charts";
@@ -127,14 +127,14 @@ function KadesSkeleton() {
 }
 
 export default function KadesDashboard() {
-  const { data: session, status } = useSession();
+  const { user: sessionUser, isLoading: statusLoading } = useAuth();
   const [data, setData] = useState<KadesStatsResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (status !== "authenticated") return;
-    if (session?.user?.role !== "kepala_desa") return;
+    if (statusLoading) return;
+    if (sessionUser?.role !== "kepala_desa") return;
 
     fetch("/api/kades/stats")
       .then((res) => {
@@ -144,9 +144,9 @@ export default function KadesDashboard() {
       .then((json: KadesStatsResponse) => setData(json))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [session, status]);
+  }, [sessionUser, statusLoading]);
 
-  if (status === "loading" || loading) {
+  if (statusLoading || loading) {
     return <KadesSkeleton />;
   }
 

@@ -1,7 +1,7 @@
-import { auth } from "@/lib/auth";
+import { getSession } from "@/lib/auth-custom";
 import { NextResponse } from "next/server";
 import type { UserRole } from "@/lib/types";
-import type { Session } from "next-auth";
+import type { Session } from "@/lib/auth-custom";
 
 type AuthError = { error: NextResponse };
 type AuthSuccess = { session: Session };
@@ -12,7 +12,7 @@ function isError(result: AuthResult): result is AuthError {
 }
 
 export async function requireAuth(): Promise<AuthResult> {
-  const session = await auth();
+  const session = await getSession();
   if (!session) {
     return {
       error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
@@ -41,7 +41,7 @@ export function getRole(result: AuthResult): UserRole | null {
   return (result.session.user?.role as UserRole) ?? null;
 }
 
-export function getSession(result: AuthResult): Session | null {
+export function unwrapSession(result: AuthResult): Session | null {
   if (isError(result)) return null;
   return result.session;
 }

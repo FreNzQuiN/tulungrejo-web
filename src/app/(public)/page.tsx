@@ -68,14 +68,15 @@ async function StatsSection() {
 
 async function ArticlesSection() {
   await connection();
+  let articles;
   try {
-    const articles = await getAllPublishedArticles();
-    if (articles.length === 0) return null;
-    return <HomeArticles articles={articles} />;
+    articles = await getAllPublishedArticles();
   } catch (e) {
     console.error("Gagal memuat artikel:", e);
     return <ArticlesError />;
   }
+  if (articles.length === 0) return null;
+  return <HomeArticles articles={articles} />;
 }
 
 function StatsSkeleton() {
@@ -150,19 +151,17 @@ export default function HomePage() {
           <div className="about-content">
             <h2>Mengenal Desa Tulungrejo</h2>
             <p>
-              Desa Tulungrejo secara administratif terletak di Kecamatan
-              Bumiaji, Kota Wisata Batu, Jawa Timur. Berada di kawasan dataran
-              tinggi lereng Gunung Welirang dengan ketinggian sekitar 1.200
-              meter di atas permukaan laut, menjadikan desa ini memiliki hawa
-              yang sejuk dan tanah yang sangat subur.
+              Desa Tulungrejo secara administratif terletak di Kecamatan Wates,
+              Kabupaten Blitar, Jawa Timur. Dikelilingi oleh perbukitan dan
+              kawasan hutan yang masih asri, desa ini memiliki tanah yang subur
+              dan potensi sumber daya alam yang melimpah untuk dikembangkan.
             </p>
             <p>
-              Desa Tulungrejo dikenal luas sebagai salah satu sentra penghasil
-              apel varietas unggul seperti Apel Manalagi dan Apel Rome Beauty di
-              Indonesia. Mayoritas penduduk di sini menggantungkan hidupnya pada
-              sektor pertanian hortikultura, peternakan sapi perah, serta
-              pengembangan pariwisata berbasis agrowisata alam yang terus
-              berkembang pesat dari tahun ke tahun.
+              Mayoritas penduduk Desa Tulungrejo menggantungkan hidupnya pada
+              sektor pertanian, peternakan, serta pengembangan pariwisata alam
+              berbasis potensi lokal yang terus berkembang pesat dari tahun ke
+              tahun. Beberapa potensi wisata alam seperti hutan pinus dan air
+              terjun menjadi daya tarik utama bagi wisatawan yang berkunjung.
             </p>
             <p>
               Melalui komitmen gotong royong, tata pemerintahan desa Tulungrejo

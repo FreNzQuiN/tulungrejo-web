@@ -90,6 +90,7 @@ Detail skema database — lihat `prisma/schema.prisma`. Tipe dan mapping di `src
 - **shadcn/ui** new-york style.
 - **Passwords** bcryptjs.
 - **Security headers, cookies, CSP** — lihat `next.config.ts`.
+- ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
 
 ---
 

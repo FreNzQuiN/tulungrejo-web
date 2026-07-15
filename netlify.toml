@@ -4,7 +4,6 @@
 
 [build.environment]
   SECRETS_SCAN_OMIT_KEYS = "NEXT_PUBLIC_SITE_URL"
-  AUTH_TRUST_HOST = "true"
 
 [[plugins]]
   package = "@netlify/plugin-nextjs"
