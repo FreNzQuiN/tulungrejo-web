@@ -1,6 +1,8 @@
 import "dotenv/config";
 import { prisma } from "../src/lib/prisma";
 import bcrypt from "bcryptjs";
+import fs from "node:fs";
+import path from "node:path";
 
 async function main() {
   console.log("Seeding database...");
@@ -17,7 +19,7 @@ async function main() {
       passwordHash: passwordPamong,
       name: "Bp. Pamong Mulyono",
       role: "pamong_pajak",
-      assignedBlok: "Junggo",
+      assignedBlok: null,
     },
   });
 
@@ -45,141 +47,100 @@ async function main() {
 
   console.log("  ✓ Users seeded");
 
-  const landPlots = [
+  const fieldsData = [
     {
-      nop: "35.79.010.001.002-0",
+      blok: "001",
+      noBidang: "0001",
       ownerName: "Budi Santoso",
-      blok: "Junggo",
-      lat: -7.8205,
-      lng: 112.5255,
-      pbbAmount: 150000,
+      dusun: "Tulungrejo",
+      landArea: 1200,
     },
     {
-      nop: "35.79.010.001.005-0",
+      blok: "001",
+      noBidang: "0005",
       ownerName: "Siti Rahma",
-      blok: "Wonorejo",
-      lat: -7.8215,
-      lng: 112.5265,
-      pbbAmount: 250000,
+      dusun: "Tulungrejo",
+      landArea: 850,
     },
     {
-      nop: "35.79.010.001.008-0",
+      blok: "003",
+      noBidang: "0010",
       ownerName: "Joko Widodo",
-      blok: "Junggo",
-      lat: -7.8195,
-      lng: 112.527,
-      pbbAmount: 300000,
+      dusun: "Tulungrejo",
+      landArea: 2100,
     },
     {
-      nop: "35.79.010.001.012-0",
+      blok: "005",
+      noBidang: "0020",
       ownerName: "Dewa Made",
-      blok: "Wonorejo",
-      lat: -7.822,
-      lng: 112.5248,
-      pbbAmount: 120000,
+      dusun: "Tulungrejo",
+      landArea: 600,
     },
     {
-      nop: "35.79.010.001.015-0",
+      blok: "006",
+      noBidang: "0003",
       ownerName: "Ahmad Fauzi",
-      blok: "Junggo",
-      lat: -7.8188,
-      lng: 112.526,
-      pbbAmount: 180000,
+      dusun: "Sidodadi",
+      landArea: 1500,
     },
     {
-      nop: "35.79.010.001.020-0",
+      blok: "008",
+      noBidang: "0015",
       ownerName: "Lestari Ningsih",
-      blok: "Wonorejo",
-      lat: -7.8232,
-      lng: 112.5275,
-      pbbAmount: 200000,
+      dusun: "Sidodadi",
+      landArea: 950,
     },
     {
-      nop: "35.79.010.001.025-0",
+      blok: "010",
+      noBidang: "0025",
       ownerName: "Hendra Wijaya",
-      blok: "Junggo",
-      lat: -7.821,
-      lng: 112.5282,
-      pbbAmount: 350000,
+      dusun: "Sidodadi",
+      landArea: 1800,
     },
     {
-      nop: "35.79.010.001.030-0",
+      blok: "012",
+      noBidang: "0190",
       ownerName: "Rina Astuti",
-      blok: "Wonorejo",
-      lat: -7.8201,
-      lng: 112.5235,
-      pbbAmount: 90000,
+      dusun: "Sidodadi",
+      landArea: 720,
     },
     {
-      nop: "35.79.010.001.035-0",
+      blok: "013",
+      noBidang: "0007",
       ownerName: "Slamet Riyadi",
-      blok: "Junggo",
-      lat: -7.819,
-      lng: 112.524,
-      pbbAmount: 400000,
+      dusun: "TumpakGatho",
+      landArea: 2500,
     },
     {
-      nop: "35.79.010.001.040-0",
+      blok: "013",
+      noBidang: "0050",
       ownerName: "Kartika Sari",
-      blok: "Wonorejo",
-      lat: -7.8228,
-      lng: 112.5258,
-      pbbAmount: 160000,
+      dusun: "TumpakGatho",
+      landArea: 1100,
     },
-  ];
+  ] as const;
 
-  for (const plot of landPlots) {
-    await prisma.landPlot.upsert({
-      where: { nop: plot.nop },
+  for (const f of fieldsData) {
+    const nop = `35.05.050.005.${f.blok}.${f.noBidang}`;
+    const noUrut = `${f.blok}${f.noBidang}`;
+    await prisma.fields.upsert({
+      where: { nop },
       update: {},
       create: {
-        nop: plot.nop,
-        ownerName: plot.ownerName,
-        address: `Dusun ${plot.blok}, Desa Tulungrejo`,
-        blok: plot.blok,
-        latitude: plot.lat,
-        longitude: plot.lng,
-        pbbAmount: plot.pbbAmount,
+        nop,
+        noUrut,
+        ownerName: f.ownerName,
+        address: `Dusun ${f.dusun}, Desa Tulungrejo`,
+        blok: f.blok,
+        noBidang: f.noBidang,
+        dusun: f.dusun,
+        landArea: f.landArea,
       },
     });
   }
 
-  console.log("  ✓ LandPlots seeded");
-
-  const currentYear = new Date().getFullYear();
-  const currentMonth = new Date().getMonth() + 1;
-  const allPlots = await prisma.landPlot.findMany();
-  const paidNops = [
-    "35.79.010.001.002-0",
-    "35.79.010.001.008-0",
-    "35.79.010.001.015-0",
-    "35.79.010.001.025-0",
-    "35.79.010.001.035-0",
-    "35.79.010.001.040-0",
-  ];
-
-  for (const plot of allPlots) {
-    const isPaid = paidNops.includes(plot.nop);
-    await prisma.payment.upsert({
-      where: {
-        landPlotId_year_month: {
-          landPlotId: plot.id,
-          year: currentYear,
-          month: currentMonth,
-        },
-      },
-      update: {},
-      create: {
-        landPlotId: plot.id,
-        year: currentYear,
-        month: currentMonth,
-        status: isPaid ? "lunas" : "belum_lunas",
-        paymentDate: isPaid ? new Date() : null,
-      },
-    });
-  }
-
-  console.log("  ✓ Payments seeded");
+  console.log("  ✓ Fields seeded (10 dummy)");
+  console.log("  ✓ Payments seeded (0 — empty)");
 
   await prisma.villageStats.upsert({
     where: { id: 1 },
@@ -258,6 +219,87 @@ async function main() {
   });
 
   console.log("  ✓ VillageProfile seeded");
+
+  await prisma.realisasi.create({
+    data: {
+      kodeKec: "050",
+      kecamatan: "WATES",
+      kodeDesa: "005",
+      desa: "TULUNGREJO",
+      totalPbb: BigInt(149186364),
+      totalBayar: BigInt(40361494),
+      persen: 27.05,
+      kurangBayar: BigInt(108824870),
+      totalSppt: 2898,
+      dibayar: 829,
+      sisaSppt: 2069,
+      tanggalAmbil: new Date("2026-07-13"),
+    },
+  });
+
+  console.log("  ✓ Realisasi seeded");
+
+  // BlockImage — read from .secret/ or use placeholder
+  const secretDir = path.join(__dirname, "..", ".secret");
+  const blockImgRegex = /^Desa Tulungrejo Blok (\d{3})([a-z])\.webp$/;
+  let blockImages: {
+    blok: string;
+    subBlok: string;
+    image: string;
+    mimeType: string;
+  }[] = [];
+
+  try {
+    if (fs.existsSync(secretDir)) {
+      const files = fs.readdirSync(secretDir);
+      for (const file of files) {
+        const match = file.match(blockImgRegex);
+        if (match?.[1] && match?.[2]) {
+          const blok = match[1];
+          const subBlok = match[2];
+          const filePath = path.join(secretDir, file);
+          const buffer = fs.readFileSync(filePath);
+          const base64 = buffer.toString("base64");
+          blockImages.push({
+            blok,
+            subBlok,
+            image: `data:image/webp;base64,${base64}`,
+            mimeType: "image/webp",
+          });
+        }
+      }
+    }
+  } catch {
+    console.log("  ⚠ .secret/ not accessible, using placeholder images");
+  }
+
+  // Fallback: generate placeholder if none found
+  if (blockImages.length === 0) {
+    const subBloks = ["a", "b", "c"] as const;
+    for (let b = 1; b <= 13; b++) {
+      const blok = String(b).padStart(3, "0");
+      for (const sb of subBloks) {
+        blockImages.push({
+          blok,
+          subBlok: sb,
+          image: `data:image/svg+xml;base64,${Buffer.from(
+            `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect fill="#2563eb" width="800" height="600"/><text x="400" y="300" text-anchor="middle" fill="white" font-size="24">Blok ${blok}${sb}</text></svg>`,
+          ).toString("base64")}`,
+          mimeType: "image/svg+xml",
+        });
+      }
+    }
+  }
+
+  for (const bi of blockImages) {
+    await prisma.blockImage.upsert({
+      where: { blok_subBlok: { blok: bi.blok, subBlok: bi.subBlok } },
+      update: { image: bi.image },
+      create: bi,
+    });
+  }
+
+  console.log(`  ✓ ${blockImages.length} BlockImages seeded`);
 
   function placeholderImg(color: string): string {
     const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="800" height="600"><rect fill="${color}" width="800" height="600"/></svg>`;

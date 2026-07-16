@@ -65,11 +65,26 @@ export async function POST(req: NextRequest) {
   if (!content) {
     return NextResponse.json({ error: "Konten harus diisi" }, { status: 400 });
   }
-  if (image && typeof image === "string" && image.length > MAX_IMAGE_SIZE) {
-    return NextResponse.json(
-      { error: "Ukuran gambar terlalu besar (maks 5MB)" },
-      { status: 400 },
-    );
+  if (image && typeof image === "string") {
+    if (image.length > MAX_IMAGE_SIZE) {
+      return NextResponse.json(
+        { error: "Ukuran gambar terlalu besar (maks 5MB)" },
+        { status: 400 },
+      );
+    }
+    const VALID_PREFIXES = [
+      "data:image/webp;base64,",
+      "data:image/jpeg;base64,",
+      "data:image/png;base64,",
+    ];
+    if (!VALID_PREFIXES.some((p) => image.startsWith(p))) {
+      return NextResponse.json(
+        {
+          error: "Format gambar tidak didukung. Gunakan webp, jpeg, atau png.",
+        },
+        { status: 400 },
+      );
+    }
   }
 
   try {

@@ -79,7 +79,7 @@ Jatim Blitar Wates Tulungrejo 001-013 0001-0297 check digit
 | `field_id`  | `uuid` FK → `fields.id`       | CASCADE delete               |
 | `year`      | `int`                         | tahun PBB                    |
 | `status`    | `enum("lunas","belum_lunas")` |                              |
-| `marked_by` | `uuid` FK → `users.id`        | petugas pamong yang menandai |
+| `marked_by` | `int` FK → `users.id`         | petugas pamong yang menandai |
 | `marked_at` | `timestamptz`                 |                              |
 | `notes`     | `text?`                       |                              |
 
@@ -111,6 +111,22 @@ Jatim Blitar Wates Tulungrejo 001-013 0001-0297 check digit
 | `imported_at`   | `timestamptz` | auto         |
 
 **Sifat:** APPEND-ONLY. Tiap upload = baris baru.
+
+### `block_images` — Peta Blok Scanned
+
+| Kolom       | Tipe         | Catatan         |
+| ----------- | ------------ | --------------- |
+| `id`        | `uuid` PK    | auto            |
+| `blok`      | `text`       | `001`–`013`     |
+| `sub_blok`  | `text`       | `a`, `b`, `c`   |
+| `image`     | `mediumtext` | base64 data URI |
+| `mime_type` | `text`       | `image/webp`    |
+
+**Unique:** `(blok, sub_blok)`.
+
+**Sumber:** scanned map per blok, diimport via seed dari `.secret/Desa Tulungrejo Blok {blok}{sub_blok}.webp`.
+
+**Catatan:** Tidak ada upload UI. Manual seed only.
 
 ---
 

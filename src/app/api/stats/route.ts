@@ -12,7 +12,10 @@ export async function GET(req: NextRequest) {
       orderBy: { id: "asc" },
     });
     if (!stats) {
-      return NextResponse.json({ error: "Stats not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Statistik tidak ditemukan" },
+        { status: 404 },
+      );
     }
     return NextResponse.json(
       {

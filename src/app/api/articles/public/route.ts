@@ -3,7 +3,7 @@ import { getAllPublishedArticles } from "@/lib/article-queries";
 import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
 
 export async function GET(req: NextRequest) {
-  if (!(await checkApiRateLimit(req))) return rateLimitResponse();
+  if (!(await checkApiRateLimit(req, "api:public"))) return rateLimitResponse();
 
   try {
     const articles = await getAllPublishedArticles();

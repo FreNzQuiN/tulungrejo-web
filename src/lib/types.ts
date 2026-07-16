@@ -27,56 +27,6 @@ export interface VillageStats {
   updatedAt: string;
 }
 
-export interface LandPlot {
-  id: number;
-  nop: string;
-  ownerName: string;
-  ownerNik?: string;
-  address: string;
-  villageName: string;
-  kecamatan: string;
-  blok: string;
-  latitude?: number;
-  longitude?: number;
-  landArea?: number;
-  buildingArea?: number;
-  njopLand?: number;
-  njopBuilding?: number;
-  pbbAmount?: number;
-}
-
-export interface Payment {
-  id: number;
-  landPlotId: number;
-  year: number;
-  month: number;
-  status: "lunas" | "belum_lunas";
-  paymentDate?: Date;
-  markedBy?: number;
-  notes?: string;
-}
-
-export interface PaymentWithPlot extends Payment {
-  landPlot: LandPlot;
-}
-
-export interface PBBStats {
-  totalPlots: number;
-  totalPaid: number;
-  totalUnpaid: number;
-  percentage: number;
-  totalTarget: number;
-  totalRealization: number;
-}
-
-export interface BlokStats {
-  blok: string;
-  totalPlots: number;
-  paid: number;
-  unpaid: number;
-  percentage: number;
-}
-
 export interface ArticleFrontmatter {
   title: string;
   slug: string;
@@ -123,44 +73,30 @@ export interface VillageProfile {
   administratif: Administratif;
 }
 
-export interface CitizenView {
-  id: number;
-  name: string;
-  dusun: string;
-  lat: number;
-  lng: number;
-  nominal: number;
-  sppt: string;
-  status: "Sudah Bayar" | "Belum Bayar";
-}
-
-export interface PamongDashboard {
-  assignedBlok: string;
-  blokStats: BlokStats;
-  recentPayments: PaymentWithPlot[];
-  unpaidPlots: LandPlot[];
-}
-
-export interface JurnalisDashboard {
-  totalArticles: number;
-  publishedArticles: number;
-  draftArticles: number;
-  recentArticles: Article[];
-}
-
-export interface MonthlyTrend {
-  month: string;
-  paid: number;
-  unpaid: number;
-  percentage: number;
-}
-
-export interface MapBlok {
+export interface FieldView {
   id: string;
-  name: string;
-  coordinates: [number, number][];
-  status: "lunas" | "sebagian" | "belum";
-  stats: BlokStats;
+  nop: string;
+  ownerName: string;
+  address: string;
+  blok: string;
+  noBidang: string;
+  dusun: string;
+  landArea?: number | null;
+  buildingArea?: number | null;
+  status: "lunas" | "belum_lunas";
+}
+
+export interface RealisasiView {
+  id: string;
+  totalPbb: number;
+  totalBayar: number;
+  persen: number;
+  kurangBayar: number;
+  totalSppt: number;
+  dibayar: number;
+  sisaSppt: number;
+  tanggalAmbil: string;
+  importedAt: string;
 }
 
 export type Category =

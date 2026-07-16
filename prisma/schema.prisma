@@ -26,7 +26,6 @@ model User {
   assignedBlok String?  @map("assigned_blok")
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
-  payments     Payment[]
 
   @@map("users")
 }
@@ -35,52 +34,6 @@ enum Role {
   kepala_desa
   pamong_pajak
   jurnalis
-}
-
-model LandPlot {
-  id           Int      @id @default(autoincrement())
-  nop          String   @unique
-  ownerName    String   @map("owner_name")
-  ownerNik     String?  @map("owner_nik")
-  address      String
-  villageName  String   @default("Tulungrejo") @map("village_name")
-  kecamatan    String   @default("Wates")
-  blok         String
-  latitude     Float?   @map("latitude")
-  longitude    Float?   @map("longitude")
-  landArea     Decimal? @map("land_area") @db.Decimal(10, 2)
-  buildingArea Decimal? @map("building_area") @db.Decimal(10, 2)
-  njopLand     Decimal? @map("njop_land") @db.Decimal(15, 2)
-  njopBuilding Decimal? @map("njop_building") @db.Decimal(15, 2)
-  pbbAmount    Decimal? @map("pbb_amount") @db.Decimal(15, 2)
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-  payments     Payment[]
-
-  @@index([blok])
-  @@index([ownerNik])
-  @@map("land_plots")
-}
-
-model Payment {
-  id          Int      @id @default(autoincrement())
-  landPlotId  Int      @map("land_plot_id")
-  year        Int
-  month       Int
-  status      String   @default("belum_lunas")
-  paymentDate DateTime? @map("payment_date")
-  markedBy    Int?     @map("marked_by")
-  notes       String?
-  createdAt   DateTime @default(now()) @map("created_at")
-  updatedAt   DateTime @updatedAt @map("updated_at")
-  landPlot    LandPlot @relation(fields: [landPlotId], references: [id])
-  marker      User?    @relation(fields: [markedBy], references: [id])
-
-  @@unique([landPlotId, year, month])
-  @@index([status])
-  @@index([year, month, status])
-  @@index([year, month])
-  @@map("payments")
 }
 
 model VillageStats {
@@ -104,6 +57,76 @@ model VillageProfile {
   updatedAt          DateTime @updatedAt @map("updated_at")
 
   @@map("village_profile")
+}
+
+model Fields {
+  id            String    @id @default(uuid())
+  nop           String    @unique
+  noUrut        String    @unique @map("no_urut")
+  ownerName     String    @map("owner_name")
+  ownerAddress  String?   @map("owner_address")
+  address       String
+  rw            String?
+  rt            String?
+  blok          String
+  noBidang      String    @map("no_bidang")
+  dusun         String
+  landArea      Decimal?  @map("land_area") @db.Decimal(10, 2)
+  buildingArea  Decimal?  @map("building_area") @db.Decimal(10, 2)
+  buildingCount Int?      @map("building_count")
+  znt           String?
+  jenisTanah    Int?      @map("jenis_tanah")
+  pendataanAt   DateTime? @map("pendataan_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@unique([blok, noBidang])
+  @@map("fields")
+}
+
+model Payments {
+  id        String   @id @default(uuid())
+  fieldId   String   @map("field_id")
+  year      Int
+  status    String   @default("belum_lunas")
+  markedBy  Int?     @map("marked_by")
+  markedAt  DateTime? @map("marked_at")
+  notes     String?
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@unique([fieldId, year])
+  @@map("payments")
+}
+
+model Realisasi {
+  id           String   @id @default(uuid())
+  kodeKec      String   @map("kode_kec")
+  kecamatan    String
+  kodeDesa     String   @map("kode_desa")
+  desa         String
+  totalPbb     BigInt   @map("total_pbb")
+  totalBayar   BigInt   @map("total_bayar")
+  persen       Decimal  @db.Decimal(5, 2)
+  kurangBayar  BigInt   @map("kurang_bayar")
+  totalSppt    Int      @map("total_sppt")
+  dibayar      Int
+  sisaSppt     Int      @map("sisa_sppt")
+  tanggalAmbil DateTime @map("tanggal_ambil")
+  importedAt   DateTime @default(now()) @map("imported_at")
+
+  @@map("realisasi")
+}
+
+model BlockImage {
+  id       String @id @default(uuid())
+  blok     String
+  subBlok  String @map("sub_blok")
+  image    String @db.MediumText
+  mimeType String @map("mime_type")
+
+  @@unique([blok, subBlok])
+  @@map("block_images")
 }
 
 model Article {

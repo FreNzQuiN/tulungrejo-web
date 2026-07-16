@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { requireRole } from "@/lib/auth-helpers";
-import { fetchPbbStats } from "@/lib/pbb-queries";
 import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
+import { prisma } from "@/lib/prisma";
+
+const CURRENT_YEAR = new Date().getFullYear();
 
 export async function GET(req: NextRequest) {
   if (!(await checkApiRateLimit(req))) return rateLimitResponse();
@@ -9,18 +11,28 @@ export async function GET(req: NextRequest) {
   const auth = await requireRole(["pamong_pajak", "kepala_desa"]);
   if ("error" in auth) return auth.error;
 
-  const { searchParams } = new URL(req.url);
-  const now = new Date();
-  const year = Number(searchParams.get("year")) || now.getFullYear();
-  const month = Number(searchParams.get("month")) || now.getMonth() + 1;
-
   try {
-    const result = await fetchPbbStats(year, month);
-    return NextResponse.json(result);
+    const [totalFields, paidCount] = await Promise.all([
+      prisma.fields.count(),
+      prisma.payments.count({
+        where: { year: CURRENT_YEAR, status: "lunas" },
+      }),
+    ]);
+
+    const unpaidCount = totalFields - paidCount;
+    const percentage =
+      totalFields > 0 ? Math.round((paidCount / totalFields) * 10000) / 100 : 0;
+
+    return NextResponse.json({
+      totalFields,
+      paid: paidCount,
+      unpaid: unpaidCount,
+      percentage,
+    });
   } catch (err) {
     console.error("PBB stats error:", err);
     return NextResponse.json(
-      { error: "Gagal memuat statistik PBB" },
+      { error: "Gagal memuat statistik." },
       { status: 500 },
     );
   }

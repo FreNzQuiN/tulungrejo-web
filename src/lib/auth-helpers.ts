@@ -36,11 +36,6 @@ export async function requireRole(
   return result;
 }
 
-export function getRole(result: AuthResult): UserRole | null {
-  if (isError(result)) return null;
-  return (result.session.user?.role as UserRole) ?? null;
-}
-
 export function unwrapSession(result: AuthResult): Session | null {
   if (isError(result)) return null;
   return result.session;

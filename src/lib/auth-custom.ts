@@ -2,9 +2,9 @@ import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import type { UserRole } from "./types";
 
-const SECRET = new TextEncoder().encode(
-  process.env.JWT_SECRET ?? process.env.AUTH_SECRET ?? "",
-);
+const SECRET_RAW = process.env.JWT_SECRET ?? process.env.AUTH_SECRET;
+if (!SECRET_RAW) throw new Error("JWT_SECRET or AUTH_SECRET must be set");
+const SECRET = new TextEncoder().encode(SECRET_RAW);
 
 const COOKIE_NAME = "session-token";
 

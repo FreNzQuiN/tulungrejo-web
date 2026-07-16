@@ -48,3 +48,11 @@ erDiagram
         date tanggal_ambil                  "2026-07-13"
         timestamptz imported_at             "auto"
     }
+
+    BLOCK_IMAGE {
+        uuid id PK                          "auto"
+        text blok                           "001-013"
+        text sub_blok UK                    "a, b, c"
+        mediumtext image                    "base64 data URI"
+        text mime_type                      "image/webp"
+    }

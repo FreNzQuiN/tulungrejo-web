@@ -11,7 +11,10 @@ export async function GET(req: NextRequest) {
   try {
     const profile = await prisma.villageProfile.findFirst();
     if (!profile) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Profil desa tidak ditemukan" },
+        { status: 404 },
+      );
     }
 
     const misi = safeJsonParse<string[]>(profile.misi, []);
@@ -93,10 +96,10 @@ export async function PUT(req: NextRequest) {
 
     return NextResponse.json({
       visi: updated.visi,
-      misi: JSON.parse(updated.misi),
-      strukturOrganisasi: JSON.parse(updated.strukturOrganisasi),
-      tugasFungsi: JSON.parse(updated.tugasFungsi),
-      administratif: JSON.parse(updated.administratif),
+      misi: safeJsonParse(updated.misi, []),
+      strukturOrganisasi: safeJsonParse(updated.strukturOrganisasi, []),
+      tugasFungsi: safeJsonParse(updated.tugasFungsi, []),
+      administratif: safeJsonParse(updated.administratif, {}),
     });
   } catch (err) {
     console.error("Profile update error:", err);

@@ -1,10 +1,13 @@
 import { NextResponse } from "next/server";
 import { checkRateLimit, getClientIp, RATE_LIMIT_PRESETS } from "./rate-limit";
 
-export async function checkApiRateLimit(req: Request): Promise<boolean> {
+export async function checkApiRateLimit(
+  req: Request,
+  namespace = "api",
+): Promise<boolean> {
   const ip = getClientIp(req);
   if (!ip) return true; // synthetic/build context — allow
-  const rl = await checkRateLimit(`api:${ip}`, RATE_LIMIT_PRESETS.api);
+  const rl = await checkRateLimit(`${namespace}:${ip}`, RATE_LIMIT_PRESETS.api);
   return rl.allowed;
 }
 

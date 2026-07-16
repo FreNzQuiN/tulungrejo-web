@@ -41,47 +41,52 @@ export async function checkRateLimit(
   key: string,
   config: RateLimitConfig = RATE_LIMIT_PRESETS.login,
 ): Promise<RateLimitResult> {
-  if (Math.random() < 0.01) {
-    prisma.rateLimit
-      .deleteMany({ where: { expiresAt: { lt: new Date() } } })
-      .catch(() => {});
-  }
-
   try {
-    const now = new Date();
-    const record = await prisma.rateLimit.findUnique({ where: { id: key } });
+    return await prisma.$transaction(async (tx) => {
+      const now = new Date();
 
-    if (!record || record.expiresAt < now) {
-      const expiresAt = new Date(Date.now() + config.windowMs);
-      await prisma.rateLimit.upsert({
-        where: { id: key },
-        create: { id: key, count: 1, expiresAt },
-        update: { count: 1, expiresAt },
-      });
-      return {
-        allowed: true,
-        remaining: config.maxAttempts - 1,
-        resetAt: expiresAt.getTime(),
-      };
-    }
-
-    if (record.count < config.maxAttempts) {
-      await prisma.rateLimit.update({
-        where: { id: key },
+      // Atomic increment: only succeeds if count < maxAttempts AND not expired
+      const updated = await tx.rateLimit.updateMany({
+        where: {
+          id: key,
+          count: { lt: config.maxAttempts },
+          expiresAt: { gte: now },
+        },
         data: { count: { increment: 1 } },
       });
-      return {
-        allowed: true,
-        remaining: config.maxAttempts - (record.count + 1),
-        resetAt: record.expiresAt.getTime(),
-      };
-    }
 
-    return {
-      allowed: false,
-      remaining: 0,
-      resetAt: record.expiresAt.getTime(),
-    };
+      if (updated.count > 0) {
+        const record = await tx.rateLimit.findUnique({ where: { id: key } });
+        return {
+          allowed: true,
+          remaining: config.maxAttempts - (record?.count ?? 1),
+          resetAt: record?.expiresAt.getTime() ?? Date.now() + config.windowMs,
+        };
+      }
+
+      // Record either doesn't exist, expired, or at limit
+      const existing = await tx.rateLimit.findUnique({ where: { id: key } });
+
+      if (!existing || existing.expiresAt < now) {
+        const expiresAt = new Date(Date.now() + config.windowMs);
+        await tx.rateLimit.upsert({
+          where: { id: key },
+          create: { id: key, count: 1, expiresAt },
+          update: { count: 1, expiresAt },
+        });
+        return {
+          allowed: true,
+          remaining: config.maxAttempts - 1,
+          resetAt: expiresAt.getTime(),
+        };
+      }
+
+      return {
+        allowed: false,
+        remaining: 0,
+        resetAt: existing.expiresAt.getTime(),
+      };
+    });
   } catch {
     return {
       allowed: false,
