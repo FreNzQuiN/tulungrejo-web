@@ -24,7 +24,7 @@ Dikembangkan oleh **Tim MMD Filkom Kelompok 19, Universitas Brawijaya**.
 
 ## Tech Stack
 
-Inti: Next.js 16 + TypeScript + Prisma + TiDB Cloud + NextAuth v5 + Tailwind v4 + shadcn/ui.
+Inti: Next.js 16 + TypeScript + Prisma + TiDB Cloud + Tailwind v4 + shadcn/ui.
 
 Daftar dependency lengkap — lihat `package.json`.
 
