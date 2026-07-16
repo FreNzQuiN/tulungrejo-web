@@ -37,69 +37,97 @@ export function getClientIp(req: { headers: Headers }): string {
   return "";
 }
 
+function maybeCleanup(): void {
+  if (Math.random() > 0.02) return;
+
+  prisma.rateLimit
+    .deleteMany({
+      where: { expiresAt: { lt: new Date() } },
+    })
+    .catch((e) => {
+      console.error("[rate-limit] cleanup failed:", e);
+    });
+}
+
+function fallbackOpen(config: RateLimitConfig): RateLimitResult {
+  return {
+    allowed: true,
+    remaining: config.maxAttempts,
+    resetAt: Date.now() + config.windowMs,
+  };
+}
+
 export async function checkRateLimit(
   key: string,
   config: RateLimitConfig = RATE_LIMIT_PRESETS.login,
 ): Promise<RateLimitResult> {
-  try {
-    return await prisma.$transaction(async (tx) => {
-      const now = new Date();
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      const result = await prisma.$transaction(async (tx) => {
+        const now = new Date();
 
-      // Atomic increment: only succeeds if count < maxAttempts AND not expired
-      const updated = await tx.rateLimit.updateMany({
-        where: {
-          id: key,
-          count: { lt: config.maxAttempts },
-          expiresAt: { gte: now },
-        },
-        data: { count: { increment: 1 } },
+        const updated = await tx.rateLimit.updateMany({
+          where: {
+            id: key,
+            count: { lt: config.maxAttempts },
+            expiresAt: { gte: now },
+          },
+          data: { count: { increment: 1 } },
+        });
+
+        if (updated.count > 0) {
+          const record = await tx.rateLimit.findUnique({ where: { id: key } });
+          return {
+            allowed: true,
+            remaining: config.maxAttempts - (record?.count ?? 1),
+            resetAt:
+              record?.expiresAt.getTime() ?? Date.now() + config.windowMs,
+          };
+        }
+
+        const existing = await tx.rateLimit.findUnique({ where: { id: key } });
+
+        if (!existing || existing.expiresAt < now) {
+          const expiresAt = new Date(Date.now() + config.windowMs);
+          await tx.rateLimit.upsert({
+            where: { id: key },
+            create: { id: key, count: 1, expiresAt },
+            update: { count: 1, expiresAt },
+          });
+          return {
+            allowed: true,
+            remaining: config.maxAttempts - 1,
+            resetAt: expiresAt.getTime(),
+          };
+        }
+
+        return {
+          allowed: false,
+          remaining: 0,
+          resetAt: existing.expiresAt.getTime(),
+        };
       });
 
-      if (updated.count > 0) {
-        const record = await tx.rateLimit.findUnique({ where: { id: key } });
-        return {
-          allowed: true,
-          remaining: config.maxAttempts - (record?.count ?? 1),
-          resetAt: record?.expiresAt.getTime() ?? Date.now() + config.windowMs,
-        };
+      maybeCleanup();
+
+      return result;
+    } catch (err) {
+      if (attempt === 1) {
+        console.error("[rate-limit] DB error, allowing through:", err);
+        maybeCleanup();
+        return fallbackOpen(config);
       }
-
-      // Record either doesn't exist, expired, or at limit
-      const existing = await tx.rateLimit.findUnique({ where: { id: key } });
-
-      if (!existing || existing.expiresAt < now) {
-        const expiresAt = new Date(Date.now() + config.windowMs);
-        await tx.rateLimit.upsert({
-          where: { id: key },
-          create: { id: key, count: 1, expiresAt },
-          update: { count: 1, expiresAt },
-        });
-        return {
-          allowed: true,
-          remaining: config.maxAttempts - 1,
-          resetAt: expiresAt.getTime(),
-        };
-      }
-
-      return {
-        allowed: false,
-        remaining: 0,
-        resetAt: existing.expiresAt.getTime(),
-      };
-    });
-  } catch {
-    return {
-      allowed: false,
-      remaining: 0,
-      resetAt: Date.now() + config.windowMs,
-    };
+      await new Promise((r) => setTimeout(r, 100));
+    }
   }
+
+  return fallbackOpen(config);
 }
 
 export async function resetRateLimit(key: string): Promise<void> {
   try {
     await prisma.rateLimit.delete({ where: { id: key } });
-  } catch {
-    // Key might not exist
+  } catch (e) {
+    console.error("[rate-limit] reset failed for", key, e);
   }
 }

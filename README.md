@@ -61,25 +61,20 @@ cp .env.example .env
 
 Isi `DATABASE_URL` dan `AUTH_SECRET` di `.env`. Lihat `.env.example` untuk required vars.
 
-### 4. Generate Prisma Client
+### 4. Setup database
 
 ```bash
-npx prisma generate
+npx prisma generate    # Generate Prisma client
+npx prisma db push     # Push schema ke database
 ```
 
-### 5. Push skema ke database
-
-```bash
-npx prisma db push
-```
-
-### 6. Seeder data awal
+### 5. Seeder data awal
 
 ```bash
 npm run seed
 ```
 
-### 7. Jalankan dev server
+### 6. Jalankan dev server
 
 ```bash
 npm run dev

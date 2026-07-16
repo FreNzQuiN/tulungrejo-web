@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
 import type { LspopAggregate } from "./types";
 import { sanitizeBlok, sanitizeNoBidang, cellValue } from "./utils";
 

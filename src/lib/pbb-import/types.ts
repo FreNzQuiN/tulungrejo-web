@@ -1,4 +1,4 @@
-import type * as XLSX from "xlsx";
+import type * as XLSX from "xlsx-js-style";
 
 export interface FieldRecord {
   nop: string;

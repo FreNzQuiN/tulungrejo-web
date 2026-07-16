@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
 import type { RealisasiRecord } from "./types";
 
 // PBB-P2 Excel column mapping (0-indexed from parsed array):

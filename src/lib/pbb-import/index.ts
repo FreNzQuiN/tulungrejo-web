@@ -1,4 +1,4 @@
-import * as XLSX from "xlsx";
+import * as XLSX from "xlsx-js-style";
 import { randomUUID } from "node:crypto";
 import { prisma } from "@/lib/prisma";
 import { parseSpopSheet } from "./parse-spop";

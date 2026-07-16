@@ -2,15 +2,14 @@
 
 ## Purpose
 
-Documents stable architectural decisions and conventions unique to this project. For agent behavior rules, see workspace `~/.config/opencode/AGENTS.md`.
+Documents stable architectural decisions and conventions unique to this project.
+For agent behavior rules, see workspace `~/.config/opencode/AGENTS.md`.
 
 ## Project
 
 Desa Tulungrejo — village website with PBB (property tax) monitoring, article publishing, and village profile management.
 
-**Stack:** Next.js 16 (App Router) + TypeScript + Prisma + TiDB Cloud + NextAuth v5 + Tailwind v4 + shadcn/ui. Lihat `package.json` untuk dependency lengkap.
-
-**Users:** Warga (public), Pamong (tax officials), Kepala Desa (village head), Jurnalis (journalists)
+**Users:** Warga (public), Pamong (tax officials), Kepala Desa (village head), Jurnalis (journalists).
 
 ---
 
@@ -20,80 +19,60 @@ Desa Tulungrejo — village website with PBB (property tax) monitoring, article 
 
 The existing Vite SPA (tulungrejo-frontend) defines what must exist. All data shapes, routes, and behaviors are sourced from the FE. Backend adapts to serve these shapes.
 
-### Route Mapping (FE → Next.js)
-
-| FE Path          | App Router                         |
-| ---------------- | ---------------------------------- |
-| `/`              | `(public)/page.tsx`                |
-| `/profil-desa`   | `(public)/profil-desa/page.tsx`    |
-| `/artikel`       | `(public)/artikel/page.tsx`        |
-| `/artikel/:slug` | `(public)/artikel/[slug]/page.tsx` |
-| `/login`         | `(auth)/login/page.tsx`            |
-| `/pbb`           | `(dashboard)/pbb/page.tsx`         |
-| `/kepala-desa`   | `(dashboard)/kepala-desa/page.tsx` |
-| `/jurnalis`      | `(dashboard)/jurnalis/page.tsx`    |
-
-### Role Name Mapping
-
-| FE display      | Prisma enum    |
-| --------------- | -------------- |
-| `"pamong"`      | `pamong_pajak` |
-| `"kepala desa"` | `kepala_desa`  |
-| `"jurnalis"`    | `jurnalis`     |
-
-Mapping in `src/lib/types.ts` (`ROLE_DISPLAY`, `DISPLAY_TO_ROLE`). Never change Prisma enum.
-
 ### Route Groups
 
-- `(public)` — no auth required
-- `(auth)` — login page
-- `(dashboard)` — role-gated (`/pbb`, `/kepala-desa`, `/jurnalis`)
+Three groups, each with different auth requirements:
+
+- `(public)/` — no auth
+- `(auth)/` — login page only
+- `(dashboard)/` — role-gated. Protected by `src/proxy.ts` which redirects unauthorized users to `/login`.
+
+Page files live under their group directory. Routes mirror the Vite SPA paths.
+
+### Role Display Mapping
+
+Prisma `Role` enum uses different values from what FE displays. See `src/lib/types.ts` (`ROLE_DISPLAY`, `DISPLAY_TO_ROLE`). Do not change the Prisma enum — FE strings are display-only.
 
 ### Database
 
-- TiDB Cloud (MySQL) via PrismaMariaDb adapter
-- `relationMode = "prisma"` — no FK at DB level
-- 6 models: `User`, `LandPlot`, `Payment`, `VillageStats`, `VillageProfile`, `Article`. Schema detail — lihat `prisma/schema.prisma`.
-- Data awal — lihat `prisma/seed.ts`.
+- TiDB Cloud (MySQL) via PrismaMariaDb adapter. See `src/lib/prisma.ts` for connection setup.
+- `relationMode = "prisma"` — no foreign keys at DB level. Relations enforced application-side via Prisma.
+- Schema: `prisma/schema.prisma`. Seed: `prisma/seed.ts`.
 
 ### Article System
 
-- CRUD via `src/app/api/articles/`. Query helpers di `src/lib/article-queries.ts`.
-- Konten markdown, render via `react-markdown` + `remark-gfm`.
-- Tags disimpan sebagai JSON string, diparse di query boundary.
-- CMS jurnalis di `src/components/jurnalis/article-manager.tsx`.
+- Tags stored as JSON string (not junction table). Simpler for a small set; no relational queries needed across tags. Parsed at query boundary.
+- CRUD API: `src/app/api/articles/`. Query helpers: `src/lib/article-queries.ts`.
+- CMS UI: `src/components/jurnalis/`.
 
 ### CSS Architecture
 
-Tiga layer CSS di `src/app/`:
+Three layers in `src/app/` to prevent shadcn/ui design tokens from clashing with FE custom glassmorphism styles:
 
-- `globals.css` — Tailwind v4 + shadcn/ui design tokens
-- `index.css` — FE design tokens (glass-panel, buttons, vars)
+- `globals.css` — Tailwind v4 + shadcn/ui tokens
+- `index.css` — FE custom design tokens (glass-panel, citizen-card, CSS variables). Takes precedence for public pages.
 - `app.css` — app-level overrides
 
-FE styles take precedence for public pages.
+### Auth
+
+Custom JWT (HS256 via `jose`). Not NextAuth. `src/lib/auth-custom.ts` handles signing/verification/session. Cookie: `session-token`, httpOnly, sameSite=lax, 30 days. Secret from `JWT_SECRET` or `AUTH_SECRET`.
 
 ### Categories
 
-`"Kegiatan Desa" | "Pembangunan" | "Pemberdayaan" | "Kesehatan" | "Pertanian" | "Pengumuman"`
-
-### Data Models
-
-Detail skema database — lihat `prisma/schema.prisma`. Tipe dan mapping di `src/lib/types.ts`.
+Defined in `src/lib/constants.ts` (`CATEGORIES`).
 
 ---
 
 ## Conventions
 
 - **No code comments.** Self-documenting code.
-- **`@/*`** → `./src/*`
-- **shadcn/ui** new-york style.
-- **Passwords** bcryptjs.
-- **Security headers, cookies, CSP** — lihat `next.config.ts`.
-- ⚠ The "middleware" file convention is deprecated. Please use "proxy" instead. Learn more: https://nextjs.org/docs/messages/middleware-to-proxy
+- `@/*` → `./src/*`
+- Passwords: bcryptjs.
+- Security headers, CSP, cookies: see `next.config.ts`.
+- ⚠ Next.js deprecated the "middleware" naming convention. This project uses `src/proxy.ts`.
 
 ---
 
 ## Deployment
 
-Netlify (`@netlify/plugin-nextjs`). Config di `netlify.toml`. Build: `npm run build`.
+Netlify via `@netlify/plugin-nextjs`. Config: `netlify.toml`. Build: `npm run build`.

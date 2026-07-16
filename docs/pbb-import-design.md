@@ -1,5 +1,10 @@
 # PBB Import System — Design Document
 
+> Documents the **external data formats** (SPOP/LSPOP Excel, CSV PBB-P2) and **edge cases** discovered during data analysis.
+> Implementation lives in `src/lib/pbb-import/`. Schema at `prisma/schema.prisma`.
+
+---
+
 ## Sumber Data
 
 ### 1. Excel SPOP/LSPOP — Data Bidang Tanah
@@ -15,19 +20,9 @@
 
 **File:** `pbb-desa-wates-2026-07-13.csv`
 
-12 kolom, 1 baris untuk Desa Tulungrejo (`kode_desa=005`):
+12 kolom, 1 baris untuk Desa Tulungrejo (`kode_desa=005`). Kolom dipetakan ke tabel `realisasi`.
 
-| Kolom        | Nilai       | Arti                        |
-| ------------ | ----------- | --------------------------- |
-| PBB          | 149.186.364 | Total nominal PBB           |
-| BAYAR        | 40.361.494  | Total nominal terbayar      |
-| PERSEN       | 27.05%      | Persentase realisasi        |
-| KURANG_BAYAR | 108.824.870 | Sisa nominal                |
-| SPPT         | 2.898       | Jumlah wajib pajak (bidang) |
-| DIBAYAR      | 829         | Jumlah SPPT lunas           |
-| SISA_SPPT    | 2.069       | Jumlah SPPT belum           |
-
-**Catatan:** data aggregate per desa, **bukan per bidang**. `payments` diisi manual via UI.
+> Data aggregate per desa, **bukan per bidang**. Pelacakan bayar per bidang dilakukan manual via UI toggle (tabel `payments`).
 
 ---
 
@@ -39,186 +34,102 @@
 Jatim Blitar Wates Tulungrejo 001-013 0001-0297 check digit
 ```
 
-- **Check digit** selalu `0` — bisa diabaikan
-- NOP yang disimpan: `35.05.050.005.{blok}.{no_bidang}`
+- Check digit selalu `0`, diabaikan. NOP disimpan: `35.05.050.005.{blok}.{no_bidang}`.
 
 ---
 
-## ER Diagram (Final)
+## Column Mapping: SPOP → `fields`
 
-### `fields` — Data Tanah dari SPOP + Agregasi LSPOP
+See `prisma/schema.prisma` for the `fields` model. Key transformations during import:
 
-| Kolom            | Tipe          | Sumber            | Transformasi                                                                  |
-| ---------------- | ------------- | ----------------- | ----------------------------------------------------------------------------- |
-| `id`             | `uuid` PK     | auto              |                                                                               |
-| `nop`            | `text unique` | SPOP col 3-9      | `concat(col3-col8)` tanpa check digit                                         |
-| `owner_name`     | `text`        | SPOP col 13       | langsung                                                                      |
-| `owner_address`  | `text?`       | SPOP col 14-18    | concat conditional — skip RW/RT jika null                                     |
-| `address`        | `text`        | SPOP col 19       | RAW — variasi penulisan tinggi, tidak dinormalisasi                           |
-| `rw`             | `text?`       | SPOP col 20       | langsung                                                                      |
-| `rt`             | `text?`       | SPOP col 21       | langsung                                                                      |
-| `blok`           | `text`        | SPOP col 7        | `001`–`013`                                                                   |
-| `no_bidang`      | `text`        | SPOP col 8        | `0001`–`0297`                                                                 |
-| `dusun`          | `text`        | derived dari blok | 001-005=Tulungrejo, 006-012=Sidodadi, 013=TumpakGatho — tidak dianggap akurat |
-| `land_area`      | `decimal`     | SPOP col 22       | `ROUND(val, 2)` — 190 baris floating error                                    |
-| `building_area`  | `decimal?`    | LSPOP col 16      | `SUM` per `(blok, no_bidang)` — null jika tanpa bangunan                      |
-| `building_count` | `int?`        | LSPOP             | `COUNT` per `(blok, no_bidang)` — null jika tanpa bangunan                    |
-| `znt`            | `text?`       | SPOP col 23       | Zona Nilai Tanah, 21 kode: AA–AU                                              |
-| `jenis_tanah`    | `int?`        | SPOP col 24       | `1`=sawah, `3`=kering/tegal, `4`=lain                                         |
-| `pendataan_at`   | `date?`       | SPOP col 26       | full date — parse 2 format: `YYYY-MM-DD HH:MM:SS` & `DD/MM/YYYY`              |
-| `created_at`     | `timestamptz` | auto              |                                                                               |
-| `updated_at`     | `timestamptz` | auto              |                                                                               |
+| Fields column   | SPOP source       | Transform                                                                                             |
+| --------------- | ----------------- | ----------------------------------------------------------------------------------------------------- |
+| `nop`           | col 3-9           | concat col 3-8, skip check digit (col 9)                                                              |
+| `ownerAddress`  | col 14-18         | conditional concat — skip RW/RT if null                                                               |
+| `address`       | col 19            | RAW — not normalized (see Edge Cases)                                                                 |
+| `blok`          | col 7             | `001`–`013`                                                                                           |
+| `noBidang`      | col 8             | `0001`–`0297`                                                                                         |
+| `dusun`         | derived from blok | `001-005=Tulungrejo`, `006-012=Sidodadi`, `013=TumpakGatho`. Not considered accurate (see Edge Cases) |
+| `landArea`      | col 22            | `ROUND(val, 2)` — 190 rows had floating-point artifacts                                               |
+| `buildingArea`  | LSPOP col 16      | `SUM` per `(blok, no_bidang)`. Null if no building data                                               |
+| `buildingCount` | LSPOP             | `COUNT` per `(blok, no_bidang)`. Null if no building data                                             |
+| `znt`           | col 23            | Zona Nilai Tanah, 21 codes: AA–AU                                                                     |
+| `jenisTanah`    | col 24            | `1=sawah`, `3=kering/tegal`, `4=lain`                                                                 |
+| `pendataanAt`   | col 26            | Handles 2 date formats: `YYYY-MM-DD HH:MM:SS` and `DD/MM/YYYY`                                        |
+| `noUrut`        | col 10            | Stored but redundant with `(blok, noBidang)`. See Edge Case #5                                        |
 
-**Unique constraint:** `(blok, no_bidang)` — composite key.
+**Unique constraint (composite):** `@@unique([blok, noBidang])` → upsert key.
 
-### `payments` — Tracking Bayar per Tahun
-
-| Kolom       | Tipe                          | Catatan                      |
-| ----------- | ----------------------------- | ---------------------------- |
-| `id`        | `uuid` PK                     | auto                         |
-| `field_id`  | `uuid` FK → `fields.id`       | CASCADE delete               |
-| `year`      | `int`                         | tahun PBB                    |
-| `status`    | `enum("lunas","belum_lunas")` |                              |
-| `marked_by` | `int` FK → `users.id`         | petugas pamong yang menandai |
-| `marked_at` | `timestamptz`                 |                              |
-| `notes`     | `text?`                       |                              |
-
-**Unique:** `(field_id, year)` — 1 baris per bidang per tahun.
-
-**Business rules:**
-
-- Awal tahun pajak: **1 Juli**. Batas bayar: **30 Juni**.
-- Saat toggle tahun di UI: jika record `(field_id, year)` belum ada → insert `belum_lunas` untuk semua bidang.
-- Data `payments` **seeded kosong** — dimulai dari tahun berapa pun pertama kali pamong akses.
-
-### `realisasi` — Riwayat Snapshot CSV
-
-| Kolom           | Tipe          | Sumber       |
-| --------------- | ------------- | ------------ |
-| `id`            | `uuid` PK     | auto         |
-| `kode_kec`      | `text`        | `050`        |
-| `kecamatan`     | `text`        | `WATES`      |
-| `kode_desa`     | `text`        | `005`        |
-| `desa`          | `text`        | `TULUNGREJO` |
-| `total_pbb`     | `bigint`      |              |
-| `total_bayar`   | `bigint`      |              |
-| `persen`        | `numeric`     |              |
-| `kurang_bayar`  | `bigint`      |              |
-| `total_sppt`    | `int`         | `2898`       |
-| `dibayar`       | `int`         | `829`        |
-| `sisa_sppt`     | `int`         | `2069`       |
-| `tanggal_ambil` | `date`        | `2026-07-13` |
-| `imported_at`   | `timestamptz` | auto         |
-
-**Sifat:** APPEND-ONLY. Tiap upload = baris baru.
-
-### `block_images` — Peta Blok Scanned
-
-| Kolom       | Tipe         | Catatan         |
-| ----------- | ------------ | --------------- |
-| `id`        | `uuid` PK    | auto            |
-| `blok`      | `text`       | `001`–`013`     |
-| `sub_blok`  | `text`       | `a`, `b`, `c`   |
-| `image`     | `mediumtext` | base64 data URI |
-| `mime_type` | `text`       | `image/webp`    |
-
-**Unique:** `(blok, sub_blok)`.
-
-**Sumber:** scanned map per blok, diimport via seed dari `.secret/Desa Tulungrejo Blok {blok}{sub_blok}.webp`.
-
-**Catatan:** Tidak ada upload UI. Manual seed only.
+For `payments`, `realisasi`, `block_images` schemas → see `prisma/schema.prisma`.
 
 ---
 
-## Kolom yang Diabaikan
+## Columns Ignored (Not Stored)
 
-### SPOP — tidak disimpan
+### SPOP — skipped
 
-| Kolom                       | Alasan                                                     |
-| --------------------------- | ---------------------------------------------------------- |
-| `col 0` (NO FORMULIR tahun) | tahun pendataan, sudah cover oleh `pendataan_at`           |
-| `col 1`                     | kode internal formulir                                     |
-| `col 2`                     | nomor internal formulir                                    |
-| `col 9` (check digit)       | selalu `0`, tidak informatif                               |
-| `col 10` (NO URUT)          | prefix `001` konstan, redundant dengan `(blok, no_bidang)` |
-| `col 11` (STATUS)           | selalu `1`, tidak berguna                                  |
-| `col 12` (PEKERJAAN)        | selalu `5`, tidak berguna                                  |
-| `col 25` (JMLH BNGN)        | selalu `1` di SPOP, data aktual dari LSPOP                 |
-| `col 27-29`                 | kosong semua                                               |
+| Column                    | Reason                                     |
+| ------------------------- | ------------------------------------------ |
+| col 0 (NO FORMULIR tahun) | Covered by `pendataan_at`                  |
+| col 1, 2                  | Internal form codes                        |
+| col 9 (check digit)       | Always `0`                                 |
+| col 11 (STATUS)           | Always `1`                                 |
+| col 12 (PEKERJAAN)        | Always `5`                                 |
+| col 25 (JMLH BNGN)        | Always `1` in SPOP; actual data from LSPOP |
+| col 27-29                 | Always empty                               |
 
-### LSPOP — tidak disimpan (cuma dipakai agregasi)
+### LSPOP — used for aggregation only (not stored)
 
-- `col 0-11` — header NOP duplikat, tidak perlu
-- `col 14` (NO BNGN) — selalu `1`
-- `col 19` (TAHUN RENOVASI) — kosong semua
-- `col 28-30` — kosong semua
-- `col 15, 17, 20, 22-26` — detail bangunan (kondisi, konstruksi, dll) tidak masuk ER karena di luar scope tracking PBB
+- col 0-11: NOP header (duplicate)
+- col 14 (NO BNGN): Always `1`
+- col 19 (TAHUN RENOVASI): All empty
+- col 28-30: All empty
+- col 15, 17, 20, 22-26: Building details outside PBB tracking scope
 
 ---
 
-## Edge Cases Terkonfirmasi
+## Edge Cases (from data analysis)
 
-### 1. Address Variasi Tinggi
+### 1. Address Variation — 17 variants
 
-17 varian alamat objek untuk 13 blok:
+| Variasi                                                                            | Count | Blok    |
+| ---------------------------------------------------------------------------------- | ----- | ------- |
+| `JL. DSN SIDODADI`                                                                 | 858   | 006-012 |
+| `DSN. SIDODADI`                                                                    | 421   | 006-010 |
+| `JL. TRISULA`                                                                      | 266   | 001-005 |
+| (14 more variants...)                                                              |       |         |
+| **Decision:** Store RAW, do not normalize. Address cleaning is a separate concern. |
 
-| Varian                | Count | Blok          |
-| --------------------- | ----- | ------------- |
-| `JL. DSN SIDODADI`    | 858   | 006-012       |
-| `DSN. SIDODADI`       | 421   | 006-010       |
-| `JL. TRISULA`         | 266   | 001-005       |
-| `DSN. TULUNG REJO`    | 242   | 001-003       |
-| `JL. DSN TULUNG REJO` | 218   | 001-003       |
-| `JL. DSN TULUNGREJO`  | 213   | 004-005       |
-| `DSN SIDODADI`        | 164   | 011-012       |
-| `TUMPAK GATHO`        | 126   | 013           |
-| `DSN. TULUNGREJO`     | 99    | 005           |
-| `JL. DSN SIDO DADI`   | 89    | 007           |
-| `DSN SIDO DADI`       | 76    | 007           |
-| `DSN TULUNGREJO`      | 63    | 004           |
-| `JLS`                 | 61    | 012-013       |
-| `DSN.PURWOREJO`       | 1     | 004 (outlier) |
-| `I`                   | 1     | 003 (anomali) |
-| `JL TRISULA`          | 1     | 006 (anomali) |
-| NULL                  | 1     |               |
+### 2. Dusun Conflict — 97 rows
 
-**Keputusan:** simpan RAW, jangan normalisasi.
+Blok 013 (TumpakGatho) has address `"JL. DSN SIDODADI"`. `dusun` is stored as metadata, not authoritative.
 
-### 2. Dusun 97 Baris Konflik
+### 3. Floating Point on Land Area — 190 rows
 
-Blok 013 (TumpakGatho) tapi address `"JL. DSN SIDODADI"`.
-`dusun` disimpan sebagai informasi, tidak dianggap akurat.
+Artifacts like `61.00000000000001`. **Fix:** `ROUND(val, 2)` during import.
 
-### 3. Floating Point pada Luas Tanah
+### 4. Dual Date Format — 315 rows
 
-190 baris: floating artifact seperti `61.00000000000001`.
-**Fix:** `ROUND(val, 2)` pada import.
+- 2585 rows: `datetime` object `2016-09-12 00:00:00`
+- 315 rows: **string** `26/09/2016`
+- 2 rows: NULL
+- **Fix:** parser handles both formats.
 
-### 4. Format Tanggal Ganda
+### 5. NO_URUT Duplication
 
-- 2585 baris: `datetime` object `2016-09-12 00:00:00`
-- 315 baris: **string** `26/09/2016` (baris 2326-2641)
-- 2 baris: NULL
-- **Fix:** parser handle 2 format
+Col 10 = concatenation `"001" + no_bidang`. Prefix `001` is constant. Same `no_urut` can appear in 13 different blok. **Not a join key.** Join key is `(blok, no_bidang)`. Field IS stored in DB for backward compatibility but not used for joins.
 
-### 5. Duplikasi NO URUT
+### 6. LSPOP Building Count Mismatch — 3 rows
 
-`NO_URUT` (col 10) = `"001" + no_bidang` — prefix `001` konstan.
-1 NO_URUT muncul hingga 13x (1x per blok). **Bukan join key.**
-Join key benar: `(blok, no_bidang)`.
+Column `JMLH BNGN` = 2 but only 1 building row. Aggregation by `(blok, no_bidang)` handles this correctly.
 
-### 6. LSPOP JMLH BNGN = 2
+### 7. Fields Without Buildings — 33 of 297 field numbers
 
-3 baris di LSPOP menyatakan `JMLH BNGN = 2` tapi hanya 1 baris bangunan.
-Data lintas form — agregasi SUM/COUNT per `(blok, no_bidang)` sudah benar.
+No LSPOP data → `buildingArea` and `buildingCount` remain null.
 
-### 7. 33 Bidang Tanpa Bangunan
+### 8. Duplicate Owner Names — 1325 unique from 2899 rows
 
-264 dari 297 nomor bidang punya data LSPOP. 33 sisanya nilai `null`.
-
-### 8. Nama Owner Duplikat
-
-1325 nama unik dari 2899 baris. Tanpa NIK. `update nama` saat import ulang.
+No NIK. On re-import, owner name is updated via upsert.
 
 ---
 
@@ -228,54 +139,52 @@ Data lintas form — agregasi SUM/COUNT per `(blok, no_bidang)` sudah benar.
 SPOP ──┬─ (blok, no_bidang) ── LSPOP (1:N)
        │
        └─ (blok, no_bidang) ── fields (1:1, upsert)
-                                   │
-                              payments (1:N per year)
-                                   │
-                              realisasi (no FK, aggregate only)
+                                    │
+                               payments (1:N, per year)
+                                    │
+                               realisasi (no FK, aggregate only)
 ```
 
 ---
 
-## Import Flow (SPOP)
+## Import Flows
 
-```
-1. Baca sheet SPOP ────┐
-2. Baca sheet LSPOP ───┘
-3. Parse NOP: gabung col 3-8, skip check digit
-4. Parse pendataan_at: handle 2 date formats
-5. Parse land_area: ROUND(val, 2)
-6. Agregasi building_area & building_count dari LSPOP per (blok, no_bidang)
-7. Filter: skip baris WHERE blok IS NULL
-8. UPSERT ke fields berdasarkan (blok, no_bidang):
-   - Ada → update (owner_name, address, land_area, dll)
-   - Tidak ada → insert
-```
+**SPOP import** (`detectFileType = "spop"`):
 
-## Import Flow (CSV)
+1. Parse SPOP sheet → `FieldRecord[]`
+2. Parse LSPOP sheet → aggregate building area/count per `(blok, no_bidang)`
+3. Merge: attach LSPOP aggregates to matching SPOP records
+4. Batch UPSERT into `fields` table via raw SQL (batches of 500)
+5. Upsert key: `@@unique([blok, noBidang])` — existing rows updated, new rows inserted
 
-```
-1. Filter baris WHERE kode_desa = '005'
-2. INSERT ke realisasi (append)
-3. Tidak ada update — riwayat
-```
+**CSV import** (`detectFileType = "pbbp2"`):
 
-## Payment Lifecycle
+1. Filter row where `kode_desa = '005'`
+2. INSERT into `realisasi` table (append-only — each upload = new row)
 
-```
-1 Juli +1 ──→ tahun pajak baru
-                 │
-                 ▼
-           Semua fields: insert payment(year, status=belum_lunas)
-           jika belum ada record untuk tahun tersebut
-                 │
-                 ▼
-           Pamong toggle lunas/belum per bidang via UI
-```
+→ Implementation: `src/lib/pbb-import/index.ts`
+
+---
+
+## Payment Lifecycle (Actual Behavior)
+
+- Current year = `new Date().getFullYear()`. No year selector in UI.
+- No batch initialization. Payments table starts empty.
+- When Pamong toggles a field:
+  - If no `(fieldId, year)` record exists → create with `status = "lunas"`
+  - If record exists → flip `"lunas"` ↔ `"belum_lunas"`
+- `Realisasi` is annual aggregate from CSV (via import), **not** computed from individual payments.
+
+→ Toggle API: `src/app/api/pbb/toggle/route.ts`
+
+---
 
 ## Role Access
 
-| Role           | Akses                                                              |
-| -------------- | ------------------------------------------------------------------ |
-| `pamong_pajak` | Upload SPOP Excel, Upload CSV, toggle payment, lihat daftar bidang |
-| `kepala_desa`  | Lihat dashboard + realisasi (read-only)                            |
-| `jurnalis`     | Tidak akses PBB                                                    |
+| Role           | Access                                        |
+| -------------- | --------------------------------------------- |
+| `pamong_pajak` | Upload SPOP/CSV, toggle payments, view fields |
+| `kepala_desa`  | View dashboard + realisasi (read-only)        |
+| `jurnalis`     | No PBB access                                 |
+
+Auth enforcement: `requireRole()` in each route handler. See `src/lib/auth-helpers.ts`.
