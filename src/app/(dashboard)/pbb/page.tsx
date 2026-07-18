@@ -3,13 +3,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/components/providers";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search, Loader2 } from "lucide-react";
+import { Search } from "lucide-react";
 import { BlokSelector } from "@/components/pbb/blok-selector";
 import { BlokViewer } from "@/components/pbb/blok-viewer";
 import { ImportButton } from "@/components/pbb/import-button";
 import type { FieldView } from "@/lib/types";
 import { AccessDenied } from "@/components/auth/access-denied";
 import { BLOK_TO_DUSUN } from "@/lib/constants";
+import { toast } from "sonner";
 
 const BLOK_FILTER_OPTIONS = [
   { value: "", label: "Semua Blok" },
@@ -65,7 +66,6 @@ export default function PBBPage() {
   const [statusFilter, setStatusFilter] = useState("");
   const [selectedBlok, setSelectedBlok] = useState("");
   const [toggling, setToggling] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
 
   const fetchFields = useCallback(async () => {
     if (!canAccess) return;
@@ -77,10 +77,12 @@ export default function PBBPage() {
       if (search) params.set("search", search);
 
       const res = await fetch(`/api/pbb/list?${params}`);
-      const data = await res.json();
-      setFields(Array.isArray(data) ? data : []);
-    } catch {
-      setError("Gagal memuat data. Periksa koneksi Anda.");
+      const body = await res.json();
+      const items = Array.isArray(body) ? (body as FieldView[]) : body.data;
+      setFields(Array.isArray(items) ? items : []);
+    } catch (err) {
+      console.error("fetchFields error:", err);
+      toast.error("Gagal memuat data. Periksa koneksi Anda.");
     } finally {
       setLoading(false);
     }
@@ -88,8 +90,9 @@ export default function PBBPage() {
 
   useEffect(() => {
     if (authLoading || !canAccess) return;
-    fetchFields();
-  }, [authLoading, canAccess, fetchFields]);
+    const id = setTimeout(() => fetchFields(), 300);
+    return () => clearTimeout(id);
+  }, [authLoading, canAccess, blokFilter, statusFilter, search, fetchFields]);
 
   async function togglePayment(fieldId: string) {
     setToggling(fieldId);
@@ -108,18 +111,20 @@ export default function PBBPage() {
               : f,
           ),
         );
+      } else {
+        const data = await res.json().catch(() => ({}));
+        toast.error(data.error || "Gagal mengubah status pembayaran.");
       }
+    } catch (err) {
+      console.error("togglePayment error:", err);
+      toast.error("Gagal mengubah status pembayaran.");
     } finally {
       setToggling(null);
     }
   }
 
   if (authLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[60vh]">
-        <Loader2 size={32} className="animate-spin text-blue-500" />
-      </div>
-    );
+    return <ListSkeleton />;
   }
 
   if (!sessionUser || !canAccess) {

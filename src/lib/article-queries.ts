@@ -1,7 +1,20 @@
 import { cacheTag, cacheLife } from "next/cache";
 import { prisma } from "./prisma";
 import type { Article, ArticleFrontmatter } from "./types";
+import type { Prisma } from "@prisma/client";
 import { safeJsonParse } from "./utils";
+
+const articleListSelect = {
+  title: true,
+  slug: true,
+  date: true,
+  author: true,
+  category: true,
+  summary: true,
+  image: true,
+  tags: true,
+  published: true,
+} as const;
 
 function toFrontmatter(a: {
   title: string;
@@ -48,26 +61,43 @@ function toFullArticle(a: {
   };
 }
 
-export async function getAllPublishedArticles(): Promise<ArticleFrontmatter[]> {
-  if (process.env.NODE_ENV === "production") {
-    return getAllPublishedArticlesCached();
-  }
-  const articles = await prisma.article.findMany({
+async function queryAllPublishedArticles(take?: number, skip?: number) {
+  return prisma.article.findMany({
     where: { published: true },
     orderBy: { date: "desc" },
+    select: articleListSelect,
+    ...(take !== undefined ? { take } : {}),
+    ...(skip !== undefined ? { skip } : {}),
   });
+}
+
+async function queryPublishedArticleBySlug(
+  slug: string,
+): Promise<Article | null> {
+  const article = await prisma.article.findUnique({ where: { slug } });
+  if (!article || !article.published) return null;
+  return toFullArticle(article);
+}
+
+export async function getAllPublishedArticles(
+  take?: number,
+  skip?: number,
+): Promise<ArticleFrontmatter[]> {
+  if (process.env.NODE_ENV === "production") {
+    return getAllPublishedArticlesCached(take, skip);
+  }
+  const articles = await queryAllPublishedArticles(take, skip);
   return articles.map(toFrontmatter);
 }
 
-async function getAllPublishedArticlesCached(): Promise<ArticleFrontmatter[]> {
+async function getAllPublishedArticlesCached(
+  take?: number,
+  skip?: number,
+): Promise<ArticleFrontmatter[]> {
   "use cache: remote";
   cacheTag("articles");
   cacheLife("hours");
-
-  const articles = await prisma.article.findMany({
-    where: { published: true },
-    orderBy: { date: "desc" },
-  });
+  const articles = await queryAllPublishedArticles(take, skip);
   return articles.map(toFrontmatter);
 }
 
@@ -77,9 +107,7 @@ export async function getPublishedArticleBySlug(
   if (process.env.NODE_ENV === "production") {
     return getPublishedArticleBySlugCached(slug);
   }
-  const article = await prisma.article.findUnique({ where: { slug } });
-  if (!article || !article.published) return null;
-  return toFullArticle(article);
+  return queryPublishedArticleBySlug(slug);
 }
 
 async function getPublishedArticleBySlugCached(
@@ -88,17 +116,18 @@ async function getPublishedArticleBySlugCached(
   "use cache: remote";
   cacheTag(`article-${slug}`);
   cacheLife("hours");
-
-  const article = await prisma.article.findUnique({ where: { slug } });
-  if (!article || !article.published) return null;
-  return toFullArticle(article);
+  return queryPublishedArticleBySlug(slug);
 }
 
-export async function getAllArticlesForJournalist(): Promise<
-  ArticleFrontmatter[]
-> {
+export async function getAllArticlesForJournalist(
+  take?: number,
+  skip?: number,
+): Promise<ArticleFrontmatter[]> {
   const articles = await prisma.article.findMany({
     orderBy: { date: "desc" },
+    select: articleListSelect,
+    ...(take !== undefined ? { take } : {}),
+    ...(skip !== undefined ? { skip } : {}),
   });
   return articles.map(toFrontmatter);
 }
@@ -134,13 +163,17 @@ export interface CreateArticleInput {
   published: boolean;
 }
 
-export async function createArticle(data: CreateArticleInput): Promise<string> {
+export async function createArticle(
+  data: CreateArticleInput,
+  authorId: number,
+): Promise<string> {
   await prisma.article.create({
     data: {
       title: data.title,
       slug: data.slug,
       date: new Date(data.date),
       author: data.author,
+      authorId,
       category: data.category,
       summary: data.summary,
       content: data.content,
@@ -157,7 +190,7 @@ export async function updateArticle(
   slug: string,
   data: Partial<CreateArticleInput>,
 ): Promise<void> {
-  const updateData: Record<string, unknown> = {};
+  const updateData: Prisma.ArticleUpdateInput = {} as Prisma.ArticleUpdateInput;
 
   if (data.title !== undefined) updateData.title = data.title;
   if (data.slug !== undefined) updateData.slug = data.slug;
@@ -184,7 +217,8 @@ export async function deleteArticle(slug: string): Promise<boolean> {
   try {
     await prisma.article.delete({ where: { slug } });
     return true;
-  } catch {
+  } catch (err) {
+    console.error("deleteArticle error:", err);
     return false;
   }
 }

@@ -43,9 +43,9 @@ export function ImportButton() {
 
       if (data.errors?.length > 0) {
         toast.warning(`${data.errors.length} error ditemukan.`);
-        console.warn("Import errors:", data.errors);
       }
-    } catch {
+    } catch (err) {
+      console.error("Import error:", err);
       toast.error("Gagal mengimpor file. Coba lagi.");
     } finally {
       setLoading(false);

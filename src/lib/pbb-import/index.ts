@@ -136,18 +136,22 @@ async function importSpop(
         await prisma.$executeRawUnsafe(sql, ...params);
         totalProcessed += batch.length;
       } catch (err) {
-        const msg = err instanceof Error ? err.message : "Unknown";
-        summary.errors.push(`Gagal import batch ${i / BATCH_SIZE + 1}: ${msg}`);
+        console.error("Import SPOP batch error:", err);
+        summary.errors.push(`Gagal import batch ${i / BATCH_SIZE + 1}.`);
       }
     }
 
     const countAfter = await prisma.fields.count();
     summary.fields.inserted = countAfter - countBefore;
     summary.fields.updated = totalProcessed - (countAfter - countBefore);
+    console.info("Import SPOP selesai:", {
+      totalProcessed,
+      inserted: summary.fields.inserted,
+      updated: summary.fields.updated,
+    });
   } catch (err) {
-    summary.errors.push(
-      `Gagal memproses file SPOP: ${err instanceof Error ? err.message : "Unknown error"}`,
-    );
+    console.error("Import SPOP error:", err);
+    summary.errors.push("Gagal memproses file SPOP.");
   }
 }
 
@@ -166,9 +170,9 @@ async function importPbbP2(
 
     await prisma.realisasi.create({ data: record });
     summary.realisasi.inserted++;
+    console.info("Import PBB-P2 selesai: realisasi tersimpan");
   } catch (err) {
-    summary.errors.push(
-      `Gagal memproses file PBB-P2: ${err instanceof Error ? err.message : "Unknown error"}`,
-    );
+    console.error("Import PBB-P2 error:", err);
+    summary.errors.push("Gagal memproses file PBB-P2.");
   }
 }

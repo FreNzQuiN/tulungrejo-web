@@ -27,18 +27,23 @@ export function getClientIp(req: { headers: Headers }): string {
 
   const forwardedFor = req.headers.get("x-forwarded-for");
   if (forwardedFor) {
-    return forwardedFor.split(",")[0]?.trim() ?? "";
+    return forwardedFor.split(",")[0]?.trim() ?? "unknown";
   }
 
   if (process.env.NODE_ENV === "development") {
     return "127.0.0.1";
   }
 
-  return "";
+  return "unknown";
 }
 
+let cleanupCounter = 0;
+const CLEANUP_INTERVAL = 100;
+
 function maybeCleanup(): void {
-  if (Math.random() > 0.02) return;
+  cleanupCounter++;
+  if (cleanupCounter < CLEANUP_INTERVAL) return;
+  cleanupCounter = 0;
 
   prisma.rateLimit
     .deleteMany({
@@ -57,9 +62,18 @@ function fallbackOpen(config: RateLimitConfig): RateLimitResult {
   };
 }
 
+function fallbackClosed(config: RateLimitConfig): RateLimitResult {
+  return {
+    allowed: false,
+    remaining: 0,
+    resetAt: Date.now() + config.windowMs,
+  };
+}
+
 export async function checkRateLimit(
   key: string,
   config: RateLimitConfig = RATE_LIMIT_PRESETS.login,
+  failClosed = false,
 ): Promise<RateLimitResult> {
   for (let attempt = 0; attempt < 2; attempt++) {
     try {
@@ -113,15 +127,15 @@ export async function checkRateLimit(
       return result;
     } catch (err) {
       if (attempt === 1) {
-        console.error("[rate-limit] DB error, allowing through:", err);
+        console.error("[rate-limit] DB error:", err);
         maybeCleanup();
-        return fallbackOpen(config);
+        return failClosed ? fallbackClosed(config) : fallbackOpen(config);
       }
       await new Promise((r) => setTimeout(r, 100));
     }
   }
 
-  return fallbackOpen(config);
+  return failClosed ? fallbackClosed(config) : fallbackOpen(config);
 }
 
 export async function resetRateLimit(key: string): Promise<void> {

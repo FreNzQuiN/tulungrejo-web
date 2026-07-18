@@ -1,6 +1,5 @@
 import { Suspense } from "react";
-import { Skeleton } from "@/components/ui/skeleton";
-import { Compass, School, HeartPulse, Award } from "lucide-react";
+import { Compass, School, HeartPulse, Award, Loader2 } from "lucide-react";
 import { getVillageProfile, getVillageStats } from "@/lib/desa-queries";
 import type { Administratif } from "@/lib/types";
 
@@ -63,7 +62,9 @@ async function ProfileDisplay({
       </section>
 
       <section className="org-structure-section">
-        <h2>Struktur Organisasi Pemerintah Desa</h2>
+        <div className="section-header">
+          <h2>Struktur Organisasi Pemerintah Desa</h2>
+        </div>
         <div className="org-chart-wrapper">
           <div className="org-tree">
             <div className="org-level-2">
@@ -107,7 +108,9 @@ async function ProfileDisplay({
       </section>
 
       <section className="mb-[60px]">
-        <h2 className="text-center mb-[35px]">Tugas & Fungsi Pemerintahan</h2>
+        <div className="section-header">
+          <h2>Tugas & Fungsi Pemerintahan</h2>
+        </div>
         <div className="profile-tupoksi-grid">
           {profile.tugasFungsi.map((item, index) => (
             <div key={index} className="tupoksi-item glass-panel">
@@ -122,9 +125,9 @@ async function ProfileDisplay({
       </section>
 
       <section className="mb-[70px]">
-        <h2 className="text-center mb-[35px]">
-          Data Administratif & Layanan Desa
-        </h2>
+        <div className="section-header">
+          <h2>Data Administratif & Layanan Desa</h2>
+        </div>
         <div className="visimisi-container">
           <div className="table-container">
             <table className="custom-table">
@@ -241,133 +244,6 @@ async function ProfileDisplay({
   );
 }
 
-function ProfileSkeleton() {
-  return (
-    <div className="container">
-      <section className="visimisi-container">
-        <div className="visi-card" style={{ opacity: 0.6 }}>
-          <h3 className="text-primary-bg">
-            <Skeleton className="h-6 w-24" />
-          </h3>
-          <Skeleton className="mt-[15px] h-5 w-full" />
-          <Skeleton className="mt-2 h-5 w-5/6" />
-          <Skeleton className="mt-2 h-5 w-4/5" />
-        </div>
-        <div className="misi-card">
-          <h3>
-            <Skeleton className="h-6 w-24" />
-          </h3>
-          <ul className="misi-list">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <li key={i}>
-                <Skeleton className="h-4 w-full" />
-              </li>
-            ))}
-          </ul>
-        </div>
-      </section>
-
-      <section className="org-structure-section">
-        <Skeleton className="mx-auto h-8 w-80" />
-        <div className="org-chart-wrapper">
-          <div className="org-tree">
-            <div className="org-level-2">
-              <div className="org-node">
-                <Skeleton className="mx-auto mb-1 h-3 w-24" />
-                <Skeleton className="mx-auto h-4 w-32" />
-              </div>
-              <div className="org-node org-node--sekdes">
-                <Skeleton className="mx-auto mb-1 h-3 w-28" />
-                <Skeleton className="mx-auto h-4 w-32" />
-              </div>
-            </div>
-            <div className="org-level-3">
-              {Array.from({ length: 5 }).map((_, i) => (
-                <div key={i} className="org-node">
-                  <Skeleton className="mx-auto mb-1 h-3 w-20" />
-                  <Skeleton className="mx-auto h-4 w-28" />
-                </div>
-              ))}
-            </div>
-            <div className="org-level-4">
-              {Array.from({ length: 3 }).map((_, i) => (
-                <div key={i} className="org-node border-dashed">
-                  <Skeleton className="mx-auto mb-1 h-3 w-24" />
-                  <Skeleton className="mx-auto h-4 w-28" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="mb-[60px]">
-        <Skeleton className="mx-auto mb-[35px] h-8 w-72" />
-        <div className="profile-tupoksi-grid">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="tupoksi-item">
-              <div className="flex items-center gap-[10px] mb-[10px]">
-                <Skeleton className="h-[18px] w-[18px]" />
-                <Skeleton className="h-5 w-32" />
-              </div>
-              <Skeleton className="mb-1 h-4 w-full" />
-              <Skeleton className="h-4 w-4/5" />
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="mb-[70px]">
-        <Skeleton className="mx-auto mb-[35px] h-8 w-80" />
-        <div className="visimisi-container">
-          <div className="table-container">
-            <table className="custom-table">
-              <thead>
-                <tr>
-                  <th>
-                    <Skeleton className="h-4 w-36" />
-                  </th>
-                  <th>
-                    <Skeleton className="h-4 w-28" />
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {Array.from({ length: 7 }).map((_, i) => (
-                  <tr key={i}>
-                    <td>
-                      <Skeleton className="h-4 w-40" />
-                    </td>
-                    <td>
-                      <Skeleton className="h-4 w-52" />
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <div className="glass-panel p-[35px] flex flex-col gap-5">
-            <div className="flex items-center gap-[10px]">
-              <Skeleton className="h-5 w-5" />
-              <Skeleton className="h-6 w-48" />
-            </div>
-            {Array.from({ length: 4 }).map((_, i) => (
-              <div
-                key={i}
-                className="pl-[15px]"
-                style={{ borderLeft: "3px solid var(--color-secondary-tan)" }}
-              >
-                <Skeleton className="mb-1 h-3 w-24" />
-                <Skeleton className="h-4 w-44" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-    </div>
-  );
-}
-
 export default function ProfilePage() {
   return (
     <div className="animate-fade-in">
@@ -381,7 +257,13 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      <Suspense fallback={<ProfileSkeleton />}>
+      <Suspense
+        fallback={
+          <div className="flex justify-center p-12">
+            <Loader2 size={32} className="animate-spin text-blue-500" />
+          </div>
+        }
+      >
         <ProfileContent />
       </Suspense>
     </div>

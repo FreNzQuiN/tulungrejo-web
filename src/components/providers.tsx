@@ -9,7 +9,7 @@ import {
   useRef,
 } from "react";
 import { Toaster } from "@/components/ui/toaster";
-import type { SessionUser } from "@/lib/auth-custom";
+import type { SessionUser } from "@/lib/auth/types";
 
 interface AuthContextValue {
   user: SessionUser | null;
@@ -36,7 +36,8 @@ async function fetchUser(): Promise<SessionUser | null> {
     const res = await fetch("/api/auth/me");
     const data = await res.json();
     return data.user ?? null;
-  } catch {
+  } catch (err) {
+    console.error("fetchUser error:", err);
     return null;
   }
 }

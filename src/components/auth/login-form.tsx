@@ -10,19 +10,26 @@ const ROLE_REDIRECTS: Record<string, string> = {
   jurnalis: "/jurnalis",
 };
 
-const DEMO_ACCOUNTS = [
-  {
-    label: "Pamong",
-    email: "pamong@tulungrejo.desa.id",
-    password: "pamong123",
-  },
-  { label: "Kades", email: "kades@tulungrejo.desa.id", password: "kades123" },
-  {
-    label: "Jurnalis",
-    email: "jurnalis@tulungrejo.desa.id",
-    password: "jurnalis123",
-  },
-];
+const DEMO_ACCOUNTS =
+  process.env.NODE_ENV !== "production"
+    ? [
+        {
+          label: "Pamong",
+          email: "pamong@tulungrejo.desa.id",
+          password: "pamong123",
+        },
+        {
+          label: "Kades",
+          email: "kades@tulungrejo.desa.id",
+          password: "kades123",
+        },
+        {
+          label: "Jurnalis",
+          email: "jurnalis@tulungrejo.desa.id",
+          password: "jurnalis123",
+        },
+      ]
+    : [];
 
 export function LoginForm() {
   const searchParams = useSearchParams();
@@ -55,9 +62,7 @@ export function LoginForm() {
       if (data.error?.includes("RATE_LIMITED")) {
         setError("Terlalu banyak percobaan gagal. Coba lagi dalam 15 menit.");
       } else {
-        setError(
-          "Email atau kata sandi salah. Silakan gunakan kredensial demo di bawah.",
-        );
+        setError("Email atau kata sandi salah. Silakan coba kembali.");
       }
       return;
     }
@@ -76,9 +81,8 @@ export function LoginForm() {
       return;
     }
 
-    const sessionRes = await fetch("/api/auth/me");
-    const session = await sessionRes.json();
-    const role = session?.user?.role as string | undefined;
+    const data = await res.json();
+    const role = data?.role as string | undefined;
     window.location.href = ROLE_REDIRECTS[role ?? ""] ?? "/";
   }
 
@@ -134,39 +138,41 @@ export function LoginForm() {
             </div>
           )}
 
-          <div className="admin-desc-box">
-            <strong className="block mb-2 text-dark-brown">
-              Akun Demo / Prototype:
-            </strong>
-            <div className="flex flex-col gap-2">
-              {DEMO_ACCOUNTS.map((acc) => (
-                <div
-                  key={acc.label}
-                  onClick={() => {
-                    setEmail(acc.email);
-                    setPassword(acc.password);
-                    setError("");
-                  }}
-                  title="Klik untuk mengisi otomatis"
-                  className="demo-credential-item demo-credential-card cursor-pointer px-3 py-2 text-xs flex justify-between items-center"
-                >
-                  <div>
-                    <span className="font-bold text-dark-brown">
-                      {acc.label}:
-                    </span>{" "}
-                    {acc.email}
+          {process.env.NODE_ENV !== "production" && (
+            <div className="admin-desc-box">
+              <strong className="block mb-2 text-dark-brown">
+                Akun Demo / Prototype:
+              </strong>
+              <div className="flex flex-col gap-2">
+                {DEMO_ACCOUNTS.map((acc) => (
+                  <div
+                    key={acc.label}
+                    onClick={() => {
+                      setEmail(acc.email);
+                      setPassword(acc.password);
+                      setError("");
+                    }}
+                    title="Klik untuk mengisi otomatis"
+                    className="demo-credential-item demo-credential-card cursor-pointer px-3 py-2 text-xs flex justify-between items-center"
+                  >
+                    <div>
+                      <span className="font-bold text-dark-brown">
+                        {acc.label}:
+                      </span>{" "}
+                      {acc.email}
+                    </div>
+                    <code className="demo-password-badge px-1.5 py-0.5 rounded font-semibold">
+                      {acc.password}
+                    </code>
                   </div>
-                  <code className="demo-password-badge px-1.5 py-0.5 rounded font-semibold">
-                    {acc.password}
-                  </code>
-                </div>
-              ))}
+                ))}
+              </div>
+              <small className="block mt-[10px] text-muted-foreground italic text-[11px]">
+                * Tips: Klik salah satu akun di atas untuk mengisi formulir
+                secara otomatis.
+              </small>
             </div>
-            <small className="block mt-[10px] text-muted-foreground italic text-[11px]">
-              * Tips: Klik salah satu akun di atas untuk mengisi formulir secara
-              otomatis.
-            </small>
-          </div>
+          )}
 
           <button
             type="submit"

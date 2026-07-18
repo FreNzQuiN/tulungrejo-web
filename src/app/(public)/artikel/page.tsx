@@ -1,12 +1,8 @@
-import { Suspense } from "react";
-import { connection } from "next/server";
 import { getAllPublishedArticles } from "@/lib/article-queries";
 import { ArticlesError } from "@/components/articles/articles-error";
 import { ArtikelClient } from "./artikel-client";
 
-async function ArticlesContent() {
-  await connection();
-
+export default async function ArticlesPage() {
   let articles;
   try {
     articles = await getAllPublishedArticles();
@@ -15,12 +11,4 @@ async function ArticlesContent() {
     return <ArticlesError message="Gagal memuat daftar artikel" />;
   }
   return <ArtikelClient articles={articles} />;
-}
-
-export default function ArticlesPage() {
-  return (
-    <Suspense fallback={null}>
-      <ArticlesContent />
-    </Suspense>
-  );
 }

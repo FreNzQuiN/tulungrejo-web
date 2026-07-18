@@ -2,19 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useAuth } from "@/components/providers";
+import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Landmark, Loader2 } from "lucide-react";
+import { Loader2 } from "lucide-react";
 import type { RealisasiView } from "@/lib/types";
 import { AccessDenied } from "@/components/auth/access-denied";
-
-function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("id-ID", {
-    style: "currency",
-    currency: "IDR",
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
-}
+import { RealisasiSummaryCard } from "@/components/kades/realisasi-summary-card";
+import { StatCard } from "@/components/kades/stat-card";
+import { formatCurrency } from "@/lib/utils";
 
 function formatDate(iso: string): string {
   const d = new Date(iso);
@@ -58,7 +53,6 @@ export default function KadesDashboard() {
   const { user: sessionUser, isLoading: authLoading } = useAuth();
   const [data, setData] = useState<RealisasiView | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -70,7 +64,9 @@ export default function KadesDashboard() {
         return res.json();
       })
       .then((json: RealisasiView) => setData(json))
-      .catch((err) => setError(err.message))
+      .catch((err) => {
+        toast.error(err.message);
+      })
       .finally(() => setLoading(false));
   }, [sessionUser, authLoading]);
 
@@ -88,34 +84,30 @@ export default function KadesDashboard() {
     );
   }
 
+  const pageHeader = loading ? (
+    <div className="page-header mb-8">
+      <div className="container">
+        <Skeleton className="mx-auto h-8 w-72" />
+        <Skeleton className="mx-auto mt-2 h-4 w-96" />
+      </div>
+    </div>
+  ) : (
+    <div className="page-header mb-8">
+      <div className="container">
+        <h1>Dashboard Realisasi PBB</h1>
+        {data && (
+          <p>Ringkasan realisasi Pajak Bumi & Bangunan Desa Tulungrejo</p>
+        )}
+      </div>
+    </div>
+  );
+
   if (loading) {
     return (
       <div>
-        <div className="page-header mb-8">
-          <div className="container">
-            <Skeleton className="mx-auto h-8 w-72" />
-            <Skeleton className="mx-auto mt-2 h-4 w-96" />
-          </div>
-        </div>
+        {pageHeader}
         <div className="container">
           <CardSkeleton />
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div>
-        <div className="page-header mb-8">
-          <div className="container">
-            <h1>Dashboard Realisasi PBB</h1>
-          </div>
-        </div>
-        <div className="container">
-          <div className="glass-panel p-8 text-center">
-            <p className="text-red-600">{error}</p>
-          </div>
         </div>
       </div>
     );
@@ -124,11 +116,7 @@ export default function KadesDashboard() {
   if (!data) {
     return (
       <div>
-        <div className="page-header mb-8">
-          <div className="container">
-            <h1>Dashboard Realisasi PBB</h1>
-          </div>
-        </div>
+        {pageHeader}
         <div className="container">
           <div className="glass-panel p-8 text-center">
             <p className="text-muted-foreground">
@@ -142,215 +130,71 @@ export default function KadesDashboard() {
 
   return (
     <div className="animate-fade-in">
-      <div className="page-header mb-8">
-        <div className="container">
-          <h1>Dashboard Realisasi PBB</h1>
-          <p>Ringkasan realisasi Pajak Bumi & Bangunan Desa Tulungrejo</p>
-        </div>
-      </div>
+      {pageHeader}
 
       <div className="container">
         <div className="space-y-6">
-          <div className="glass-panel p-6">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <div className="flex items-center gap-2 mb-1">
-                  <Landmark
-                    size={20}
-                    className="text-[var(--color-dark-brown)]"
-                  />
-                  <h3 className="text-lg font-bold text-[var(--color-dark-brown)] font-[family-name:var(--font-heading)]">
-                    Target PBB Desa
-                  </h3>
-                </div>
-                <p className="text-[13px] text-[var(--color-muted)]">
-                  Total kewajiban pajak bumi & bangunan Desa Tulungrejo
-                </p>
-              </div>
-            </div>
-
-            <div className="flex items-baseline gap-6 mb-5">
-              <div>
-                <div className="text-[30px] font-extrabold text-[var(--color-dark-brown)]">
-                  {formatCurrency(data.totalPbb)}
-                </div>
-                <div className="text-[12px] text-[var(--color-muted)]">
-                  Total nominal kewajiban
-                </div>
-              </div>
-              <div className="flex items-baseline gap-1.5">
-                <span className="text-[28px] font-extrabold text-[var(--color-dark-brown)]">
-                  {data.totalSppt}
-                </span>
-                <span className="text-[12px] text-[var(--color-muted)] font-medium">
-                  lbr SPPT
-                </span>
-              </div>
-            </div>
-
-            <div className="mb-2">
-              <div className="h-2.5 bg-gray-200 rounded-full overflow-hidden">
-                <div
-                  className="h-full rounded-full transition-all duration-700"
-                  style={{
-                    width: `${data.persen}%`,
-                    backgroundColor: "var(--color-dark-brown)",
-                  }}
-                />
-              </div>
-            </div>
-            <div className="flex justify-between text-[12px] font-semibold">
-              <span className="text-[var(--color-dark-brown)]">
-                Realisasi Nominal {data.persen}%
-              </span>
-              <span className="text-[var(--color-muted)]">
-                SPPT Lunas {data.dibayar}/{data.totalSppt}
-              </span>
-            </div>
-          </div>
+          <RealisasiSummaryCard
+            totalPbb={data.totalPbb}
+            totalSppt={data.totalSppt}
+            persen={data.persen}
+            dibayar={data.dibayar}
+          />
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="glass-panel p-5">
-              <h4 className="text-[13px] font-bold uppercase text-[var(--color-muted)] tracking-wide mb-1">
-                Nominal Terbayar
-              </h4>
-              <div
-                className="text-[22px] font-extrabold mb-3"
-                style={{ color: "var(--color-success)" }}
-              >
-                {formatCurrency(data.totalBayar)}
-              </div>
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-1.5">
-                <div
-                  className="h-full rounded-full"
-                  style={{
-                    width: `${data.persen}%`,
-                    backgroundColor: "var(--color-success)",
-                  }}
-                />
-              </div>
-              <div className="flex justify-between text-[11px]">
-                <span
-                  className="font-semibold"
-                  style={{ color: "var(--color-success)" }}
-                >
-                  {data.persen}%
-                </span>
-                <span className="text-[var(--color-muted)]">
-                  Dari total target
-                </span>
-              </div>
-            </div>
+            <StatCard
+              title="Nominal Terbayar"
+              value={formatCurrency(data.totalBayar)}
+              progressPercent={data.persen}
+              progressColor="var(--color-success)"
+              valueColor="var(--color-success)"
+              sublabel={`${data.persen}%`}
+              sublabelRight="Dari total target"
+            />
 
-            <div className="glass-panel p-5">
-              <h4 className="text-[13px] font-bold uppercase text-[var(--color-muted)] tracking-wide mb-1">
-                Sisa Piutang
-              </h4>
-              <div
-                className="text-[22px] font-extrabold mb-3"
-                style={{ color: "var(--color-danger)" }}
-              >
-                {formatCurrency(data.kurangBayar)}
-              </div>
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-1.5">
-                <div
-                  className="h-full rounded-full"
-                  style={{
-                    width: `${100 - data.persen}%`,
-                    backgroundColor: "var(--color-danger)",
-                  }}
-                />
-              </div>
-              <div className="flex justify-between text-[11px]">
-                <span
-                  className="font-semibold"
-                  style={{ color: "var(--color-danger)" }}
-                >
-                  {(100 - data.persen).toFixed(1)}%
-                </span>
-                <span className="text-[var(--color-muted)]">
-                  Sisa tunggakan
-                </span>
-              </div>
-            </div>
+            <StatCard
+              title="Sisa Piutang"
+              value={formatCurrency(data.kurangBayar)}
+              progressPercent={100 - data.persen}
+              progressColor="var(--color-danger)"
+              valueColor="var(--color-danger)"
+              sublabel={`${(100 - data.persen).toFixed(1)}%`}
+              sublabelRight="Sisa tunggakan"
+            />
 
-            <div className="glass-panel p-5">
-              <h4 className="text-[13px] font-bold uppercase text-[var(--color-muted)] tracking-wide mb-1">
-                SPPT Lunas
-              </h4>
-              <div className="flex items-baseline gap-1.5 mb-3">
-                <span
-                  className="text-[22px] font-extrabold"
-                  style={{ color: "var(--color-success)" }}
-                >
-                  {data.dibayar}
-                </span>
-                <span className="text-[12px] text-[var(--color-muted)] font-medium">
-                  Lembar
-                </span>
-              </div>
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-1.5">
-                <div
-                  className="h-full rounded-full"
-                  style={{
-                    width: `${data.totalSppt > 0 ? (data.dibayar / data.totalSppt) * 100 : 0}%`,
-                    backgroundColor: "var(--color-success)",
-                  }}
-                />
-              </div>
-              <div className="flex justify-between text-[11px]">
-                <span
-                  className="font-semibold"
-                  style={{ color: "var(--color-success)" }}
-                >
-                  {data.totalSppt > 0
-                    ? Math.round((data.dibayar / data.totalSppt) * 100)
-                    : 0}
-                  %
-                </span>
-                <span className="text-[var(--color-muted)]">
-                  Dari {data.totalSppt} SPPT
-                </span>
-              </div>
-            </div>
+            <StatCard
+              title="SPPT Lunas"
+              value={String(data.dibayar)}
+              valueUnit="Lembar"
+              progressPercent={
+                data.totalSppt > 0 ? (data.dibayar / data.totalSppt) * 100 : 0
+              }
+              progressColor="var(--color-success)"
+              valueColor="var(--color-success)"
+              sublabel={`${
+                data.totalSppt > 0
+                  ? Math.round((data.dibayar / data.totalSppt) * 100)
+                  : 0
+              }%`}
+              sublabelRight={`Dari ${data.totalSppt} SPPT`}
+            />
 
-            <div className="glass-panel p-5">
-              <h4 className="text-[13px] font-bold uppercase text-[var(--color-muted)] tracking-wide mb-1">
-                SPPT Tertunggak
-              </h4>
-              <div className="flex items-baseline gap-1.5 mb-3">
-                <span
-                  className="text-[22px] font-extrabold"
-                  style={{ color: "var(--color-danger)" }}
-                >
-                  {data.sisaSppt}
-                </span>
-                <span className="text-[12px] text-[var(--color-muted)] font-medium">
-                  Lembar
-                </span>
-              </div>
-              <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-1.5">
-                <div
-                  className="h-full rounded-full"
-                  style={{
-                    width: `${data.totalSppt > 0 ? (data.sisaSppt / data.totalSppt) * 100 : 0}%`,
-                    backgroundColor: "var(--color-danger)",
-                  }}
-                />
-              </div>
-              <div className="flex justify-between text-[11px]">
-                <span
-                  className="font-semibold"
-                  style={{ color: "var(--color-danger)" }}
-                >
-                  {data.totalSppt > 0
-                    ? Math.round((data.sisaSppt / data.totalSppt) * 100)
-                    : 0}
-                  %
-                </span>
-                <span className="text-[var(--color-muted)]">Belum dibayar</span>
-              </div>
-            </div>
+            <StatCard
+              title="SPPT Tertunggak"
+              value={String(data.sisaSppt)}
+              valueUnit="Lembar"
+              progressPercent={
+                data.totalSppt > 0 ? (data.sisaSppt / data.totalSppt) * 100 : 0
+              }
+              progressColor="var(--color-danger)"
+              valueColor="var(--color-danger)"
+              sublabel={`${
+                data.totalSppt > 0
+                  ? Math.round((data.sisaSppt / data.totalSppt) * 100)
+                  : 0
+              }%`}
+              sublabelRight="Belum dibayar"
+            />
           </div>
 
           <div className="glass-panel p-5 text-center text-sm text-muted-foreground">

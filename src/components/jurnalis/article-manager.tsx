@@ -2,24 +2,15 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
-import {
-  Trash2,
-  Pencil,
-  Plus,
-  X,
-  Save,
-  ArrowLeft,
-  ImageUp,
-  Trash as TrashIcon,
-} from "lucide-react";
+import { Plus, ArrowLeft } from "lucide-react";
 import type { ArticleFrontmatter } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
-import { CATEGORIES, MAX_IMAGE_SIZE } from "@/lib/constants";
-import { toKebab, resizeImage } from "@/lib/utils";
-import { MarkdownEditor } from "@/components/jurnalis/markdown-editor";
+import { toKebab } from "@/lib/utils";
+import { ArticleEditor } from "@/components/jurnalis/article-editor";
+import { ArticleList } from "@/components/jurnalis/article-list";
 
-interface ArticleForm {
+export interface ArticleForm {
   title: string;
   slug: string;
   category: string;
@@ -31,13 +22,13 @@ interface ArticleForm {
 const EMPTY_FORM: ArticleForm = {
   title: "",
   slug: "",
-  category: CATEGORIES[0],
+  category: "Kegiatan Desa",
   summary: "",
   content: "",
   image: "",
 };
 
-function ArticleManagerSkeleton() {
+export function ArticleManagerSkeleton() {
   return (
     <div className="cms-content-card">
       <div className="cms-section-header">
@@ -89,7 +80,6 @@ export function ArticleManager() {
   const [editingSlug, setEditingSlug] = useState<string | null>(null);
   const [form, setForm] = useState<ArticleForm>(EMPTY_FORM);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [saving, setSaving] = useState(false);
 
   const fetchArticles = useCallback(async (abortSignal?: AbortSignal) => {
@@ -118,7 +108,8 @@ export function ArticleManager() {
   async function refreshArticles() {
     try {
       setArticles(await fetchArticles());
-    } catch {
+    } catch (err) {
+      console.error("refreshArticles error:", err);
       toast.error("Gagal memuat daftar artikel");
     }
   }
@@ -137,36 +128,6 @@ export function ArticleManager() {
       title,
       slug: editingSlug ? prev.slug : slug,
     }));
-  }
-
-  async function handleImagePick(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (file.size > MAX_IMAGE_SIZE) {
-      toast.error("Ukuran gambar maksimal 5MB");
-      return;
-    }
-    if (!file.type.startsWith("image/")) {
-      toast.error("Hanya file gambar yang diperbolehkan");
-      return;
-    }
-
-    setUploading(true);
-    try {
-      const dataUri = await resizeImage(file);
-      setForm((p) => ({ ...p, image: dataUri }));
-      setImagePreview(dataUri);
-    } catch {
-      toast.error("Gagal memproses gambar");
-    } finally {
-      setUploading(false);
-    }
-  }
-
-  function handleRemoveImage() {
-    setForm((p) => ({ ...p, image: "" }));
-    setImagePreview(null);
   }
 
   async function handleCreate() {
@@ -192,7 +153,8 @@ export function ArticleManager() {
         const data = await res.json();
         toast.error(data.error || "Gagal membuat artikel");
       }
-    } catch {
+    } catch (err) {
+      console.error("handleCreate error:", err);
       toast.error("Gagal membuat artikel");
     } finally {
       setSaving(false);
@@ -219,7 +181,8 @@ export function ArticleManager() {
       } else {
         toast.error("Gagal memuat konten artikel");
       }
-    } catch {
+    } catch (err) {
+      console.error("handleEdit error:", err);
       toast.error("Gagal memuat konten artikel");
     }
   }
@@ -243,7 +206,8 @@ export function ArticleManager() {
         const data = await res.json();
         toast.error(data.error || "Gagal memperbarui artikel");
       }
-    } catch {
+    } catch (err) {
+      console.error("handleUpdate error:", err);
       toast.error("Gagal memperbarui artikel");
     } finally {
       setSaving(false);
@@ -265,20 +229,9 @@ export function ArticleManager() {
         const data = await res.json();
         toast.error(data.error || "Gagal menghapus artikel");
       }
-    } catch {
+    } catch (err) {
+      console.error("handleDelete error:", err);
       toast.error("Gagal menghapus artikel");
-    }
-  }
-
-  function formatDate(dateStr: string): string {
-    try {
-      return new Date(dateStr).toLocaleDateString("id-ID", {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-      } as Intl.DateTimeFormatOptions);
-    } catch {
-      return dateStr;
     }
   }
 
@@ -305,184 +258,25 @@ export function ArticleManager() {
       </div>
 
       {(isAdding || editingSlug) && (
-        <div className="article-form mb-6">
-          <div className="form-group">
-            <label>Judul Artikel</label>
-            <input
-              className="form-input"
-              value={form.title}
-              onChange={(e) =>
-                editingSlug
-                  ? setForm((p) => ({ ...p, title: e.target.value }))
-                  : handleTitleChange(e.target.value)
-              }
-              placeholder="Masukkan judul artikel"
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Kategori</label>
-            <select
-              className="form-select"
-              value={form.category}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, category: e.target.value }))
-              }
-            >
-              {CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="form-group">
-            <label>Ringkasan</label>
-            <textarea
-              className="form-textarea"
-              value={form.summary}
-              onChange={(e) =>
-                setForm((p) => ({ ...p, summary: e.target.value }))
-              }
-              placeholder="Ringkasan artikel (max 500 karakter)"
-              rows={3}
-              maxLength={500}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Konten</label>
-            <MarkdownEditor
-              value={form.content}
-              onChange={(v) => setForm((p) => ({ ...p, content: v }))}
-            />
-          </div>
-
-          <div className="form-group">
-            <label>Gambar Cover</label>
-            <div className="flex gap-3 items-start">
-              <label
-                className={`cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
-                  uploading
-                    ? "opacity-50 pointer-events-none border-muted bg-muted text-muted-foreground"
-                    : "border-input bg-background hover:bg-accent hover:text-accent-foreground"
-                }`}
-              >
-                <ImageUp size={16} />
-                {uploading ? "Memproses..." : "Pilih Gambar"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="sr-only"
-                  onChange={handleImagePick}
-                  disabled={uploading}
-                />
-              </label>
-              {imagePreview && (
-                <button
-                  type="button"
-                  onClick={handleRemoveImage}
-                  className="inline-flex items-center gap-1 px-3 py-2 text-sm text-red-600 hover:text-red-700 transition-colors"
-                >
-                  <TrashIcon size={14} />
-                  Hapus
-                </button>
-              )}
-            </div>
-            {imagePreview && (
-              <div className="mt-3 relative w-full max-w-[400px] rounded-lg overflow-hidden border">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={imagePreview}
-                  alt="Preview cover"
-                  className="w-full h-auto object-cover max-h-[240px]"
-                />
-              </div>
-            )}
-            {!imagePreview && (
-              <p className="text-[12px] text-muted-foreground mt-1.5">
-                Format: JPG, PNG, WebP. Maks 5MB. Akan diresize otomatis ke
-                1920px.
-              </p>
-            )}
-          </div>
-
-          <div className="cms-action-btn-row">
-            <Button variant="outline" size="sm" onClick={resetForm}>
-              <X size={16} />
-              Batal
-            </Button>
-            <Button
-              size="sm"
-              onClick={editingSlug ? handleUpdate : handleCreate}
-              disabled={saving}
-            >
-              <Save size={16} />
-              {saving ? "Menyimpan..." : editingSlug ? "Perbarui" : "Terbitkan"}
-            </Button>
-          </div>
-        </div>
+        <ArticleEditor
+          form={form}
+          imagePreview={imagePreview}
+          saving={saving}
+          editingSlug={editingSlug}
+          setForm={setForm}
+          setImagePreview={setImagePreview}
+          onTitleChange={handleTitleChange}
+          onSave={editingSlug ? handleUpdate : handleCreate}
+          onCancel={resetForm}
+        />
       )}
 
       {!isAdding && !editingSlug && (
-        <div className="table-container">
-          <table className="custom-table">
-            <thead>
-              <tr>
-                <th>Judul</th>
-                <th>Tanggal</th>
-                <th>Kategori</th>
-                <th>Aksi</th>
-              </tr>
-            </thead>
-            <tbody>
-              {articles.length === 0 ? (
-                <tr>
-                  <td
-                    colSpan={4}
-                    className="text-center p-10 text-muted-foreground"
-                  >
-                    Belum ada artikel. Klik &ldquo;Terbitkan Artikel&rdquo;
-                    untuk membuat yang baru.
-                  </td>
-                </tr>
-              ) : (
-                articles.map((article) => (
-                  <tr key={article.slug}>
-                    <td className="font-semibold">{article.title}</td>
-                    <td>{formatDate(article.date)}</td>
-                    <td>
-                      <span className="inline-block px-[10px] py-[4px] text-[11px] font-bold uppercase tracking-wider rounded-full bg-green-100 text-green-700">
-                        {article.category}
-                      </span>
-                    </td>
-                    <td>
-                      <div className="flex gap-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleEdit(article)}
-                          title="Edit"
-                        >
-                          <Pencil size={14} />
-                        </Button>
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleDelete(article.slug)}
-                          title="Hapus"
-                        >
-                          <Trash2 size={14} />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+        <ArticleList
+          articles={articles}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
       )}
     </div>
   );

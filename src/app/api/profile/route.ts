@@ -1,50 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { requireRole } from "@/lib/auth-helpers";
+import { requireRole } from "@/lib/auth/guards";
 import { safeJsonParse } from "@/lib/utils";
 import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
+import { getVillageProfile } from "@/lib/desa-queries";
 
 export async function GET(req: NextRequest) {
   if (!(await checkApiRateLimit(req))) return rateLimitResponse();
 
   try {
-    const profile = await prisma.villageProfile.findFirst();
-    if (!profile) {
-      return NextResponse.json(
-        { error: "Profil desa tidak ditemukan" },
-        { status: 404 },
-      );
-    }
+    const profile = await getVillageProfile();
 
-    const misi = safeJsonParse<string[]>(profile.misi, []);
-    const strukturOrganisasi = safeJsonParse<{ role: string; name: string }[]>(
-      profile.strukturOrganisasi,
-      [],
-    );
-    const tugasFungsi = safeJsonParse<{ jabatan: string; tugas: string }[]>(
-      profile.tugasFungsi,
-      [],
-    );
-    const administratif = safeJsonParse<Record<string, string>>(
-      profile.administratif,
-      {},
-    );
-
-    return NextResponse.json(
-      {
-        visi: profile.visi,
-        misi,
-        strukturOrganisasi,
-        tugasFungsi,
-        administratif,
+    return NextResponse.json(profile, {
+      headers: {
+        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
       },
-      {
-        headers: {
-          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
-        },
-      },
-    );
+    });
   } catch (err) {
     console.error("Profile fetch error:", err);
     return NextResponse.json(
@@ -65,6 +37,78 @@ export async function PUT(req: NextRequest) {
 
   if (!visi) {
     return NextResponse.json({ error: "Visi harus diisi" }, { status: 400 });
+  }
+
+  if (
+    misi !== undefined &&
+    (!Array.isArray(misi) || !misi.every((s: unknown) => typeof s === "string"))
+  ) {
+    return NextResponse.json(
+      { error: "Misi harus berupa array of string" },
+      { status: 400 },
+    );
+  }
+  if (
+    strukturOrganisasi !== undefined &&
+    (!Array.isArray(strukturOrganisasi) ||
+      !strukturOrganisasi.every(
+        (s: unknown) =>
+          typeof s === "object" &&
+          s !== null &&
+          typeof (s as Record<string, unknown>).role === "string" &&
+          typeof (s as Record<string, unknown>).name === "string",
+      ))
+  ) {
+    return NextResponse.json(
+      { error: "Struktur organisasi harus berupa array of { role, name }" },
+      { status: 400 },
+    );
+  }
+  if (
+    tugasFungsi !== undefined &&
+    (!Array.isArray(tugasFungsi) ||
+      !tugasFungsi.every(
+        (s: unknown) =>
+          typeof s === "object" &&
+          s !== null &&
+          typeof (s as Record<string, unknown>).jabatan === "string" &&
+          typeof (s as Record<string, unknown>).tugas === "string",
+      ))
+  ) {
+    return NextResponse.json(
+      { error: "Tugas fungsi harus berupa array of { jabatan, tugas }" },
+      { status: 400 },
+    );
+  }
+  if (
+    administratif !== undefined &&
+    (typeof administratif !== "object" ||
+      administratif === null ||
+      Array.isArray(administratif) ||
+      !(
+        [
+          "koordinat",
+          "batasUtara",
+          "batasSelatan",
+          "batasTimur",
+          "batasBarat",
+          "luasWilayah",
+          "mataPencaharianUtama",
+          "saranaPendidikan",
+          "saranaKesehatan",
+        ] as const
+      ).every(
+        (k) =>
+          typeof (administratif as Record<string, unknown>)[k] === "string",
+      ))
+  ) {
+    return NextResponse.json(
+      {
+        error:
+          "Administratif harus berupa objek dengan semua field bertipe string",
+      },
+      { status: 400 },
+    );
   }
 
   try {

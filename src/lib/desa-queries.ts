@@ -11,11 +11,7 @@ export interface VillageStatsData {
   perempuan: number;
 }
 
-export async function getVillageStats(): Promise<VillageStatsData> {
-  "use cache: remote";
-  cacheTag("village-stats");
-  cacheLife("hours");
-
+async function fetchVillageStats(): Promise<VillageStatsData> {
   const data = await prisma.villageStats.findFirst({ orderBy: { id: "asc" } });
   if (!data) {
     console.warn(
@@ -31,11 +27,21 @@ export async function getVillageStats(): Promise<VillageStatsData> {
   };
 }
 
-export async function getVillageProfile(): Promise<VillageProfile> {
-  "use cache: remote";
-  cacheTag("village-profile");
-  cacheLife("hours");
+export async function getVillageStats(): Promise<VillageStatsData> {
+  if (process.env.NODE_ENV === "production") {
+    return getVillageStatsCached();
+  }
+  return fetchVillageStats();
+}
 
+async function getVillageStatsCached(): Promise<VillageStatsData> {
+  "use cache: remote";
+  cacheTag("village-stats");
+  cacheLife("hours");
+  return fetchVillageStats();
+}
+
+async function fetchVillageProfile(): Promise<VillageProfile> {
   const dbProfile = await prisma.villageProfile.findFirst({
     orderBy: { id: "asc" },
   });
@@ -67,4 +73,18 @@ export async function getVillageProfile(): Promise<VillageProfile> {
       VILLAGE_PROFILE_DATA.administratif,
     ),
   };
+}
+
+export async function getVillageProfile(): Promise<VillageProfile> {
+  if (process.env.NODE_ENV === "production") {
+    return getVillageProfileCached();
+  }
+  return fetchVillageProfile();
+}
+
+async function getVillageProfileCached(): Promise<VillageProfile> {
+  "use cache: remote";
+  cacheTag("village-profile");
+  cacheLife("hours");
+  return fetchVillageProfile();
 }

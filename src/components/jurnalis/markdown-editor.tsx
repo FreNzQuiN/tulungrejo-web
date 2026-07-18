@@ -20,6 +20,43 @@ import {
 } from "lucide-react";
 import { wrapWith, insertLinePrefix } from "@/lib/markdown-utils";
 
+type MarkdownAction = (
+  text: string,
+  start: number,
+  end: number,
+) => { newText: string; cursorPos: number };
+
+const boldAction: MarkdownAction = (t, s, e) => wrapWith(t, s, e, "**", "**");
+const italicAction: MarkdownAction = (t, s, e) => wrapWith(t, s, e, "*", "*");
+const codeAction: MarkdownAction = (t, s, e) => wrapWith(t, s, e, "`", "`");
+const linkAction: MarkdownAction = (t, s, e) => {
+  const sel = t.slice(s, e);
+  if (s === e)
+    return {
+      newText: t.slice(0, s) + "[](url)" + t.slice(e),
+      cursorPos: s + 1,
+    };
+  return {
+    newText: t.slice(0, s) + `[${sel}](url)` + t.slice(e),
+    cursorPos: s + sel.length + 3,
+  };
+};
+const h1Action: MarkdownAction = (t, s, e) => insertLinePrefix(t, s, e, "# ");
+const h2Action: MarkdownAction = (t, s, e) => insertLinePrefix(t, s, e, "## ");
+const h3Action: MarkdownAction = (t, s, e) => insertLinePrefix(t, s, e, "### ");
+const h4Action: MarkdownAction = (t, s, e) =>
+  insertLinePrefix(t, s, e, "#### ");
+const h5Action: MarkdownAction = (t, s, e) =>
+  insertLinePrefix(t, s, e, "##### ");
+const h6Action: MarkdownAction = (t, s, e) =>
+  insertLinePrefix(t, s, e, "###### ");
+const bulletListAction: MarkdownAction = (t, s, e) =>
+  insertLinePrefix(t, s, e, "- ");
+const numberedListAction: MarkdownAction = (t, s, e) =>
+  insertLinePrefix(t, s, e, "1. ");
+const blockquoteAction: MarkdownAction = (t, s, e) =>
+  insertLinePrefix(t, s, e, "> ");
+
 interface MarkdownEditorProps {
   value: string;
   onChange: (value: string) => void;
@@ -58,27 +95,16 @@ export function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
       const ctrl = e.ctrlKey || e.metaKey;
       if (ctrl && e.key === "b") {
         e.preventDefault();
-        applyStyle((t, s, e) => wrapWith(t, s, e, "**", "**"));
+        applyStyle(boldAction);
       } else if (ctrl && e.key === "i") {
         e.preventDefault();
-        applyStyle((t, s, e) => wrapWith(t, s, e, "*", "*"));
+        applyStyle(italicAction);
       } else if (ctrl && e.key === "k") {
         e.preventDefault();
-        applyStyle((t, s, e) => {
-          const sel = t.slice(s, e);
-          if (s === e)
-            return {
-              newText: t.slice(0, s) + "[](url)" + t.slice(e),
-              cursorPos: s + 1,
-            };
-          return {
-            newText: t.slice(0, s) + `[${sel}](url)` + t.slice(e),
-            cursorPos: s + sel.length + 3,
-          };
-        });
+        applyStyle(linkAction);
       } else if (ctrl && e.shiftKey && e.key === "`") {
         e.preventDefault();
-        applyStyle((t, s, e) => wrapWith(t, s, e, "`", "`"));
+        applyStyle(codeAction);
       }
     },
     [applyStyle],
@@ -110,110 +136,73 @@ export function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
               icon={<Bold size={14} />}
               label="Bold"
               shortcut="Ctrl+B"
-              onClick={() =>
-                applyStyle((t, s, e) => wrapWith(t, s, e, "**", "**"))
-              }
+              onClick={() => applyStyle(boldAction)}
             />
             <ToolbarButton
               icon={<Italic size={14} />}
               label="Italic"
               shortcut="Ctrl+I"
-              onClick={() =>
-                applyStyle((t, s, e) => wrapWith(t, s, e, "*", "*"))
-              }
+              onClick={() => applyStyle(italicAction)}
             />
             <div className="md-editor-divider" />
             <ToolbarButton
               icon={<Heading1 size={14} />}
               label="Heading 1"
-              onClick={() =>
-                applyStyle((t, s, e) => insertLinePrefix(t, s, e, "# "))
-              }
+              onClick={() => applyStyle(h1Action)}
             />
             <ToolbarButton
               icon={<Heading2 size={14} />}
               label="Heading 2"
-              onClick={() =>
-                applyStyle((t, s, e) => insertLinePrefix(t, s, e, "## "))
-              }
+              onClick={() => applyStyle(h2Action)}
             />
             <ToolbarButton
               icon={<Heading3 size={14} />}
               label="Heading 3"
-              onClick={() =>
-                applyStyle((t, s, e) => insertLinePrefix(t, s, e, "### "))
-              }
+              onClick={() => applyStyle(h3Action)}
             />
             <ToolbarButton
               icon={<Heading4 size={14} />}
               label="Heading 4"
-              onClick={() =>
-                applyStyle((t, s, e) => insertLinePrefix(t, s, e, "#### "))
-              }
+              onClick={() => applyStyle(h4Action)}
             />
             <ToolbarButton
               icon={<Heading5 size={14} />}
               label="Heading 5"
-              onClick={() =>
-                applyStyle((t, s, e) => insertLinePrefix(t, s, e, "##### "))
-              }
+              onClick={() => applyStyle(h5Action)}
             />
             <ToolbarButton
               icon={<Heading6 size={14} />}
               label="Heading 6"
-              onClick={() =>
-                applyStyle((t, s, e) => insertLinePrefix(t, s, e, "###### "))
-              }
+              onClick={() => applyStyle(h6Action)}
             />
             <div className="md-editor-divider" />
             <ToolbarButton
               icon={<List size={14} />}
               label="Bullet list"
-              onClick={() =>
-                applyStyle((t, s, e) => insertLinePrefix(t, s, e, "- "))
-              }
+              onClick={() => applyStyle(bulletListAction)}
             />
             <ToolbarButton
               icon={<ListOrdered size={14} />}
               label="Numbered list"
-              onClick={() =>
-                applyStyle((t, s, e) => insertLinePrefix(t, s, e, "1. "))
-              }
+              onClick={() => applyStyle(numberedListAction)}
             />
             <ToolbarButton
               icon={<Quote size={14} />}
               label="Blockquote"
-              onClick={() =>
-                applyStyle((t, s, e) => insertLinePrefix(t, s, e, "> "))
-              }
+              onClick={() => applyStyle(blockquoteAction)}
             />
             <div className="md-editor-divider" />
             <ToolbarButton
               icon={<Link size={14} />}
               label="Link"
               shortcut="Ctrl+K"
-              onClick={() =>
-                applyStyle((t, s, e) => {
-                  const sel = t.slice(s, e);
-                  if (s === e)
-                    return {
-                      newText: t.slice(0, s) + "[](url)" + t.slice(e),
-                      cursorPos: s + 1,
-                    };
-                  return {
-                    newText: t.slice(0, s) + `[${sel}](url)` + t.slice(e),
-                    cursorPos: s + sel.length + 3,
-                  };
-                })
-              }
+              onClick={() => applyStyle(linkAction)}
             />
             <ToolbarButton
               icon={<Code size={14} />}
               label="Code"
               shortcut="Ctrl+Shift+`"
-              onClick={() =>
-                applyStyle((t, s, e) => wrapWith(t, s, e, "`", "`"))
-              }
+              onClick={() => applyStyle(codeAction)}
             />
           </div>
 

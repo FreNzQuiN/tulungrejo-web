@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Save, X, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCmsEditor } from "@/hooks/use-cms-editor";
 
 interface StatsData {
   jumlahKK: number;
@@ -37,42 +37,14 @@ function StatsEditorSkeleton() {
 }
 
 export function StatsEditor() {
-  const [data, setData] = useState<StatsData>({
-    jumlahKK: 0,
-    jumlahPenduduk: 0,
-    lakiLaki: 0,
-    perempuan: 0,
-  });
-  const [original, setOriginal] = useState<StatsData | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/stats")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load");
-        return res.json();
-      })
-      .then((data: StatsData) => {
-        setData(data);
-        setOriginal(data);
-      })
-      .catch(() => toast.error("Gagal memuat statistik"))
-      .finally(() => setLoading(false));
-  }, []);
-
-  function hasChanges(): boolean {
-    if (!original) return false;
-    return (
-      data.jumlahKK !== original.jumlahKK ||
-      data.jumlahPenduduk !== original.jumlahPenduduk ||
-      data.lakiLaki !== original.lakiLaki ||
-      data.perempuan !== original.perempuan
-    );
-  }
+  const editor = useCmsEditor(
+    "/api/stats",
+    { jumlahKK: 0, jumlahPenduduk: 0, lakiLaki: 0, perempuan: 0 },
+    "Gagal memuat statistik",
+  );
 
   const populationMismatch =
-    data.lakiLaki + data.perempuan !== data.jumlahPenduduk;
+    editor.data.lakiLaki + editor.data.perempuan !== editor.data.jumlahPenduduk;
 
   async function handleSave() {
     if (populationMismatch) {
@@ -82,35 +54,14 @@ export function StatsEditor() {
       );
     }
 
-    setSaving(true);
-    try {
-      const res = await fetch("/api/stats", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      });
-
-      if (res.ok) {
-        const updated = await res.json();
-        setData(updated);
-        setOriginal(updated);
-        toast.success("Statistik berhasil diperbarui");
-      } else {
-        const err = await res.json();
-        toast.error(err.error || "Gagal memperbarui statistik");
-      }
-    } catch {
-      toast.error("Gagal memperbarui statistik");
-    } finally {
-      setSaving(false);
-    }
+    await editor.save(
+      editor.data,
+      "Statistik berhasil diperbarui",
+      "Gagal memperbarui statistik",
+    );
   }
 
-  function handleCancel() {
-    if (original) setData(original);
-  }
-
-  if (loading) {
+  if (editor.loading) {
     return <StatsEditorSkeleton />;
   }
 
@@ -145,9 +96,12 @@ export function StatsEditor() {
             className="form-input"
             type="number"
             min={0}
-            value={data.jumlahKK}
+            value={editor.data.jumlahKK}
             onChange={(e) =>
-              setData((p) => ({ ...p, jumlahKK: Number(e.target.value) }))
+              editor.setData((p) => ({
+                ...p,
+                jumlahKK: Number(e.target.value),
+              }))
             }
           />
         </div>
@@ -157,9 +111,12 @@ export function StatsEditor() {
             className="form-input"
             type="number"
             min={0}
-            value={data.jumlahPenduduk}
+            value={editor.data.jumlahPenduduk}
             onChange={(e) =>
-              setData((p) => ({ ...p, jumlahPenduduk: Number(e.target.value) }))
+              editor.setData((p) => ({
+                ...p,
+                jumlahPenduduk: Number(e.target.value),
+              }))
             }
           />
         </div>
@@ -169,9 +126,12 @@ export function StatsEditor() {
             className="form-input"
             type="number"
             min={0}
-            value={data.lakiLaki}
+            value={editor.data.lakiLaki}
             onChange={(e) =>
-              setData((p) => ({ ...p, lakiLaki: Number(e.target.value) }))
+              editor.setData((p) => ({
+                ...p,
+                lakiLaki: Number(e.target.value),
+              }))
             }
           />
         </div>
@@ -181,9 +141,12 @@ export function StatsEditor() {
             className="form-input"
             type="number"
             min={0}
-            value={data.perempuan}
+            value={editor.data.perempuan}
             onChange={(e) =>
-              setData((p) => ({ ...p, perempuan: Number(e.target.value) }))
+              editor.setData((p) => ({
+                ...p,
+                perempuan: Number(e.target.value),
+              }))
             }
           />
         </div>
@@ -193,8 +156,8 @@ export function StatsEditor() {
         <Button
           variant="outline"
           size="sm"
-          onClick={handleCancel}
-          disabled={!hasChanges()}
+          onClick={() => editor.cancel()}
+          disabled={!editor.hasChanges}
         >
           <X size={16} />
           Batal
@@ -202,10 +165,10 @@ export function StatsEditor() {
         <Button
           size="sm"
           onClick={handleSave}
-          disabled={saving || !hasChanges()}
+          disabled={editor.saving || !editor.hasChanges}
         >
           <Save size={16} />
-          {saving ? "Menyimpan..." : "Simpan"}
+          {editor.saving ? "Menyimpan..." : "Simpan"}
         </Button>
       </div>
     </div>

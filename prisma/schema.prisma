@@ -23,9 +23,11 @@ model User {
   passwordHash String   @map("password_hash")
   name         String
   role         Role     @default(pamong_pajak)
-  assignedBlok String?  @map("assigned_blok")
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
+  assignedBlok   String?   @map("assigned_blok")
+  createdAt      DateTime  @default(now()) @map("created_at")
+  updatedAt      DateTime  @updatedAt @map("updated_at")
+  markedPayments Payments[]
+  articles       Article[]
 
   @@map("users")
 }
@@ -34,6 +36,11 @@ enum Role {
   kepala_desa
   pamong_pajak
   jurnalis
+}
+
+enum PaymentStatus {
+  lunas
+  belum_lunas
 }
 
 model VillageStats {
@@ -79,6 +86,7 @@ model Fields {
   pendataanAt   DateTime? @map("pendataan_at")
   createdAt     DateTime  @default(now()) @map("created_at")
   updatedAt     DateTime  @updatedAt @map("updated_at")
+  payments      Payments[]
 
   @@unique([blok, noBidang])
   @@map("fields")
@@ -87,15 +95,18 @@ model Fields {
 model Payments {
   id        String   @id @default(uuid())
   fieldId   String   @map("field_id")
+  field     Fields   @relation(fields: [fieldId], references: [id], onDelete: Cascade)
   year      Int
-  status    String   @default("belum_lunas")
+  status    PaymentStatus @default(belum_lunas)
   markedBy  Int?     @map("marked_by")
+  marker    User?    @relation(fields: [markedBy], references: [id], onDelete: SetNull)
   markedAt  DateTime? @map("marked_at")
   notes     String?
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@unique([fieldId, year])
+  @@index([year, status])
   @@map("payments")
 }
 
@@ -115,6 +126,7 @@ model Realisasi {
   tanggalAmbil DateTime @map("tanggal_ambil")
   importedAt   DateTime @default(now()) @map("imported_at")
 
+  @@index([importedAt])
   @@map("realisasi")
 }
 
@@ -135,6 +147,8 @@ model Article {
   slug      String   @unique
   date      DateTime
   author    String
+  authorId  Int?    @map("author_id")
+  createdBy User?   @relation(fields: [authorId], references: [id], onDelete: SetNull)
   category  String
   summary   String
   image     String? @db.MediumText

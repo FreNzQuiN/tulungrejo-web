@@ -31,31 +31,64 @@ export const CATEGORIES = [
   "Pengumuman",
 ] as const;
 
-export const VILLAGE_COLORS = {
-  hero: "emerald-800",
-  heroTo: "emerald-950",
-  accent: "amber-500",
-} as const;
-
-export const PBB_MONTHS = [
-  "Januari",
-  "Februari",
-  "Maret",
-  "April",
-  "Mei",
-  "Juni",
-  "Juli",
-  "Agustus",
-  "September",
-  "Oktober",
-  "November",
-  "Desember",
-] as const;
-
-export const DUSUN_LIST = ["Tulungrejo", "Sidodadi", "TumpakGatho"] as const;
-
 /** Max length of base64 image string (~5MB encoded, ~3.75MB raw) */
 export const MAX_IMAGE_SIZE = 5_242_880;
+
+const VALID_IMAGE_PREFIXES = [
+  "data:image/webp;base64,",
+  "data:image/jpeg;base64,",
+  "data:image/png;base64,",
+] as const;
+
+/** Validates base64 article image: size, prefix format, and decoded magic bytes. Returns error message or null. */
+export function validateArticleImage(image: string): string | null {
+  if (image.length > MAX_IMAGE_SIZE) {
+    return "Ukuran gambar terlalu besar (maks 5MB)";
+  }
+
+  const prefix = VALID_IMAGE_PREFIXES.find((p) => image.startsWith(p));
+  if (!prefix) {
+    return "Format gambar tidak didukung. Gunakan webp, jpeg, atau png.";
+  }
+
+  // Decode first 20 base64 chars (= 15 bytes) to check magic bytes
+  const base64Data = image.slice(prefix.length);
+  const raw = Buffer.from(base64Data.slice(0, 20), "base64");
+
+  const type = prefix.replace("data:image/", "").replace(";base64,", "");
+  let valid: boolean;
+
+  switch (type) {
+    case "png":
+      valid =
+        raw.length >= 4 &&
+        raw[0] === 0x89 &&
+        raw[1] === 0x50 &&
+        raw[2] === 0x4e &&
+        raw[3] === 0x47;
+      break;
+    case "jpeg":
+      valid = raw.length >= 2 && raw[0] === 0xff && raw[1] === 0xd8;
+      break;
+    case "webp":
+      valid =
+        raw.length >= 12 &&
+        raw[0] === 0x52 &&
+        raw[1] === 0x49 &&
+        raw[2] === 0x46 &&
+        raw[3] === 0x46 && // RIFF
+        raw[8] === 0x57 &&
+        raw[9] === 0x45 &&
+        raw[10] === 0x42 &&
+        raw[11] === 0x50; // WEBP
+      break;
+    default:
+      valid = false;
+  }
+
+  if (!valid) return "Gambar tidak valid";
+  return null;
+}
 
 export const BLOK_TO_DUSUN: Record<string, string> = {
   "001": "Tulungrejo",

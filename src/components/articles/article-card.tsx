@@ -14,7 +14,7 @@ export function ArticleCard({ article }: { article: ArticleFrontmatter }) {
           className="article-img"
           fill
           unoptimized
-          loading="eager"
+
           sizes="(max-width: 768px) 100vw, (max-width: 992px) 50vw, 33vw"
         />
         <span className="article-category">{article.category}</span>

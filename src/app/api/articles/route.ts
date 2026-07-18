@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
-import { requireRole } from "@/lib/auth-helpers";
+import { requireRole } from "@/lib/auth/guards";
 import {
   getAllArticlesForJournalist,
   createArticle,
   checkSlugExists,
 } from "@/lib/article-queries";
-import { CATEGORIES, MAX_IMAGE_SIZE } from "@/lib/constants";
+import { CATEGORIES, validateArticleImage } from "@/lib/constants";
 import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
 
 export async function GET(req: NextRequest) {
@@ -15,7 +15,12 @@ export async function GET(req: NextRequest) {
   const auth = await requireRole(["jurnalis"]);
   if ("error" in auth) return auth.error;
 
-  const articles = await getAllArticlesForJournalist();
+  const take = Math.min(
+    Number(req.nextUrl.searchParams.get("take")) || 100,
+    500,
+  );
+  const skip = Number(req.nextUrl.searchParams.get("skip")) || 0;
+  const articles = await getAllArticlesForJournalist(take, skip);
   return NextResponse.json(articles);
 }
 
@@ -62,46 +67,34 @@ export async function POST(req: NextRequest) {
       { status: 400 },
     );
   }
-  if (!content) {
+  if (!content || typeof content !== "string") {
     return NextResponse.json({ error: "Konten harus diisi" }, { status: 400 });
   }
   if (image && typeof image === "string") {
-    if (image.length > MAX_IMAGE_SIZE) {
-      return NextResponse.json(
-        { error: "Ukuran gambar terlalu besar (maks 5MB)" },
-        { status: 400 },
-      );
-    }
-    const VALID_PREFIXES = [
-      "data:image/webp;base64,",
-      "data:image/jpeg;base64,",
-      "data:image/png;base64,",
-    ];
-    if (!VALID_PREFIXES.some((p) => image.startsWith(p))) {
-      return NextResponse.json(
-        {
-          error: "Format gambar tidak didukung. Gunakan webp, jpeg, atau png.",
-        },
-        { status: 400 },
-      );
+    const imgErr = validateArticleImage(image);
+    if (imgErr) {
+      return NextResponse.json({ error: imgErr }, { status: 400 });
     }
   }
 
   try {
     const author = auth.session.user?.name ?? "Jurnalis";
     const today = new Date().toISOString().substring(0, 10);
-    const articleSlug = await createArticle({
-      title,
-      slug,
-      date: today,
-      author,
-      category,
-      summary,
-      content,
-      image: image || "",
-      tags: tags || [],
-      published: published ?? true,
-    });
+    const articleSlug = await createArticle(
+      {
+        title,
+        slug,
+        date: today,
+        author,
+        category,
+        summary,
+        content,
+        image: image || "",
+        tags: tags || [],
+        published: published ?? true,
+      },
+      Number(auth.session.user.id),
+    );
     revalidateTag("articles", "max");
     return NextResponse.json({ slug: articleSlug }, { status: 201 });
   } catch (err) {

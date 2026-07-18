@@ -1,12 +1,30 @@
 "use client";
 
 import { useState } from "react";
+import dynamic from "next/dynamic";
 import { useAuth } from "@/components/providers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CMSLayout } from "@/components/jurnalis/cms-layout";
-import { ArticleManager } from "@/components/jurnalis/article-manager";
-import { StatsEditor } from "@/components/jurnalis/stats-editor";
-import { ProfileEditor } from "@/components/jurnalis/profile-editor";
+import { ArticleManagerSkeleton } from "@/components/jurnalis/article-manager";
+
+const ArticleManager = dynamic(
+  () =>
+    import("@/components/jurnalis/article-manager").then(
+      (m) => m.ArticleManager,
+    ),
+  { loading: () => <ArticleManagerSkeleton /> },
+);
+
+const StatsEditor = dynamic(
+  () => import("@/components/jurnalis/stats-editor").then((m) => m.StatsEditor),
+  { loading: () => <Skeleton className="h-64 w-full rounded-lg" /> },
+);
+
+const ProfileEditor = dynamic(
+  () =>
+    import("@/components/jurnalis/profile-editor").then((m) => m.ProfileEditor),
+  { loading: () => <Skeleton className="h-64 w-full rounded-lg" /> },
+);
 
 function JurnalisSkeleton() {
   return (

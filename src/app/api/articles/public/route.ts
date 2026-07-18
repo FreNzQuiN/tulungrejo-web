@@ -6,7 +6,15 @@ export async function GET(req: NextRequest) {
   if (!(await checkApiRateLimit(req, "api:public"))) return rateLimitResponse();
 
   try {
-    const articles = await getAllPublishedArticles();
+    const { searchParams } = req.nextUrl;
+    const limitParam = searchParams.get("limit");
+    const offsetParam = searchParams.get("offset");
+    const take = limitParam
+      ? Math.max(1, Math.min(100, parseInt(limitParam, 10)))
+      : 10;
+    const skip = offsetParam ? Math.max(0, parseInt(offsetParam, 10)) : 0;
+
+    const articles = await getAllPublishedArticles(take, skip);
 
     return NextResponse.json(articles, {
       headers: {

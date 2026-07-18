@@ -6,7 +6,7 @@ const isDev = process.env.NODE_ENV !== "production";
 function csp(frameAncestors: string): string {
   return [
     "default-src 'self'",
-    "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://unpkg.com https://cdnjs.cloudflare.com https://identity.netlify.com https://app.netlify.com",
+    "script-src 'self' 'unsafe-inline' https://unpkg.com https://cdnjs.cloudflare.com https://identity.netlify.com https://app.netlify.com",
     "style-src 'self' 'unsafe-inline' https://unpkg.com https://fonts.googleapis.com https://app.netlify.com",
     "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://images.unsplash.com https://unpkg.com https://app.netlify.com",
     "font-src 'self' https://fonts.gstatic.com",
@@ -63,7 +63,7 @@ const nextConfig: NextConfig = {
   },
   allowedDevOrigins: isDev ? getDevOrigins() : [],
   images: {
-    remotePatterns: [{ protocol: "https", hostname: "**" }],
+    remotePatterns: [{ protocol: "https", hostname: "images.unsplash.com" }],
     dangerouslyAllowLocalIP: isDev,
   },
   async headers() {

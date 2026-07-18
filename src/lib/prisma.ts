@@ -38,7 +38,7 @@ function createPrismaClient() {
     connectTimeout: 10_000,
     acquireTimeout: 15_000,
     socketTimeout: 5_000,
-    connectionLimit: 5,
+    connectionLimit: Number(process.env.DB_POOL_SIZE) || 10,
   });
 
   return new PrismaClient({

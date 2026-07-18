@@ -69,7 +69,7 @@ Defined in `src/lib/constants.ts` (`CATEGORIES`).
 - `@/*` → `./src/*`
 - Passwords: bcryptjs.
 - Security headers, CSP, cookies: see `next.config.ts`.
-- ⚠ Next.js deprecated the "middleware" naming convention. This project uses `src/proxy.ts`.
+- ⚠ Next.js deprecated the "middleware" naming convention. This project uses `src/proxy.ts` as Next.js 16 new standard. Do not flag it as broken or issue (already working).
 
 ---
 

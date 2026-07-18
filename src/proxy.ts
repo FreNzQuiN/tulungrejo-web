@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getSessionFromRequest } from "@/lib/auth-custom";
+import { getSessionFromRequest } from "@/lib/auth/session";
 
 const PUBLIC_API_PATHS = [
   "/api/auth/login",

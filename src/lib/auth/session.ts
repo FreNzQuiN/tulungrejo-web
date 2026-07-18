@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
-import type { UserRole } from "./types";
+import { prisma } from "@/lib/prisma";
+import type { SessionUser, Session } from "@/lib/auth/types";
 
 const SECRET_RAW = process.env.JWT_SECRET ?? process.env.AUTH_SECRET;
 if (!SECRET_RAW) throw new Error("JWT_SECRET or AUTH_SECRET must be set");
@@ -16,17 +17,6 @@ const COOKIE_OPTIONS = {
   maxAge: 60 * 60 * 24 * 30,
 };
 
-export interface SessionUser {
-  id: string;
-  email: string;
-  name: string;
-  role: UserRole;
-}
-
-export interface Session {
-  user: SessionUser;
-}
-
 export async function signToken(payload: SessionUser): Promise<string> {
   return new SignJWT({ ...payload })
     .setProtectedHeader({ alg: "HS256" })
@@ -39,7 +29,7 @@ export async function signToken(payload: SessionUser): Promise<string> {
 export async function verifyToken(token: string): Promise<SessionUser | null> {
   try {
     const { payload } = await jwtVerify(token, SECRET);
-    const role = payload.role as UserRole;
+    const role = payload.role as SessionUser["role"];
     if (!role || !["kepala_desa", "pamong_pajak", "jurnalis"].includes(role))
       return null;
     return {
@@ -48,12 +38,13 @@ export async function verifyToken(token: string): Promise<SessionUser | null> {
       name: payload.name as string,
       role,
     };
-  } catch {
+  } catch (err) {
+    console.error("verifyToken error:", err);
     return null;
   }
 }
 
-export async function setSessionCookie(user: SessionUser): Promise<void> {
+async function setSessionCookie(user: SessionUser): Promise<void> {
   const token = await signToken(user);
   const cookieStore = await cookies();
   cookieStore.set(COOKIE_NAME, token, COOKIE_OPTIONS);
@@ -81,6 +72,13 @@ export async function getSessionFromRequest(
   if (!token) return null;
   const user = await verifyToken(token);
   if (!user) return null;
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: Number(user.id) },
+    select: { role: true },
+  });
+  if (!dbUser || dbUser.role !== user.role) return null;
+
   return { user };
 }
 
@@ -95,3 +93,5 @@ function parseCookie(cookie: string, name: string): string | null {
   }
   return null;
 }
+
+export { setSessionCookie };

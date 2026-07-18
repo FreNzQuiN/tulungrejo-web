@@ -45,111 +45,20 @@ async function main() {
     },
   });
 
+  const jurnalisUser = await prisma.user.findUniqueOrThrow({
+    where: { email: "jurnalis@tulungrejo.desa.id" },
+  });
+
   console.log("  ✓ Users seeded");
-
-  const fieldsData = [
-    {
-      blok: "001",
-      noBidang: "0001",
-      ownerName: "Budi Santoso",
-      dusun: "Tulungrejo",
-      landArea: 1200,
-    },
-    {
-      blok: "001",
-      noBidang: "0005",
-      ownerName: "Siti Rahma",
-      dusun: "Tulungrejo",
-      landArea: 850,
-    },
-    {
-      blok: "003",
-      noBidang: "0010",
-      ownerName: "Joko Widodo",
-      dusun: "Tulungrejo",
-      landArea: 2100,
-    },
-    {
-      blok: "005",
-      noBidang: "0020",
-      ownerName: "Dewa Made",
-      dusun: "Tulungrejo",
-      landArea: 600,
-    },
-    {
-      blok: "006",
-      noBidang: "0003",
-      ownerName: "Ahmad Fauzi",
-      dusun: "Sidodadi",
-      landArea: 1500,
-    },
-    {
-      blok: "008",
-      noBidang: "0015",
-      ownerName: "Lestari Ningsih",
-      dusun: "Sidodadi",
-      landArea: 950,
-    },
-    {
-      blok: "010",
-      noBidang: "0025",
-      ownerName: "Hendra Wijaya",
-      dusun: "Sidodadi",
-      landArea: 1800,
-    },
-    {
-      blok: "012",
-      noBidang: "0190",
-      ownerName: "Rina Astuti",
-      dusun: "Sidodadi",
-      landArea: 720,
-    },
-    {
-      blok: "013",
-      noBidang: "0007",
-      ownerName: "Slamet Riyadi",
-      dusun: "TumpakGatho",
-      landArea: 2500,
-    },
-    {
-      blok: "013",
-      noBidang: "0050",
-      ownerName: "Kartika Sari",
-      dusun: "TumpakGatho",
-      landArea: 1100,
-    },
-  ] as const;
-
-  for (const f of fieldsData) {
-    const nop = `35.05.050.005.${f.blok}.${f.noBidang}`;
-    const noUrut = `${f.blok}${f.noBidang}`;
-    await prisma.fields.upsert({
-      where: { nop },
-      update: {},
-      create: {
-        nop,
-        noUrut,
-        ownerName: f.ownerName,
-        address: `Dusun ${f.dusun}, Desa Tulungrejo`,
-        blok: f.blok,
-        noBidang: f.noBidang,
-        dusun: f.dusun,
-        landArea: f.landArea,
-      },
-    });
-  }
-
-  console.log("  ✓ Fields seeded (10 dummy)");
-  console.log("  ✓ Payments seeded (0 — empty)");
 
   await prisma.villageStats.upsert({
     where: { id: 1 },
     update: {},
     create: {
-      jumlahKK: 1420,
-      jumlahPenduduk: 4850,
-      lakiLaki: 2410,
-      perempuan: 2440,
+      jumlahKK: 1144,
+      jumlahPenduduk: 3176,
+      lakiLaki: 1564,
+      perempuan: 1612,
     },
   });
 
@@ -159,85 +68,100 @@ async function main() {
     where: { id: 1 },
     update: {},
     create: {
-      visi: "Terwujudnya Desa Tulungrejo yang Mandiri, Sejahtera, Berbudaya, dan Berkeadilan Berlandaskan Gotong Royong.",
+      visi: "Maju Bersama Rakyat Membangun Desa Tulungrejo Dengan Aman, Beriman, Damai, Dan Sejahtera Berlandasakan Pancasila Dan Undang-Undang Dasar 1945",
       misi: JSON.stringify([
-        "Meningkatkan kualitas pelayanan publik berbasis teknologi informasi.",
-        "Mengembangkan sektor pertanian, peternakan, dan pariwisata yang berkelanjutan.",
-        "Meningkatkan kualitas SDM melalui pendidikan dan sarana kesehatan yang memadai.",
-        "Mewujudkan tata kelola pemerintahan desa yang bersih, transparan, dan akuntabel.",
+        "Mewujudkan dan mengembangkan kegiatan keagamaan untuk menambah keimanan dan ketaqwaan kepada Tuhan Yang Maha Esa, melalui kegiatan kegiatan pengajian-pengajian, Majelis Taklim, serta kegiatan kegiatan positif seperti mengadakan pembinaan bersholawat bersama.",
+        "Mewujudkan penyelenggaraan Pemerintahan yang berwibawa, adil dan bijaksana dengan mengedepankan Musyawarah mufakat dan transparansi, selalu terbuka menerima kritik dan saran Masyarakat.",
+        "Membangun dan meningkatkan hasil pertanian dengan jalan penataan pengairan, perbaikan jalan sawah / jalan usaha tani, serta dengan melalui pelatihan pelatihan di bidang pertanian agar terciptanya masyarakat petani yang berpengetahuan dalam pola tanam yang benar.",
+        "Menata Pemerintahan Desa Tulungrejo yang kompak dan bertanggung jawab dalam mengemban amanat masyarakat dengan cara melibatkan seluruh elemen masyarakat dalam musyawarah untuk mengambil keputusan.",
+        "Meningkatkan pelayanan masyarakat secara terpadu dan serius dengan cara melayani masyarakat di waktu jam kerja maupun di luar jam kerja.",
+        "Mencari dan menambah debet air untuk mencukupi kebutuhan pertanian dengan pembangunan Sumur Bor dan Pipanisasi yang di peruntukan untuk pertanian sehingga bisa meningkatkan hasil pertanian, yang selama ini hanya mengandalkan air hujan.",
+        "Menumbuh Kembangkan Kelompok Tani dan Gabungan Kelompok Tani serta bekerja sama dengan HIPPA untuk memfasilitasi kebutuhan Petani.",
+        "Menumbuh kembangkan usaha kecil dan menengah dengan cara mengadakan pelatihan pelatihan yang di sesuaikan dengan keahlian yang di butuhkan untuk melaksanakan berbagai aspek kegiatan usaha, mulai perencanaan produksi sampai pemasarannya.",
+        "Luasnya pekarangan penduduk yang dapat di tanami buah-buah, kayu untuk bangunan (sengon, Jati dll) untuk Melestarikan Lingkungan Hidup.",
+        "Membangun dan mendorong majunya bidang pendidikan baik formal maupun informal yang mudah diakses dan dinikmati seluruh warga masyarakat tanpa terkecuali yang mampu menghasilkan insan intelektual, inovatif dan enterpreneur (wirausahawan) dengan pembangunan sarana dan prasarana yang memadai.",
+        "Membangun dan mendorong usaha-usaha untuk pengembangan dan optimalisasi sektor pertanian, perkebunan, peternakan, dan perikanan, baik tahap produksi maupun tahap pengolahan hasilnya.",
       ]),
       strukturOrganisasi: JSON.stringify([
         { role: "Kepala Desa", name: "Ir. H. Sulaiman Basri" },
         { role: "Sekretaris Desa", name: "Dewi Anggraini, S.E." },
-        { role: "Kasi Pemerintahan", name: "Bambang Triyono" },
-        { role: "Kasi Kesejahteraan", name: "Fajar Nugroho, S.Pd." },
-        { role: "Kasi Pelayanan", name: "Siti Kurniati" },
+        { role: "Kaur Perencanaan", name: "Novi Fitriani" },
         { role: "Kaur Keuangan", name: "Rahmat Hidayat" },
-        { role: "Kaur Umum & Perencanaan", name: "Novi Fitriani" },
-        { role: "Kepala Dusun Junggo", name: "Jatmiko Wibowo" },
-        { role: "Kepala Dusun Wonorejo", name: "Subagyo" },
+        { role: "Kaur Tata Usaha dan Umum", name: "Agus Prasetyo" },
+        { role: "Kasi Pemerintahan", name: "Bambang Triyono" },
+        { role: "Kasi Pelayanan", name: "Siti Kurniati" },
+        { role: "Kasi Kesejahteraan", name: "Fajar Nugroho, S.Pd." },
+        { role: "Kamituwo", name: "Slamet Riyadi" },
+        { role: "Kepala Dusun Tulungrejo", name: "Jatmiko Wibowo" },
+        { role: "Kepala Dusun Sidodadi", name: "Subagyo" },
       ]),
       tugasFungsi: JSON.stringify([
         {
           jabatan: "Kepala Desa",
           tugas:
-            "Menyelenggarakan Pemerintahan Desa, melaksanakan Pembangunan Desa, pembinaan kemasyarakatan Desa, dan pemberdayaan masyarakat Desa.",
+            "Kepala Desa bertugas menyelenggarakan Pemerintahan Desa, melaksanakan pembangunan, pembinaan kemasyarakatan, dan pemberdayaan masyarakat.",
         },
         {
           jabatan: "Sekretaris Desa",
           tugas:
-            "Memimpin, mengoordinasikan, dan mengendalikan urusan ketatausahaan, umum, perencanaan, dan keuangan serta memberikan pelayanan administratif bagi perangkat desa dan masyarakat.",
+            "Sekretaris Desa bertugas membantu Kepala Desa dalam bidang administrasi pemerintahan.",
         },
         {
-          jabatan: "Seksi Pemerintahan (Kasi Pemerintahan)",
+          jabatan: "Kaur Perencanaan",
           tugas:
-            "Menyusun rencana, melaksanakan, mengevaluasi dan melaporkan pelaksanaan program administrasi kependudukan, ketentraman dan ketertiban umum, serta pertanahan desa.",
+            "Kepala urusan perencanaan memiliki fungsi mengoordinasikan urusan perencanaan seperti menyusun rencana anggaran pendapatan dan belanja desa, menginventarisir data-data dalam rangka pembangunan, melakukan monitoring dan evaluasi program, serta penyusunan laporan.",
         },
         {
-          jabatan: "Seksi Kesejahteraan (Kasi Kesejahteraan)",
+          jabatan: "Kaur Keuangan",
           tugas:
-            "Melaksanakan pembangunan infrastruktur perdesaan, pembinaan kepemudaan, olahraga, keagamaan, serta pengelolaan bantuan sosial masyarakat.",
+            "Kepala urusan keuangan memiliki fungsi seperti melaksanakan urusan keuangan seperti pengurusan administrasi keuangan, administrasi sumber-sumber pendapatan dan pengeluaran, verifikasi administrasi keuangan pemerintahan desa.",
         },
         {
-          jabatan: "Seksi Pelayanan (Kasi Pelayanan)",
+          jabatan: "Kaur Tata Usaha dan Umum",
           tugas:
-            "Membantu penyediaan sarana dan prasarana pelayanan administrasi, pelayanan sosial dasar, serta pemberdayaan ekonomi masyarakat.",
+            "Kepala urusan tata usaha dan umum memiliki fungsi seperti melaksanakan urusan ketatausahaan seperti tata naskah, administrasi surat menyurat, arsip, dan ekspedisi, dan penataan administrasi perangkat desa, penyediaan prasarana perangkat desa dan kantor, penyiapan rapat, pengadministrasian aset, inventarisasi, perjalanan dinas, dan pelayanan umum.",
+        },
+        {
+          jabatan: "Kasi Pemerintahan",
+          tugas:
+            "Kepala seksi pemerintahan mempunyai fungsi melaksanakan manajemen tata praja Pemerintahan, menyusun regulasi desa, pembinaan masalah pertanahan, pembinaan ketentraman dan ketertiban, pelaksanaan upaya perlindungan masyarakat, kependudukan, penataan dan pengelolaan wilayah, serta pendataan dan pengelolaan Profil Desa.",
+        },
+        {
+          jabatan: "Kasi Pelayanan",
+          tugas:
+            "Kepala Seksi pelayanan memiliki fungsi melaksanakan penyuluhan dan motivasi terhadap pelaksanaan hak dan kewajiban masyarakat, meningkatkan upaya partisipasi masyarakat, pelestarian nilai sosial budaya masyarakat, keagamaan, dan ketenagakerjaan.",
+        },
+        {
+          jabatan: "Kasi Kesejahteraan",
+          tugas:
+            "Kepala seksi kesejahteraan mempunyai fungsi melaksanakan pembangunan sarana prasarana perdesaan, pembangunan bidang pendidikan, kesehatan, dan tugas sosialisasi serta motivasi masyarakat di bidang budaya, ekonomi, politik, lingkungan hidup, pemberdayaan keluarga, pemuda, olahraga, dan karang taruna.",
+        },
+        {
+          jabatan: "Kamituwo",
+          tugas:
+            "Kamituwo berkedudukan sebagai unsur satuan tugas kewilayahan yang bertugas membantu Kepala Desa dalam pelaksanaan tugasnya di wilayahnya.",
         },
       ]),
       administratif: JSON.stringify({
-        koordinat: "-7.8207° LS, 112.5262° BT",
-        batasUtara: "Berbatasan dengan Desa Sumberarum dan Desa Ringinrejo.",
-        batasSelatan: "Berbatasan dengan Desa Purworejo.",
-        batasTimur: "Berbatasan dengan wilayah Kabupaten Malang.",
-        batasBarat: "Berbatasan dengan Kawasan Hutan atau area perkebunan.",
-        luasWilayah: "2 Dusun (Junggo & Wonorejo), Total Luas 342,5 Hektar",
-        mataPencaharianUtama: "Petani, Peternak, dan Pengelola Wisata Alam",
-        saranaPendidikan: "2 Taman Kanak-Kanak (TK) dan 3 Sekolah Dasar (SD)",
-        saranaKesehatan: "1 Pos Kesehatan Desa (Postu) Tulungrejo",
+        koordinat: "8°16′9.73668″S 112°19′47.05806″E",
+        batasUtara:
+          "Sebelah Utara: Desa Sumberarum, Kecamatan Wates, Kabupaten Blitar",
+        batasSelatan:
+          "Sebelah Selatan: Desa Ringinrejo, Kecamatan Wates; dan Perhutani",
+        batasTimur: "Sebelah Timur: Desa Ringinrejo, Kecamatan Wates",
+        batasBarat:
+          "Sebelah Barat: Desa Purworejo, Kecamatan Wates; dan Desa Balerejo, Kecamatan Panggungrejo",
+        luasWilayah:
+          "2 Dusun (Tulungrejo & Sidodadi), Total Luas 902,75 Hektar",
+        mataPencaharianUtama:
+          "Pertanian, Jasa/Perdagangan, Sektor Industri, dan Sektor Lain",
+        saranaPendidikan: "Tingkat Pendidikan Dasar 9 Tahun (SD & SMP)",
+        saranaKesehatan: "Puskesmas dan Polindes",
       }),
     },
   });
 
   console.log("  ✓ VillageProfile seeded");
-
-  await prisma.realisasi.create({
-    data: {
-      kodeKec: "050",
-      kecamatan: "WATES",
-      kodeDesa: "005",
-      desa: "TULUNGREJO",
-      totalPbb: BigInt(149186364),
-      totalBayar: BigInt(40361494),
-      persen: 27.05,
-      kurangBayar: BigInt(108824870),
-      totalSppt: 2898,
-      dibayar: 829,
-      sisaSppt: 2069,
-      tanggalAmbil: new Date("2026-07-13"),
-    },
-  });
-
-  console.log("  ✓ Realisasi seeded");
 
   // BlockImage — read from .secret/ or use placeholder
   const secretDir = path.join(__dirname, "..", ".secret");
@@ -851,6 +775,7 @@ Desa Tulungrejo menyimpan **potensi sumber daya alam** yang sangat berupa *sumbe
         slug: article.slug,
         date: article.date,
         author: article.author,
+        authorId: jurnalisUser.id,
         category: article.category,
         summary: article.summary,
         image: placeholderImg(SEED_COLORS[i % SEED_COLORS.length]!),
@@ -861,6 +786,24 @@ Desa Tulungrejo menyimpan **potensi sumber daya alam** yang sangat berupa *sumbe
     });
   }
   console.log(`  ✓ ${articlesData.length} Articles seeded`);
+
+  // Verify critical data
+  const stats = await prisma.villageStats.findFirst({ orderBy: { id: "asc" } });
+  console.log(
+    "  → VillageStats:",
+    stats?.jumlahKK,
+    "KK,",
+    stats?.jumlahPenduduk,
+    "jiwa",
+  );
+
+  const profile = await prisma.villageProfile.findFirst({
+    orderBy: { id: "asc" },
+  });
+  const misiCount = JSON.parse(profile?.misi ?? "[]").length;
+  console.log("  → Misi:", misiCount, "items");
+  const strukturCount = JSON.parse(profile?.strukturOrganisasi ?? "[]").length;
+  console.log("  → Struktur:", strukturCount, "jabatan");
 
   console.log("Seeding complete!");
 }

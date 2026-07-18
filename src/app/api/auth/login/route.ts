@@ -1,7 +1,7 @@
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { setSessionCookie } from "@/lib/auth-custom";
+import { setSessionCookie } from "@/lib/auth/session";
 import {
   checkRateLimit,
   getClientIp,
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
 
     const ip = getClientIp({ headers: request.headers });
     if (ip) {
-      const ipLimit = await checkRateLimit(`login:ip:${ip}`);
+      const ipLimit = await checkRateLimit(`login:ip:${ip}`, undefined, true);
       if (!ipLimit.allowed) {
         return NextResponse.json({ error: "RATE_LIMITED" }, { status: 429 });
       }
@@ -33,6 +33,7 @@ export async function POST(request: Request) {
     const emailLimit = await checkRateLimit(
       `login:email:${normalizedEmail}`,
       RATE_LIMIT_PRESETS.loginEmail,
+      true,
     );
     if (!emailLimit.allowed) {
       return NextResponse.json({ error: "RATE_LIMITED" }, { status: 429 });
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
       role: user.role,
     });
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, role: user.role });
   } catch (err) {
     console.error("Login error:", err);
     return NextResponse.json(

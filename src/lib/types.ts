@@ -6,12 +6,6 @@ export const ROLE_DISPLAY: Record<UserRole, string> = {
   jurnalis: "jurnalis",
 };
 
-export const DISPLAY_TO_ROLE: Record<string, UserRole> = {
-  pamong: "pamong_pajak",
-  "kepala desa": "kepala_desa",
-  jurnalis: "jurnalis",
-};
-
 export interface User {
   id: number;
   email: string;

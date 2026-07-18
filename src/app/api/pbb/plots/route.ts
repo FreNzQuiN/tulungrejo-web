@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth-helpers";
+import { requireRole, getAssignedBlok } from "@/lib/auth/guards";
 import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
-import { prisma } from "@/lib/prisma";
+import { findFields } from "@/lib/pbb-queries";
 import { sanitizeSearch } from "@/lib/utils";
+
+const MAX_TAKE = 2000;
 
 export async function GET(req: NextRequest) {
   if (!(await checkApiRateLimit(req))) return rateLimitResponse();
@@ -12,24 +14,19 @@ export async function GET(req: NextRequest) {
 
   try {
     const { searchParams } = new URL(req.url);
-    const blok = searchParams.get("blok");
+    let blok = searchParams.get("blok");
     const raw = searchParams.get("search");
     const search = sanitizeSearch(raw);
+    const take = Math.min(
+      Number(searchParams.get("take")) || MAX_TAKE,
+      MAX_TAKE,
+    );
+    const skip = Number(searchParams.get("skip")) || 0;
 
-    const where: Record<string, unknown> = {};
-    if (blok) where.blok = blok;
-    if (search) {
-      where.OR = [
-        { ownerName: { contains: search } },
-        { nop: { contains: search } },
-        { noBidang: { contains: search } },
-      ];
-    }
+    const assignedBlok = await getAssignedBlok(auth);
+    if (assignedBlok) blok = assignedBlok;
 
-    const fields = await prisma.fields.findMany({
-      where: where as any,
-      orderBy: [{ blok: "asc" }, { noBidang: "asc" }],
-    });
+    const fields = await findFields({ blok, search, take, skip });
 
     return NextResponse.json(
       fields.map((f) => ({

@@ -1,11 +1,11 @@
 "use client";
 
-import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { Save, X } from "lucide-react";
 import type { VillageProfile } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useCmsEditor } from "@/hooks/use-cms-editor";
 
 interface ProfileForm {
   visi: string;
@@ -94,116 +94,69 @@ function ProfileEditorSkeleton() {
 }
 
 export function ProfileEditor() {
-  const [form, setForm] = useState<ProfileForm>({
-    visi: "",
-    misi: "",
-    strukturOrganisasi: "",
-    tugasFungsi: "",
-    administratif: EMPTY_ADMIN,
-  });
-  const [original, setOriginal] = useState<ProfileForm | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-
-  useEffect(() => {
-    fetch("/api/profile")
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to load");
-        return res.json();
-      })
-      .then((data: VillageProfile) => {
-        const profileForm = villageProfileToForm(data);
-        setForm(profileForm);
-        setOriginal(profileForm);
-      })
-      .catch(() => toast.error("Gagal memuat profil desa"))
-      .finally(() => setLoading(false));
-  }, []);
-
-  function hasChanges(): boolean {
-    if (!original) return false;
-    return (
-      form.visi !== original.visi ||
-      form.misi !== original.misi ||
-      form.strukturOrganisasi !== original.strukturOrganisasi ||
-      form.tugasFungsi !== original.tugasFungsi ||
-      JSON.stringify(form.administratif) !==
-        JSON.stringify(original.administratif)
-    );
-  }
+  const editor = useCmsEditor(
+    "/api/profile",
+    {
+      visi: "",
+      misi: "",
+      strukturOrganisasi: "",
+      tugasFungsi: "",
+      administratif: EMPTY_ADMIN,
+    },
+    "Gagal memuat profil desa",
+    (raw) => villageProfileToForm(raw as VillageProfile),
+  );
 
   async function handleSave() {
-    if (!form.visi) {
+    if (!editor.data.visi) {
       toast.error("Visi harus diisi");
       return;
     }
 
-    setSaving(true);
-    try {
-      const misiArray = form.misi
-        .split("\n")
-        .map((s) => s.trim())
-        .filter(Boolean);
+    const misiArray = editor.data.misi
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean);
 
-      const strukturArray = form.strukturOrganisasi
-        .split("\n")
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .map((line) => {
-          const colonIdx = line.indexOf(":");
-          return colonIdx > 0
-            ? {
-                role: line.slice(0, colonIdx).trim(),
-                name: line.slice(colonIdx + 1).trim(),
-              }
-            : { role: line, name: "" };
-        });
-
-      const tugasFungsiArray = form.tugasFungsi
-        .split("\n")
-        .map((s) => s.trim())
-        .filter(Boolean)
-        .map((line) => {
-          const colonIdx = line.indexOf(":");
-          return colonIdx > 0
-            ? {
-                jabatan: line.slice(0, colonIdx).trim(),
-                tugas: line.slice(colonIdx + 1).trim(),
-              }
-            : { jabatan: line, tugas: "" };
-        });
-
-      const res = await fetch("/api/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          visi: form.visi,
-          misi: misiArray,
-          strukturOrganisasi: strukturArray,
-          tugasFungsi: tugasFungsiArray,
-          administratif: form.administratif,
-        }),
+    const strukturArray = editor.data.strukturOrganisasi
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const colonIdx = line.indexOf(":");
+        return colonIdx > 0
+          ? {
+              role: line.slice(0, colonIdx).trim(),
+              name: line.slice(colonIdx + 1).trim(),
+            }
+          : { role: line, name: "" };
       });
 
-      if (res.ok) {
-        const updated = await res.json();
-        const profileForm = villageProfileToForm(updated);
-        setForm(profileForm);
-        setOriginal(profileForm);
-        toast.success("Profil desa berhasil diperbarui");
-      } else {
-        const err = await res.json();
-        toast.error(err.error || "Gagal memperbarui profil desa");
-      }
-    } catch {
-      toast.error("Gagal memperbarui profil desa");
-    } finally {
-      setSaving(false);
-    }
-  }
+    const tugasFungsiArray = editor.data.tugasFungsi
+      .split("\n")
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map((line) => {
+        const colonIdx = line.indexOf(":");
+        return colonIdx > 0
+          ? {
+              jabatan: line.slice(0, colonIdx).trim(),
+              tugas: line.slice(colonIdx + 1).trim(),
+            }
+          : { jabatan: line, tugas: "" };
+      });
 
-  function handleCancel() {
-    if (original) setForm(original);
+    await editor.save(
+      {
+        visi: editor.data.visi,
+        misi: misiArray,
+        strukturOrganisasi: strukturArray,
+        tugasFungsi: tugasFungsiArray,
+        administratif: editor.data.administratif,
+      },
+      "Profil desa berhasil diperbarui",
+      "Gagal memperbarui profil desa",
+    );
   }
 
   const ADMIN_FIELDS: {
@@ -221,7 +174,7 @@ export function ProfileEditor() {
     { key: "saranaKesehatan", label: "Sarana Kesehatan" },
   ];
 
-  if (loading) {
+  if (editor.loading) {
     return <ProfileEditorSkeleton />;
   }
 
@@ -235,8 +188,10 @@ export function ProfileEditor() {
         <label>Visi</label>
         <textarea
           className="form-textarea"
-          value={form.visi}
-          onChange={(e) => setForm((p) => ({ ...p, visi: e.target.value }))}
+          value={editor.data.visi}
+          onChange={(e) =>
+            editor.setData((p) => ({ ...p, visi: e.target.value }))
+          }
           rows={3}
           placeholder="Masukkan visi desa"
         />
@@ -246,8 +201,10 @@ export function ProfileEditor() {
         <label>Misi (satu baris per misi)</label>
         <textarea
           className="form-textarea"
-          value={form.misi}
-          onChange={(e) => setForm((p) => ({ ...p, misi: e.target.value }))}
+          value={editor.data.misi}
+          onChange={(e) =>
+            editor.setData((p) => ({ ...p, misi: e.target.value }))
+          }
           rows={5}
           placeholder="Masukkan misi desa, satu per baris"
         />
@@ -257,9 +214,12 @@ export function ProfileEditor() {
         <label>Struktur Organisasi (satu baris per jabatan: nama)</label>
         <textarea
           className="form-textarea"
-          value={form.strukturOrganisasi}
+          value={editor.data.strukturOrganisasi}
           onChange={(e) =>
-            setForm((p) => ({ ...p, strukturOrganisasi: e.target.value }))
+            editor.setData((p) => ({
+              ...p,
+              strukturOrganisasi: e.target.value,
+            }))
           }
           rows={4}
           placeholder="Kepala Desa: Ir. H. Sulaiman Basri"
@@ -272,9 +232,9 @@ export function ProfileEditor() {
         </label>
         <textarea
           className="form-textarea"
-          value={form.tugasFungsi}
+          value={editor.data.tugasFungsi}
           onChange={(e) =>
-            setForm((p) => ({ ...p, tugasFungsi: e.target.value }))
+            editor.setData((p) => ({ ...p, tugasFungsi: e.target.value }))
           }
           rows={4}
           placeholder="Kepala Desa: Menyelenggarakan Pemerintahan Desa..."
@@ -290,9 +250,9 @@ export function ProfileEditor() {
             <label>{field.label}</label>
             <input
               className="form-input"
-              value={form.administratif[field.key]}
+              value={editor.data.administratif[field.key]}
               onChange={(e) =>
-                setForm((p) => ({
+                editor.setData((p) => ({
                   ...p,
                   administratif: {
                     ...p.administratif,
@@ -309,8 +269,8 @@ export function ProfileEditor() {
         <Button
           variant="outline"
           size="sm"
-          onClick={handleCancel}
-          disabled={!hasChanges()}
+          onClick={() => editor.cancel()}
+          disabled={!editor.hasChanges}
         >
           <X size={16} />
           Batal
@@ -318,10 +278,10 @@ export function ProfileEditor() {
         <Button
           size="sm"
           onClick={handleSave}
-          disabled={saving || !hasChanges()}
+          disabled={editor.saving || !editor.hasChanges}
         >
           <Save size={16} />
-          {saving ? "Menyimpan..." : "Simpan"}
+          {editor.saving ? "Menyimpan..." : "Simpan"}
         </Button>
       </div>
     </div>

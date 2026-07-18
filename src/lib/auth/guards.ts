@@ -1,10 +1,11 @@
-import { getSession } from "@/lib/auth-custom";
+import { getSession } from "@/lib/auth/session";
+import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import type { UserRole } from "@/lib/types";
-import type { Session } from "@/lib/auth-custom";
+import type { Session } from "@/lib/auth/types";
 
 type AuthError = { error: NextResponse };
-type AuthSuccess = { session: Session };
+type AuthSuccess = { session: Session; assignedBlok: string | null };
 type AuthResult = AuthError | AuthSuccess;
 
 function isError(result: AuthResult): result is AuthError {
@@ -18,7 +19,18 @@ export async function requireAuth(): Promise<AuthResult> {
       error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
     };
   }
-  return { session };
+
+  const dbUser = await prisma.user.findUnique({
+    where: { id: Number(session.user.id) },
+    select: { role: true, assignedBlok: true },
+  });
+  if (!dbUser || dbUser.role !== session.user.role) {
+    return {
+      error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
+    };
+  }
+
+  return { session, assignedBlok: dbUser.assignedBlok ?? null };
 }
 
 export async function requireRole(
@@ -39,4 +51,9 @@ export async function requireRole(
 export function unwrapSession(result: AuthResult): Session | null {
   if (isError(result)) return null;
   return result.session;
+}
+
+export function getAssignedBlok(result: AuthResult): string | null {
+  if (isError(result)) return null;
+  return result.assignedBlok ?? null;
 }

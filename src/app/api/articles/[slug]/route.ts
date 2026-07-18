@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
-import { requireRole } from "@/lib/auth-helpers";
+import { prisma } from "@/lib/prisma";
+import { requireRole } from "@/lib/auth/guards";
 import {
   getArticleBySlugAll,
   updateArticle,
   deleteArticle,
   checkSlugExists,
 } from "@/lib/article-queries";
-import { CATEGORIES, MAX_IMAGE_SIZE } from "@/lib/constants";
+import { CATEGORIES, validateArticleImage } from "@/lib/constants";
 import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
 
 export async function GET(
@@ -40,6 +41,24 @@ export async function PUT(
   if ("error" in auth) return auth.error;
 
   const { slug } = await params;
+
+  const existing = await prisma.article.findUnique({
+    where: { slug },
+    select: { authorId: true },
+  });
+  if (!existing) {
+    return NextResponse.json(
+      { error: "Artikel tidak ditemukan" },
+      { status: 404 },
+    );
+  }
+  if (
+    existing.authorId !== null &&
+    existing.authorId !== Number(auth.session.user.id)
+  ) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   const body = await req.json();
   const {
     title,
@@ -75,25 +94,19 @@ export async function PUT(
       { status: 400 },
     );
   }
+  if (summary !== undefined && (!summary || summary.length > 500)) {
+    return NextResponse.json(
+      { error: "Ringkasan tidak valid (max 500 karakter)" },
+      { status: 400 },
+    );
+  }
+  if (content !== undefined && (typeof content !== "string" || !content)) {
+    return NextResponse.json({ error: "Konten tidak valid" }, { status: 400 });
+  }
   if (image !== undefined && typeof image === "string") {
-    if (image.length > MAX_IMAGE_SIZE) {
-      return NextResponse.json(
-        { error: "Ukuran gambar terlalu besar (maks 5MB)" },
-        { status: 400 },
-      );
-    }
-    const VALID_PREFIXES = [
-      "data:image/webp;base64,",
-      "data:image/jpeg;base64,",
-      "data:image/png;base64,",
-    ];
-    if (!VALID_PREFIXES.some((p) => image.startsWith(p))) {
-      return NextResponse.json(
-        {
-          error: "Format gambar tidak didukung. Gunakan webp, jpeg, atau png.",
-        },
-        { status: 400 },
-      );
+    const imgErr = validateArticleImage(image);
+    if (imgErr) {
+      return NextResponse.json({ error: imgErr }, { status: 400 });
     }
   }
 
@@ -134,6 +147,24 @@ export async function DELETE(
   if ("error" in auth) return auth.error;
 
   const { slug } = await params;
+
+  const existing = await prisma.article.findUnique({
+    where: { slug },
+    select: { authorId: true },
+  });
+  if (!existing) {
+    return NextResponse.json(
+      { error: "Artikel tidak ditemukan" },
+      { status: 404 },
+    );
+  }
+  if (
+    existing.authorId !== null &&
+    existing.authorId !== Number(auth.session.user.id)
+  ) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
   try {
     const deleted = await deleteArticle(slug);
     if (!deleted) {
