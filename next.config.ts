@@ -11,7 +11,7 @@ function csp(frameAncestors: string): string {
     "img-src 'self' data: blob: https://*.tile.openstreetmap.org https://images.unsplash.com https://unpkg.com https://app.netlify.com",
     "font-src 'self' https://fonts.gstatic.com",
     "connect-src 'self' https://*.netlify.app https://identity.netlify.com https://app.netlify.com",
-    "frame-src 'self' https://*.netlify.app https://app.netlify.com https://www.google.com",
+    "frame-src 'self' https://*.netlify.app https://app.netlify.com https://www.google.com https://google.com https://maps.googleapis.com https://maps.gstatic.com https://maps.google.com",
     `frame-ancestors ${frameAncestors}`,
     "base-uri 'self'",
     "form-action 'self'",
