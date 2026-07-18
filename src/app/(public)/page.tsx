@@ -171,7 +171,7 @@ export default function HomePage() {
           <div className="map-container">
             <iframe
               title="Peta Lokasi Desa Tulungrejo"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d31582.023305011266!2d112.31065444999999!3d-8.327332949999999!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e78b9bfe12d6a7d%3A0xc0a3160b9e66bf89!2sArea%20Hutan%2C%20Tulungrejo%2C%20Wates%2C%20Blitar%20Regency%2C%20East%20Java!5e0!3m2!1sen!2sid!4v1783657389028!5m2!1sen!2sid"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d31582!2d112.329738!3d-8.269371!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sDesa%20Tulungrejo%2C%20Wates%2C%20Blitar%2C%20Jawa%20Timur!5e0!3m2!1sid!2sid!4v1"
               width="100%"
               height="100%"
               className="border-0"
