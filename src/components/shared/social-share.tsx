@@ -12,7 +12,7 @@ export function SocialShare({ title, slug }: { title: string; slug: string }) {
 
   return (
     <div
-      className="flex gap-3 items-center pt-8 mt-8"
+      className="flex flex-wrap gap-2 md:gap-3 items-center pt-8 mt-8"
       style={{ borderTop: "1px solid rgba(79,112,156,0.2)" }}
     >
       <span className="text-[13px] font-bold text-muted-foreground inline-flex items-center gap-1.5">

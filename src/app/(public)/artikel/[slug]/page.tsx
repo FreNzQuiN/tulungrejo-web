@@ -60,7 +60,7 @@ async function ArticleContent({
   if (!article) notFound();
 
   return (
-    <div className="container px-6 py-10 flex-1">
+    <div className="container py-10 flex-1">
       <nav className="text-[13px] text-muted-foreground mb-6 flex items-center gap-2">
         <Link href="/artikel" className="text-dark-brown font-semibold">
           Artikel
@@ -68,7 +68,12 @@ async function ArticleContent({
         <span>/</span>
         <span>{article.category}</span>
         <span>/</span>
-        <span style={{ color: "var(--color-dark)" }}>{article.title}</span>
+        <span
+          className="truncate max-w-[160px] md:max-w-none"
+          style={{ color: "var(--color-dark)" }}
+        >
+          {article.title}
+        </span>
       </nav>
 
       <div className="mb-6">
@@ -81,7 +86,7 @@ async function ArticleContent({
       </div>
 
       <article className="glass-panel overflow-hidden mb-[60px]">
-        <div className="relative w-full h-[480px]">
+        <div className="relative w-full h-[200px] md:h-[480px]">
           <Image
             src={article.image || ARTICLE_IMAGE_FALLBACK}
             alt={article.title}
@@ -92,7 +97,7 @@ async function ArticleContent({
             className="object-cover"
           />
         </div>
-        <div className="detail-article-body p-10">
+        <div className="detail-article-body p-5 md:p-10">
           <div className="flex gap-4 text-[13px] text-muted-foreground mb-4 items-center">
             <span className="inline-block px-[10px] py-[4px] text-[11px] font-bold uppercase tracking-wider rounded-full bg-green-100 text-green-700">
               {article.category}
@@ -107,12 +112,12 @@ async function ArticleContent({
             </span>
           </div>
           <h1
-            className="text-[36px] text-dark-brown leading-tight mb-6 font-bold"
+            className="text-[24px] md:text-[36px] text-dark-brown leading-tight mb-6 font-bold"
             style={{ fontFamily: "var(--font-heading)" }}
           >
             {article.title}
           </h1>
-          <div className="prose max-w-none text-[16px] leading-[1.8]">
+          <div className="prose max-w-none text-[15px] leading-[1.7] md:text-[16px] md:leading-[1.8]">
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
               {article.content}
             </ReactMarkdown>
@@ -127,12 +132,12 @@ async function ArticleContent({
 
 function ArticleSkeleton() {
   return (
-    <div className="container px-6 py-10 flex-1">
+    <div className="container py-10 flex-1">
       <Skeleton className="mb-6 h-4 w-48" />
       <Skeleton className="mb-8 h-8 w-32" />
       <div className="glass-panel overflow-hidden mb-[60px]">
-        <Skeleton className="h-[480px] w-full rounded-none" />
-        <div className="p-10">
+        <Skeleton className="h-[200px] md:h-[480px] w-full rounded-none" />
+        <div className="p-5 md:p-10">
           <Skeleton className="mb-4 h-6 w-28" />
           <Skeleton className="mb-6 h-10 w-3/4" />
           <Skeleton className="mb-2 h-4 w-full" />
