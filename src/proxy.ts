@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { getSessionFromRequest } from "@/lib/auth/session";
+import { getSessionFromRequestEdge } from "@/lib/auth/session";
 
 const PUBLIC_API_PATHS = [
   "/api/auth/login",
@@ -15,7 +15,7 @@ export async function proxy(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const session = await getSessionFromRequest(request);
+  const session = await getSessionFromRequestEdge(request);
 
   const isApiRoute = path.startsWith("/api/");
   const isDashboardRoute =
