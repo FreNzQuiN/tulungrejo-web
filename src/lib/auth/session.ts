@@ -82,21 +82,6 @@ export async function getSessionFromRequest(
   return { user };
 }
 
-/**
- * Edge-safe version — JWT verification only, no Prisma.
- * Use in middleware/edge functions where Prisma is unavailable.
- */
-export async function getSessionFromRequestEdge(
-  request: Request,
-): Promise<Session | null> {
-  const cookieHeader = request.headers.get("cookie") ?? "";
-  const token = parseCookie(cookieHeader, COOKIE_NAME);
-  if (!token) return null;
-  const user = await verifyToken(token);
-  if (!user) return null;
-  return { user };
-}
-
 function parseCookie(cookie: string, name: string): string | null {
   for (const part of cookie.split(";")) {
     const eq = part.indexOf("=");
