@@ -31,7 +31,7 @@ Page files live under their group directory. Routes mirror the Vite SPA paths.
 
 ### Role Display Mapping
 
-Prisma `Role` enum uses different values from what FE displays. See `src/lib/types.ts` (`ROLE_DISPLAY`, `DISPLAY_TO_ROLE`). Do not change the Prisma enum — FE strings are display-only.
+Prisma `Role` enum uses different values from what FE displays. See `src/lib/types.ts` (`ROLE_DISPLAY`). Do not change the Prisma enum — FE strings are display-only.
 
 ### Database
 
@@ -55,7 +55,7 @@ Three layers in `src/app/` to prevent shadcn/ui design tokens from clashing with
 
 ### Auth
 
-Custom JWT (HS256 via `jose`). Not NextAuth. `src/lib/auth-custom.ts` handles signing/verification/session. Cookie: `session-token`, httpOnly, sameSite=lax, 30 days. Secret from `JWT_SECRET` or `AUTH_SECRET`.
+Custom JWT (HS256 via `jose`). Not NextAuth. Auth modules in `src/lib/auth/` — `session.ts` handles signing/verification/session, `edge-session.ts` for edge runtime, `guards.ts` for role enforcement. Cookie: `session-token`, httpOnly, sameSite=lax, 30 days. Secret from `JWT_SECRET` or `AUTH_SECRET`.
 
 ### Categories
 
