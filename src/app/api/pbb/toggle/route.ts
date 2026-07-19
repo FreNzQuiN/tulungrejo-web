@@ -52,13 +52,15 @@ export async function POST(req: NextRequest) {
     const markedBy = Number(session?.user?.id) || null;
     const markedAt = new Date();
 
-    const existing = await prisma.payments.findUnique({
-      where: { fieldId_year: { fieldId, year: parsedYear } },
-    });
+    let actualStatus: "lunas" | "belum_lunas" = "belum_lunas";
 
-    if (!existing) {
-      try {
-        await prisma.payments.create({
+    await prisma.$transaction(async (tx) => {
+      const existing = await tx.payments.findUnique({
+        where: { fieldId_year: { fieldId, year: parsedYear } },
+      });
+
+      if (!existing) {
+        await tx.payments.create({
           data: {
             fieldId,
             year: parsedYear,
@@ -67,38 +69,17 @@ export async function POST(req: NextRequest) {
             markedAt,
           },
         });
-      } catch (createErr: unknown) {
-        if (
-          createErr &&
-          typeof createErr === "object" &&
-          "code" in createErr &&
-          (createErr as { code: string }).code === "P2002"
-        ) {
-          const current = await prisma.payments.findUniqueOrThrow({
-            where: { fieldId_year: { fieldId, year: parsedYear } },
-          });
-          await prisma.payments.update({
-            where: { fieldId_year: { fieldId, year: parsedYear } },
-            data: {
-              status: current.status === "lunas" ? "belum_lunas" : "lunas",
-              markedBy,
-              markedAt,
-            },
-          });
-        } else {
-          throw createErr;
-        }
+        actualStatus = "lunas";
+      } else {
+        actualStatus = existing.status === "lunas" ? "belum_lunas" : "lunas";
+        await tx.payments.update({
+          where: { fieldId_year: { fieldId, year: parsedYear } },
+          data: { status: actualStatus, markedBy, markedAt },
+        });
       }
-    } else {
-      const newStatus = existing.status === "lunas" ? "belum_lunas" : "lunas";
+    });
 
-      await prisma.payments.update({
-        where: { fieldId_year: { fieldId, year: parsedYear } },
-        data: { status: newStatus, markedBy, markedAt },
-      });
-    }
-
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, status: actualStatus });
   } catch (err) {
     console.error("PBB toggle error:", err);
     return NextResponse.json(

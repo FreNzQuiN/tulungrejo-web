@@ -104,10 +104,16 @@ export default function PBBPage() {
         body: JSON.stringify({ fieldId, year }),
       });
       if (res.ok) {
+        const data = await res.json().catch(() => ({}));
         setFields((prev) =>
           prev.map((f) =>
             f.id === fieldId
-              ? { ...f, status: f.status === "lunas" ? "belum_lunas" : "lunas" }
+              ? {
+                  ...f,
+                  status:
+                    data.status ??
+                    (f.status === "lunas" ? "belum_lunas" : "lunas"),
+                }
               : f,
           ),
         );
