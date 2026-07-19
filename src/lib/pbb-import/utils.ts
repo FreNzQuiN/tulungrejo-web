@@ -10,14 +10,12 @@ export function parseDate(value: unknown): Date | null {
   const str = String(value).trim();
   if (!str) return null;
 
-  // Format 1: DD/MM/YYYY
   const dmy = str.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if (dmy) {
     const d = new Date(Number(dmy[3]), Number(dmy[2]) - 1, Number(dmy[1]));
     return Number.isNaN(d.getTime()) ? null : d;
   }
 
-  // Format 2: YYYY-MM-DD HH:MM:SS
   const iso = str.match(/^(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2}):(\d{2})$/);
   if (iso) {
     const d = new Date(

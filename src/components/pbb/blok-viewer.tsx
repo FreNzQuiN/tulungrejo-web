@@ -34,13 +34,13 @@ export function BlokViewer({ blok }: BlokViewerProps) {
   const isIdle = !blok;
 
   useEffect(() => {
-    setCurrentIndex(0);
-    setZoomLevel(null);
-  }, [blok]);
-
-  useEffect(() => {
     if (!blok) return;
     const controller = new AbortController();
+
+    Promise.resolve().then(() => {
+      setCurrentIndex(0);
+      setZoomLevel(null);
+    });
 
     fetch(`/api/pbb/blok/${blok}`, { signal: controller.signal })
       .then(async (res) => {
@@ -175,9 +175,13 @@ export function BlokViewer({ blok }: BlokViewerProps) {
             : "overflow-hidden cursor-zoom-in"
         }`}
       >
-        {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
         <div
           onClick={toggleZoom}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") toggleZoom();
+          }}
+          role="button"
+          tabIndex={0}
           className={isZoomed ? "inline-block min-w-full" : ""}
         >
           <Image

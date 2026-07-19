@@ -251,7 +251,6 @@ async function main() {
   const prisma = createPrismaClient();
 
   try {
-    // Check existing article count
     const existing = await prisma.article.count();
     console.log(`Existing articles: ${existing}`);
 

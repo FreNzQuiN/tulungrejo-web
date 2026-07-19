@@ -11,11 +11,15 @@ export async function GET(req: NextRequest) {
   if ("error" in auth) return auth.error;
 
   try {
-    const latest = await prisma.realisasi.findFirst({
+    const tahunParam = req.nextUrl.searchParams.get("tahun");
+    const where = tahunParam ? { tahun: parseInt(tahunParam, 10) } : undefined;
+
+    const record = await prisma.realisasi.findFirst({
+      where,
       orderBy: { importedAt: "desc" },
     });
 
-    if (!latest) {
+    if (!record) {
       return NextResponse.json(
         { error: "Belum ada data realisasi." },
         { status: 404 },
@@ -23,16 +27,17 @@ export async function GET(req: NextRequest) {
     }
 
     const result: RealisasiView = {
-      id: latest.id,
-      totalPbb: Number(latest.totalPbb),
-      totalBayar: Number(latest.totalBayar),
-      persen: Number(latest.persen),
-      kurangBayar: Number(latest.kurangBayar),
-      totalSppt: latest.totalSppt,
-      dibayar: latest.dibayar,
-      sisaSppt: latest.sisaSppt,
-      tanggalAmbil: latest.tanggalAmbil.toISOString(),
-      importedAt: latest.importedAt.toISOString(),
+      id: record.id,
+      totalPbb: Number(record.totalPbb),
+      totalBayar: Number(record.totalBayar),
+      persen: Number(record.persen),
+      kurangBayar: Number(record.kurangBayar),
+      totalSppt: record.totalSppt,
+      dibayar: record.dibayar,
+      sisaSppt: record.sisaSppt,
+      tanggalAmbil: record.tanggalAmbil.toISOString(),
+      importedAt: record.importedAt.toISOString(),
+      tahun: record.tahun,
     };
 
     return NextResponse.json(result);

@@ -1,4 +1,5 @@
 import { jwtVerify } from "jose";
+import { ALLOWED_ROLES } from "@/lib/types";
 import type { SessionUser, Session } from "@/lib/auth/types";
 
 const SECRET_RAW = process.env.JWT_SECRET ?? process.env.AUTH_SECRET;
@@ -11,10 +12,9 @@ async function verifyToken(token: string): Promise<SessionUser | null> {
   try {
     const { payload } = await jwtVerify(token, SECRET);
     const role = payload.role as SessionUser["role"];
-    if (!role || !["kepala_desa", "pamong_pajak", "jurnalis"].includes(role))
-      return null;
+    if (!role || !ALLOWED_ROLES.includes(role)) return null;
     return {
-      id: (payload.sub ?? payload.id) as string,
+      id: Number(payload.sub ?? payload.id),
       email: payload.email as string,
       name: payload.name as string,
       role,

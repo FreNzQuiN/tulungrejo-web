@@ -3,6 +3,7 @@
 import { useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
 import { X, Save, ImageUp, Trash as TrashIcon } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { CATEGORIES, MAX_IMAGE_SIZE } from "@/lib/constants";
 import { resizeImage } from "@/lib/client-utils";
@@ -149,11 +150,13 @@ export function ArticleEditor({
         </div>
         {imagePreview && (
           <div className="mt-3 relative w-full max-w-[400px] rounded-lg overflow-hidden border">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src={imagePreview}
               alt="Preview cover"
+              width={400}
+              height={240}
               className="w-full h-auto object-cover max-h-[240px]"
+              unoptimized
             />
           </div>
         )}

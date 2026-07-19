@@ -1,5 +1,19 @@
 export type UserRole = "kepala_desa" | "pamong_pajak" | "jurnalis";
 
+export const ALLOWED_ROLES = [
+  "kepala_desa",
+  "pamong_pajak",
+  "jurnalis",
+] as const;
+
+export const PAYMENT_STATUS = {
+  LUNAS: "lunas",
+  BELUM_LUNAS: "belum_lunas",
+} as const;
+
+export type PaymentStatus =
+  (typeof PAYMENT_STATUS)[keyof typeof PAYMENT_STATUS];
+
 export const ROLE_DISPLAY: Record<UserRole, string> = {
   kepala_desa: "kepala desa",
   pamong_pajak: "pamong",
@@ -77,7 +91,7 @@ export interface FieldView {
   dusun: string;
   landArea?: number | null;
   buildingArea?: number | null;
-  status: "lunas" | "belum_lunas";
+  status: PaymentStatus;
 }
 
 export interface RealisasiView {
@@ -91,6 +105,17 @@ export interface RealisasiView {
   sisaSppt: number;
   tanggalAmbil: string;
   importedAt: string;
+  tahun: number | null;
+}
+
+export interface PaymentRecord {
+  id: string;
+  fieldId: string;
+  year: number;
+  status: PaymentStatus;
+  markedAt: string | null;
+  notes: string | null;
+  markerName: string | null;
 }
 
 export type Category =

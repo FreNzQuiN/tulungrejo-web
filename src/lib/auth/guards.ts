@@ -21,7 +21,7 @@ export async function requireAuth(): Promise<AuthResult> {
   }
 
   const dbUser = await prisma.user.findUnique({
-    where: { id: Number(session.user.id) },
+    where: { id: session.user.id },
     select: { role: true, assignedBlok: true },
   });
   if (!dbUser || dbUser.role !== session.user.role) {

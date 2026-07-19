@@ -68,7 +68,7 @@ async function StatsSection() {
 async function ArticlesSection() {
   let articles;
   try {
-    articles = await getAllPublishedArticles();
+    articles = await getAllPublishedArticles(6);
   } catch (e) {
     console.error("Gagal memuat artikel:", e);
     return <ArticlesError />;

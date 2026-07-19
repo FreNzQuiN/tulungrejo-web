@@ -31,7 +31,6 @@ export const CATEGORIES = [
   "Pengumuman",
 ] as const;
 
-/** Max length of base64 image string (~5MB encoded, ~3.75MB raw) */
 export const MAX_IMAGE_SIZE = 5_242_880;
 
 const VALID_IMAGE_PREFIXES = [
@@ -40,7 +39,6 @@ const VALID_IMAGE_PREFIXES = [
   "data:image/png;base64,",
 ] as const;
 
-/** Validates base64 article image: size, prefix format, and decoded magic bytes. Returns error message or null. */
 export function validateArticleImage(image: string): string | null {
   if (image.length > MAX_IMAGE_SIZE) {
     return "Ukuran gambar terlalu besar (maks 5MB)";
@@ -51,7 +49,6 @@ export function validateArticleImage(image: string): string | null {
     return "Format gambar tidak didukung. Gunakan webp, jpeg, atau png.";
   }
 
-  // Decode first 20 base64 chars (= 15 bytes) to check magic bytes
   const base64Data = image.slice(prefix.length);
   const raw = Buffer.from(base64Data.slice(0, 20), "base64");
 
@@ -76,11 +73,11 @@ export function validateArticleImage(image: string): string | null {
         raw[0] === 0x52 &&
         raw[1] === 0x49 &&
         raw[2] === 0x46 &&
-        raw[3] === 0x46 && // RIFF
+        raw[3] === 0x46 &&
         raw[8] === 0x57 &&
         raw[9] === 0x45 &&
         raw[10] === 0x42 &&
-        raw[11] === 0x50; // WEBP
+        raw[11] === 0x50;
       break;
     default:
       valid = false;

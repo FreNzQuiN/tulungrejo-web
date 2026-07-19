@@ -1,9 +1,7 @@
 "use client";
 
-/** Max dimension for uploaded cover images */
 const MAX_IMAGE_DIMENSION = 1920;
 
-/** Resize image to max dimension, encode as WebP base64 */
 export function resizeImage(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();

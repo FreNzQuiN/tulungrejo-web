@@ -3,10 +3,13 @@ import { requireRole, unwrapSession, getAssignedBlok } from "@/lib/auth/guards";
 import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
 import { prisma } from "@/lib/prisma";
 import { buildFieldWhere } from "@/lib/pbb-queries";
-import type { FieldView } from "@/lib/types";
+import {
+  PAYMENT_STATUS,
+  type FieldView,
+  type PaymentStatus,
+} from "@/lib/types";
 import { sanitizeSearch } from "@/lib/utils";
-
-const CURRENT_YEAR = new Date().getFullYear();
+import { getCurrentTaxYear } from "@/lib/pbb-tax-year";
 const MAX_TAKE = 500;
 
 export async function GET(req: NextRequest) {
@@ -21,7 +24,11 @@ export async function GET(req: NextRequest) {
     const status = searchParams.get("status");
     const raw = searchParams.get("search");
     const search = sanitizeSearch(raw);
-    const year = Number(searchParams.get("year")) || CURRENT_YEAR;
+    const defaultYear = getCurrentTaxYear();
+    const year =
+      Number(searchParams.get("tahun")) ||
+      Number(searchParams.get("year")) ||
+      defaultYear;
 
     const take = Math.min(
       Number(searchParams.get("take")) || MAX_TAKE,
@@ -37,25 +44,23 @@ export async function GET(req: NextRequest) {
 
     const baseWhere = buildFieldWhere({ blok, search });
 
-    // Use Prisma relation filters instead of pre-fetching all paid IDs
     let fieldsWhere = baseWhere;
-    let statusOverride: "lunas" | "belum_lunas" | null = null;
+    let statusOverride: PaymentStatus | null = null;
 
-    if (status === "lunas") {
+    if (status === PAYMENT_STATUS.LUNAS) {
       fieldsWhere = {
         ...baseWhere,
-        payments: { some: { year, status: "lunas" } },
+        payments: { some: { year, status: PAYMENT_STATUS.LUNAS } },
       };
-      statusOverride = "lunas";
-    } else if (status === "belum_lunas") {
+      statusOverride = PAYMENT_STATUS.LUNAS;
+    } else if (status === PAYMENT_STATUS.BELUM_LUNAS) {
       fieldsWhere = {
         ...baseWhere,
-        payments: { none: { year, status: "lunas" } },
+        payments: { none: { year, status: PAYMENT_STATUS.LUNAS } },
       };
-      statusOverride = "belum_lunas";
+      statusOverride = PAYMENT_STATUS.BELUM_LUNAS;
     }
 
-    // Fetch paginated fields + total count
     const [total, fields] = await Promise.all([
       prisma.fields.count({ where: fieldsWhere }),
       prisma.fields.findMany({
@@ -66,21 +71,25 @@ export async function GET(req: NextRequest) {
       }),
     ]);
 
-    // Determine payment status for each field
-    let statusMap: Map<string, "lunas" | "belum_lunas">;
+    let statusMap: Map<string, PaymentStatus>;
     if (statusOverride) {
-      // All results share the same status (filtered via relation)
       statusMap = new Map(fields.map((f) => [f.id, statusOverride]));
     } else {
-      // Query payments only for paginated field IDs (bounded by take)
       const fieldIds = fields.map((f) => f.id);
       const paidRows = await prisma.payments.findMany({
-        where: { fieldId: { in: fieldIds }, year, status: "lunas" },
+        where: {
+          fieldId: { in: fieldIds },
+          year,
+          status: PAYMENT_STATUS.LUNAS,
+        },
         select: { fieldId: true },
       });
       const paidSet = new Set(paidRows.map((r) => r.fieldId));
       statusMap = new Map(
-        fields.map((f) => [f.id, paidSet.has(f.id) ? "lunas" : "belum_lunas"]),
+        fields.map((f) => [
+          f.id,
+          paidSet.has(f.id) ? PAYMENT_STATUS.LUNAS : PAYMENT_STATUS.BELUM_LUNAS,
+        ]),
       );
     }
 
@@ -94,10 +103,10 @@ export async function GET(req: NextRequest) {
       dusun: f.dusun,
       landArea: f.landArea ? Number(f.landArea) : null,
       buildingArea: f.buildingArea ? Number(f.buildingArea) : null,
-      status: statusMap.get(f.id)!,
+      status: statusMap.get(f.id) ?? PAYMENT_STATUS.BELUM_LUNAS,
     }));
 
-    return NextResponse.json({ data: result, total });
+    return NextResponse.json({ data: result, total, tahun: year });
   } catch (err) {
     console.error("PBB list error:", err);
     return NextResponse.json(

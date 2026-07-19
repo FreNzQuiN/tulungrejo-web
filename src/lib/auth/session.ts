@@ -1,6 +1,7 @@
 import { SignJWT, jwtVerify } from "jose";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
+import { ALLOWED_ROLES } from "@/lib/types";
 import type { SessionUser, Session } from "@/lib/auth/types";
 
 const SECRET_RAW = process.env.JWT_SECRET ?? process.env.AUTH_SECRET;
@@ -22,7 +23,7 @@ export async function signToken(payload: SessionUser): Promise<string> {
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt()
     .setExpirationTime("30d")
-    .setSubject(payload.id)
+    .setSubject(String(payload.id))
     .sign(SECRET);
 }
 
@@ -30,10 +31,9 @@ export async function verifyToken(token: string): Promise<SessionUser | null> {
   try {
     const { payload } = await jwtVerify(token, SECRET);
     const role = payload.role as SessionUser["role"];
-    if (!role || !["kepala_desa", "pamong_pajak", "jurnalis"].includes(role))
-      return null;
+    if (!role || !ALLOWED_ROLES.includes(role)) return null;
     return {
-      id: (payload.sub ?? payload.id) as string,
+      id: Number(payload.sub ?? payload.id),
       email: payload.email as string,
       name: payload.name as string,
       role,
@@ -74,7 +74,7 @@ export async function getSessionFromRequest(
   if (!user) return null;
 
   const dbUser = await prisma.user.findUnique({
-    where: { id: Number(user.id) },
+    where: { id: user.id },
     select: { role: true },
   });
   if (!dbUser || dbUser.role !== user.role) return null;

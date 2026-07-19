@@ -93,11 +93,22 @@ export async function POST(req: NextRequest) {
         tags: tags || [],
         published: published ?? true,
       },
-      Number(auth.session.user.id),
+      auth.session.user.id,
     );
     revalidateTag("articles", "max");
     return NextResponse.json({ slug: articleSlug }, { status: 201 });
   } catch (err) {
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      "code" in err &&
+      (err as { code: string }).code === "P2002"
+    ) {
+      return NextResponse.json(
+        { error: "Slug sudah digunakan" },
+        { status: 409 },
+      );
+    }
     console.error("Create article error:", err);
     return NextResponse.json(
       { error: "Gagal membuat artikel" },

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireRole, unwrapSession, getAssignedBlok } from "@/lib/auth/guards";
 import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
 import { prisma } from "@/lib/prisma";
+import { PAYMENT_STATUS, type PaymentStatus } from "@/lib/types";
+import { getCurrentTaxYear } from "@/lib/pbb-tax-year";
 
 export async function POST(req: NextRequest) {
   if (!(await checkApiRateLimit(req))) return rateLimitResponse();
@@ -32,6 +34,15 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    if (parsedYear !== getCurrentTaxYear()) {
+      return NextResponse.json(
+        {
+          error: "Hanya tahun pajak berjalan yang bisa diubah.",
+        },
+        { status: 400 },
+      );
+    }
+
     const field = await prisma.fields.findUnique({ where: { id: fieldId } });
     if (!field) {
       return NextResponse.json(
@@ -49,10 +60,10 @@ export async function POST(req: NextRequest) {
     }
 
     const session = unwrapSession(auth);
-    const markedBy = Number(session?.user?.id) || null;
+    const markedBy = session?.user?.id ?? null;
     const markedAt = new Date();
 
-    let actualStatus: "lunas" | "belum_lunas" = "belum_lunas";
+    let actualStatus: PaymentStatus = PAYMENT_STATUS.BELUM_LUNAS;
 
     await prisma.$transaction(async (tx) => {
       const existing = await tx.payments.findUnique({
@@ -64,14 +75,17 @@ export async function POST(req: NextRequest) {
           data: {
             fieldId,
             year: parsedYear,
-            status: "lunas",
+            status: PAYMENT_STATUS.LUNAS,
             markedBy,
             markedAt,
           },
         });
-        actualStatus = "lunas";
+        actualStatus = PAYMENT_STATUS.LUNAS;
       } else {
-        actualStatus = existing.status === "lunas" ? "belum_lunas" : "lunas";
+        actualStatus =
+          existing.status === PAYMENT_STATUS.LUNAS
+            ? PAYMENT_STATUS.BELUM_LUNAS
+            : PAYMENT_STATUS.LUNAS;
         await tx.payments.update({
           where: { fieldId_year: { fieldId, year: parsedYear } },
           data: { status: actualStatus, markedBy, markedAt },

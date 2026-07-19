@@ -2,7 +2,11 @@ import * as XLSX from "xlsx-js-style";
 import type { LspopAggregate } from "./types";
 import { sanitizeBlok, sanitizeNoBidang, cellValue } from "./utils";
 
-// LSPOP col 9=blok, 10=no_bidang, 16=building_area
+const COL = {
+  BLOK: 9,
+  NO_BIDANG: 10,
+  BUILDING_AREA: 16,
+} as const;
 
 export function parseLspopSheet(
   workbook: XLSX.WorkBook,
@@ -14,12 +18,12 @@ export function parseLspopSheet(
   const agg = new Map<string, { area: number; count: number }>();
 
   for (const row of rows) {
-    const blok = sanitizeBlok(cellValue(row, 9));
-    const noBidang = sanitizeNoBidang(cellValue(row, 10));
+    const blok = sanitizeBlok(cellValue(row, COL.BLOK));
+    const noBidang = sanitizeNoBidang(cellValue(row, COL.NO_BIDANG));
     if (!blok || !noBidang) continue;
 
     const key = `${blok}|${noBidang}`;
-    const areaRaw = cellValue(row, 16);
+    const areaRaw = cellValue(row, COL.BUILDING_AREA);
     if (areaRaw == null) continue;
 
     const area = typeof areaRaw === "number" ? areaRaw : Number(areaRaw);

@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState } from "react";
 import { useAuth } from "@/components/providers";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Search } from "lucide-react";
+import { Search, ChevronLeft, ChevronRight } from "lucide-react";
 import { BlokSelector } from "@/components/pbb/blok-selector";
 import { BlokViewer } from "@/components/pbb/blok-viewer";
 import { ImportButton } from "@/components/pbb/import-button";
-import type { FieldView } from "@/lib/types";
-import { AccessDenied } from "@/components/auth/access-denied";
+import { FieldCard } from "@/components/pbb/field-card";
+import { usePbbFields } from "@/hooks/use-pbb-fields";
+import { PAYMENT_STATUS } from "@/lib/types";
 import { BLOK_TO_DUSUN } from "@/lib/constants";
-import { toast } from "sonner";
+import { getYearOptions } from "@/lib/pbb-tax-year";
+import { AccessDenied } from "@/components/auth/access-denied";
 
 const BLOK_FILTER_OPTIONS = [
   { value: "", label: "Semua Blok" },
@@ -59,75 +61,26 @@ export default function PBBPage() {
   const isKades = role === "kepala_desa";
   const canAccess = isPamong || isKades;
 
-  const [fields, setFields] = useState<FieldView[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [search, setSearch] = useState("");
-  const [blokFilter, setBlokFilter] = useState("");
-  const [statusFilter, setStatusFilter] = useState("");
   const [selectedBlok, setSelectedBlok] = useState("");
-  const [toggling, setToggling] = useState<string | null>(null);
 
-  const fetchFields = useCallback(async () => {
-    if (!canAccess) return;
-    setLoading(true);
-    try {
-      const params = new URLSearchParams();
-      if (blokFilter) params.set("blok", blokFilter);
-      if (statusFilter) params.set("status", statusFilter);
-      if (search) params.set("search", search);
-
-      const res = await fetch(`/api/pbb/list?${params}`);
-      const body = await res.json();
-      const items = Array.isArray(body) ? (body as FieldView[]) : body.data;
-      setFields(Array.isArray(items) ? items : []);
-    } catch (err) {
-      console.error("fetchFields error:", err);
-      toast.error("Gagal memuat data. Periksa koneksi Anda.");
-    } finally {
-      setLoading(false);
-    }
-  }, [blokFilter, statusFilter, search, canAccess]);
-
-  useEffect(() => {
-    if (authLoading || !canAccess) return;
-    const id = setTimeout(() => fetchFields(), 300);
-    return () => clearTimeout(id);
-  }, [authLoading, canAccess, blokFilter, statusFilter, search, fetchFields]);
-
-  async function togglePayment(fieldId: string) {
-    setToggling(fieldId);
-    const year = new Date().getFullYear();
-    try {
-      const res = await fetch("/api/pbb/toggle", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fieldId, year }),
-      });
-      if (res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setFields((prev) =>
-          prev.map((f) =>
-            f.id === fieldId
-              ? {
-                  ...f,
-                  status:
-                    data.status ??
-                    (f.status === "lunas" ? "belum_lunas" : "lunas"),
-                }
-              : f,
-          ),
-        );
-      } else {
-        const data = await res.json().catch(() => ({}));
-        toast.error(data.error || "Gagal mengubah status pembayaran.");
-      }
-    } catch (err) {
-      console.error("togglePayment error:", err);
-      toast.error("Gagal mengubah status pembayaran.");
-    } finally {
-      setToggling(null);
-    }
-  }
+  const {
+    fields,
+    loading,
+    total,
+    page,
+    totalPages,
+    search,
+    blokFilter,
+    statusFilter,
+    selectedYear,
+    toggling,
+    setSearch,
+    setBlokFilter,
+    setStatusFilter,
+    setSelectedYear,
+    setPage,
+    togglePayment,
+  } = usePbbFields(canAccess, authLoading);
 
   if (authLoading) {
     return <ListSkeleton />;
@@ -179,6 +132,25 @@ export default function PBBPage() {
               {isPamong && <ImportButton />}
             </div>
 
+            {selectedYear && (
+              <div className="glass-panel p-3 flex items-center justify-between">
+                <label className="text-[11px] font-bold uppercase text-muted-foreground">
+                  Tahun Pajak
+                </label>
+                <select
+                  value={selectedYear}
+                  onChange={(e) => setSelectedYear(Number(e.target.value))}
+                  className="form-select px-3 py-1.5 text-xs w-auto min-w-[90px]"
+                >
+                  {getYearOptions(selectedYear).map((y) => (
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+
             <div className="glass-panel p-4 flex flex-col gap-3">
               <div className="relative">
                 <Search
@@ -222,8 +194,10 @@ export default function PBBPage() {
                     className="form-select px-3 py-2 text-xs"
                   >
                     <option value="">Semua Status</option>
-                    <option value="lunas">Lunas</option>
-                    <option value="belum_lunas">Belum Lunas</option>
+                    <option value={PAYMENT_STATUS.LUNAS}>Lunas</option>
+                    <option value={PAYMENT_STATUS.BELUM_LUNAS}>
+                      Belum Lunas
+                    </option>
                   </select>
                 </div>
               </div>
@@ -241,70 +215,44 @@ export default function PBBPage() {
                   </div>
                 ) : (
                   fields.map((f) => (
-                    <div key={f.id} className="citizen-card">
-                      <div className="citizen-card-header">
-                        <div>
-                          <h4>{f.ownerName}</h4>
-                          <span className="citizen-sppt">NOP: {f.nop}</span>
-                        </div>
-                        <span
-                          className={`inline-block px-[10px] py-[4px] text-[11px] font-bold uppercase tracking-wider rounded-full ${
-                            f.status === "lunas"
-                              ? "bg-green-100 text-green-700"
-                              : "bg-red-100 text-red-700"
-                          }`}
-                        >
-                          {f.status === "lunas" ? "Lunas" : "Belum Lunas"}
-                        </span>
-                      </div>
-
-                      <div className="citizen-detail-row text-muted-foreground text-xs">
-                        <span>Blok / Dusun:</span>
-                        <strong style={{ color: "var(--color-dark)" }}>
-                          Blok {f.blok} / {f.dusun}
-                        </strong>
-                      </div>
-
-                      <div className="citizen-detail-row text-muted-foreground text-xs">
-                        <span>Luas Tanah:</span>
-                        <strong style={{ color: "var(--color-dark)" }}>
-                          {f.landArea ? `${f.landArea} m²` : "-"}
-                        </strong>
-                      </div>
-
-                      {f.buildingArea != null && (
-                        <div className="citizen-detail-row text-muted-foreground text-xs">
-                          <span>Luas Bangunan:</span>
-                          <strong style={{ color: "var(--color-dark)" }}>
-                            {f.buildingArea} m²
-                          </strong>
-                        </div>
-                      )}
-
-                      {isPamong && (
-                        <div className="citizen-card-footer">
-                          <button
-                            onClick={() => togglePayment(f.id)}
-                            disabled={toggling === f.id}
-                            className="btn btn-primary btn-sm px-[10px] py-1 text-[11px]"
-                            style={{
-                              backgroundColor:
-                                f.status === "lunas"
-                                  ? "var(--color-danger)"
-                                  : "var(--color-success)",
-                            }}
-                          >
-                            {toggling === f.id
-                              ? "..."
-                              : f.status === "lunas"
-                                ? "Tandai Belum Bayar"
-                                : "Verifikasi Bayar"}
-                          </button>
-                        </div>
-                      )}
-                    </div>
+                    <FieldCard
+                      key={f.id}
+                      field={f}
+                      isPamong={isPamong}
+                      toggling={toggling}
+                      onToggle={togglePayment}
+                    />
                   ))
                 )}
+              </div>
+            )}
+
+            {totalPages > 1 && (
+              <div className="flex items-center justify-between px-1 py-3">
+                <span className="text-xs text-muted-foreground">
+                  {total} bidang
+                </span>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setPage(page - 1)}
+                    disabled={page <= 0}
+                    className="btn btn-outline btn-sm px-2 py-1 text-xs"
+                  >
+                    <ChevronLeft size={14} />
+                    Sebelumnya
+                  </button>
+                  <span className="text-xs text-muted-foreground">
+                    {page + 1} / {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage(page + 1)}
+                    disabled={page >= totalPages - 1}
+                    className="btn btn-outline btn-sm px-2 py-1 text-xs"
+                  >
+                    Selanjutnya
+                    <ChevronRight size={14} />
+                  </button>
+                </div>
               </div>
             )}
           </div>

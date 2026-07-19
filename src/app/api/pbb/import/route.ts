@@ -20,10 +20,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    const ext = file.name.toLowerCase();
     if (
-      !file.name.endsWith(".xlsx") &&
-      !file.name.endsWith(".xls") &&
-      !file.name.endsWith(".csv")
+      !ext.endsWith(".xlsx") &&
+      !ext.endsWith(".xls") &&
+      !ext.endsWith(".csv")
     ) {
       return NextResponse.json(
         { error: "Format file harus .xlsx, .xls, atau .csv." },

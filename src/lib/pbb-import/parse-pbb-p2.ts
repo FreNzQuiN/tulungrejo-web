@@ -1,18 +1,20 @@
 import * as XLSX from "xlsx-js-style";
 import type { RealisasiRecord } from "./types";
+import { getTaxYearFromDate } from "@/lib/pbb-tax-year";
 
-// PBB-P2 Excel column mapping (0-indexed from parsed array):
-// col 0 = kode_kec ("050")
-// col 1 = kecamatan ("WATES")
-// col 2 = kode_desa ("001"-"008")
-// col 3 = kelurahan
-// col 4 = PBB (total nominal)
-// col 5 = BAYAR (total terbayar)
-// col 6 = % (persentase)
-// col 7 = KURANG BAYAR
-// col 8 = SPPT (total wajib pajak)
-// col 9 = DIBAYAR (jumlah SPPT lunas)
-// col 10 = SISA SPPT
+const COL = {
+  KODE_KEC: 0,
+  KECAMATAN: 1,
+  KODE_DESA: 2,
+  DESA: 3,
+  TOTAL_PBB: 4,
+  TOTAL_BAYAR: 5,
+  PERSEN: 6,
+  KURANG_BAYAR: 7,
+  TOTAL_SPPT: 8,
+  DIBAYAR: 9,
+  SISA_SPPT: 10,
+} as const;
 
 export function parsePbbP2(workbook: XLSX.WorkBook): RealisasiRecord | null {
   const sheetName = workbook.SheetNames[0];
@@ -26,8 +28,8 @@ export function parsePbbP2(workbook: XLSX.WorkBook): RealisasiRecord | null {
   let dataRow: unknown[] | null = null;
   for (const row of rows) {
     if (!row || row.length < 4) continue;
-    const col2 = String(row[2] ?? "").trim();
-    const col3 = String(row[3] ?? "").trim();
+    const col2 = String(row[COL.KODE_DESA] ?? "").trim();
+    const col3 = String(row[COL.DESA] ?? "").trim();
     if (col2 === "005" || col3.toUpperCase() === "TULUNGREJO") {
       dataRow = row;
       break;
@@ -51,17 +53,18 @@ export function parsePbbP2(workbook: XLSX.WorkBook): RealisasiRecord | null {
   const big = (idx: number): bigint => BigInt(Math.round(num(idx)));
 
   return {
-    kodeKec: String(dataRow[0] ?? "").trim() || "050",
-    kecamatan: String(dataRow[1] ?? "").trim() || "WATES",
-    kodeDesa: String(dataRow[2] ?? "").trim() || "005",
-    desa: String(dataRow[3] ?? "").trim() || "TULUNGREJO",
-    totalPbb: big(4),
-    totalBayar: big(5),
-    persen: Math.round(num(6) * 100) / 100,
-    kurangBayar: big(7),
-    totalSppt: Math.round(num(8)),
-    dibayar: Math.round(num(9)),
-    sisaSppt: Math.round(num(10)),
+    kodeKec: String(dataRow[COL.KODE_KEC] ?? "").trim() || "050",
+    kecamatan: String(dataRow[COL.KECAMATAN] ?? "").trim() || "WATES",
+    kodeDesa: String(dataRow[COL.KODE_DESA] ?? "").trim() || "005",
+    desa: String(dataRow[COL.DESA] ?? "").trim() || "TULUNGREJO",
+    totalPbb: big(COL.TOTAL_PBB),
+    totalBayar: big(COL.TOTAL_BAYAR),
+    persen: Math.round(num(COL.PERSEN) * 100) / 100,
+    kurangBayar: big(COL.KURANG_BAYAR),
+    totalSppt: Math.round(num(COL.TOTAL_SPPT)),
+    dibayar: Math.round(num(COL.DIBAYAR)),
+    sisaSppt: Math.round(num(COL.SISA_SPPT)),
     tanggalAmbil: new Date(),
+    tahun: getTaxYearFromDate(new Date()),
   };
 }

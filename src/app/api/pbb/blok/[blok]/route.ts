@@ -38,11 +38,18 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({
-      blok,
-      dusun: BLOK_TO_DUSUN[blok] ?? null,
-      images,
-    });
+    return NextResponse.json(
+      {
+        blok,
+        dusun: BLOK_TO_DUSUN[blok] ?? null,
+        images,
+      },
+      {
+        headers: {
+          "Cache-Control": "private, max-age=3600",
+        },
+      },
+    );
   } catch (err) {
     console.error("PBB blok image error:", err);
     return NextResponse.json(

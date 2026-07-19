@@ -11,14 +11,23 @@ import {
   cellValue,
 } from "./utils";
 
-// Column mapping (0-indexed):
-// 3=kode_propinsi, 4=kode_kab, 5=kode_kec, 6=kode_desa
-// 7=blok, 8=no_bidang, 9=check digit (skip)
-// 13=owner_name, 14-18=owner_address, 19=address
-// 20=RW, 21=RT, 22=land_area, 23=znt, 24=jenis_tanah
-// 26=pendataan_at
-
-const OWNER_ADDR_COLS = [14, 15, 16, 17, 18] as const;
+const COL = {
+  KODE_PROP: 3,
+  KODE_KAB: 4,
+  KODE_KEC: 5,
+  KODE_DESA: 6,
+  BLOK: 7,
+  NO_BIDANG: 8,
+  OWNER_NAME: 13,
+  OWNER_ADDR: [14, 15, 16, 17, 18] as const,
+  ADDRESS: 19,
+  RW: 20,
+  RT: 21,
+  LAND_AREA: 22,
+  ZNT: 23,
+  JENIS_TANAH: 24,
+  PENDATAAN_AT: 26,
+} as const;
 
 export function parseSpopSheet(workbook: XLSX.WorkBook): FieldRecord[] {
   const sheet = workbook.Sheets["SPOP"];
@@ -29,18 +38,19 @@ export function parseSpopSheet(workbook: XLSX.WorkBook): FieldRecord[] {
   const seen = new Set<string>();
 
   for (const row of rows) {
-    const blok = sanitizeBlok(cellValue(row, 7));
-    const noBidang = sanitizeNoBidang(cellValue(row, 8));
+    const blok = sanitizeBlok(cellValue(row, COL.BLOK));
+    const noBidang = sanitizeNoBidang(cellValue(row, COL.NO_BIDANG));
     if (!blok || !noBidang) continue;
 
     const key = `${blok}|${noBidang}`;
     if (seen.has(key)) continue;
     seen.add(key);
 
-    const kodeProp = String(cellValue(row, 3) ?? "").trim() || "35";
-    const kodeKab = String(cellValue(row, 4) ?? "").trim() || "05";
-    const kodeKec = String(cellValue(row, 5) ?? "").trim() || "050";
-    const kodeDesa = String(cellValue(row, 6) ?? "").trim() || "005";
+    const kodeProp = String(cellValue(row, COL.KODE_PROP) ?? "").trim() || "35";
+    const kodeKab = String(cellValue(row, COL.KODE_KAB) ?? "").trim() || "05";
+    const kodeKec = String(cellValue(row, COL.KODE_KEC) ?? "").trim() || "050";
+    const kodeDesa =
+      String(cellValue(row, COL.KODE_DESA) ?? "").trim() || "005";
 
     const nop = buildNop([
       kodeProp,
@@ -52,11 +62,11 @@ export function parseSpopSheet(workbook: XLSX.WorkBook): FieldRecord[] {
     ]);
     const noUrut = buildNoUrut(blok, noBidang);
 
-    const ownerName = String(cellValue(row, 13) ?? "").trim();
+    const ownerName = String(cellValue(row, COL.OWNER_NAME) ?? "").trim();
     if (!ownerName) continue;
 
     const addrParts: string[] = [];
-    for (const ci of OWNER_ADDR_COLS) {
+    for (const ci of COL.OWNER_ADDR) {
       const v = cellValue(row, ci);
       if (v != null) {
         const s = String(v).trim();
@@ -65,18 +75,21 @@ export function parseSpopSheet(workbook: XLSX.WorkBook): FieldRecord[] {
     }
     const ownerAddress = addrParts.length > 0 ? addrParts.join(", ") : null;
 
-    const address = String(cellValue(row, 19) ?? "").trim();
-    const rw = String(cellValue(row, 20) ?? "").trim() || null;
-    const rt = String(cellValue(row, 21) ?? "").trim() || null;
+    const address = String(cellValue(row, COL.ADDRESS) ?? "").trim();
+    const rw = String(cellValue(row, COL.RW) ?? "").trim() || null;
+    const rt = String(cellValue(row, COL.RT) ?? "").trim() || null;
 
-    const landArea = roundLandArea(cellValue(row, 22));
-    const znt = String(cellValue(row, 23) ?? "").trim() || null;
+    const landArea = roundLandArea(cellValue(row, COL.LAND_AREA));
+    const znt = String(cellValue(row, COL.ZNT) ?? "").trim() || null;
 
-    const jenisTanahRaw = cellValue(row, 24);
-    const jenisTanah =
-      jenisTanahRaw != null ? Number(jenisTanahRaw) || null : null;
+    const jenisTanahRaw = cellValue(row, COL.JENIS_TANAH);
+    const jenisTanah: number | null = (() => {
+      if (jenisTanahRaw == null) return null;
+      const n = Number(jenisTanahRaw);
+      return Number.isNaN(n) ? null : n;
+    })();
 
-    const pendataanAt = parseDate(cellValue(row, 26));
+    const pendataanAt = parseDate(cellValue(row, COL.PENDATAAN_AT));
 
     records.push({
       nop,

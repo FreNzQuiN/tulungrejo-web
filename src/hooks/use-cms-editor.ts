@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo, useRef } from "react";
 import { toast } from "sonner";
 
 function isEqual(a: unknown, b: unknown): boolean {
@@ -47,6 +47,8 @@ export function useCmsEditor<T>(
   const [original, setOriginal] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const transformRef = useRef(transformResponse);
+  transformRef.current = transformResponse;
 
   useEffect(() => {
     let cancelled = false;
@@ -58,7 +60,8 @@ export function useCmsEditor<T>(
       })
       .then((raw: unknown) => {
         if (cancelled) return;
-        const d = transformResponse ? transformResponse(raw) : (raw as T);
+        const fn = transformRef.current;
+        const d = fn ? fn(raw) : (raw as T);
         setData(d);
         setOriginal(d);
       })
@@ -73,7 +76,7 @@ export function useCmsEditor<T>(
     return () => {
       cancelled = true;
     };
-  }, [apiUrl, loadErrorMsg, transformResponse]);
+  }, [apiUrl, loadErrorMsg]);
 
   const hasChanges = useMemo(() => {
     if (!original) return false;
@@ -95,9 +98,8 @@ export function useCmsEditor<T>(
         });
         if (res.ok) {
           const raw = await res.json();
-          const updated = transformResponse
-            ? transformResponse(raw)
-            : (raw as T);
+          const fn = transformRef.current;
+          const updated = fn ? fn(raw) : (raw as T);
           setData(updated);
           setOriginal(updated);
           toast.success(successMsg);
@@ -115,7 +117,7 @@ export function useCmsEditor<T>(
         setSaving(false);
       }
     },
-    [apiUrl, transformResponse],
+    [apiUrl],
   );
 
   const cancel = useCallback(() => {

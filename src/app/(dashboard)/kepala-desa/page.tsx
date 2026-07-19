@@ -9,6 +9,7 @@ import type { RealisasiView } from "@/lib/types";
 import { AccessDenied } from "@/components/auth/access-denied";
 import { RealisasiSummaryCard } from "@/components/kades/realisasi-summary-card";
 import { StatCard } from "@/components/kades/stat-card";
+import { getYearOptions } from "@/lib/pbb-tax-year";
 import { formatCurrency } from "@/lib/utils";
 
 function formatDate(iso: string): string {
@@ -53,22 +54,62 @@ export default function KadesDashboard() {
   const { user: sessionUser, isLoading: authLoading } = useAuth();
   const [data, setData] = useState<RealisasiView | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selectedYear, setSelectedYear] = useState<number | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
     if (sessionUser?.role !== "kepala_desa") return;
 
-    fetch("/api/pbb/realisasi")
+    const url = selectedYear
+      ? `/api/pbb/realisasi?tahun=${selectedYear}`
+      : "/api/pbb/realisasi";
+
+    fetch(url)
       .then((res) => {
+        if (res.status === 404) {
+          setData(null);
+          return null;
+        }
         if (!res.ok) throw new Error("Gagal memuat data realisasi.");
         return res.json();
       })
-      .then((json: RealisasiView) => setData(json))
+      .then((json: RealisasiView | null) => {
+        if (json) {
+          setData(json);
+          if (json.tahun != null && selectedYear === null) {
+            setSelectedYear(json.tahun);
+          }
+        }
+      })
       .catch((err) => {
         toast.error(err.message);
       })
       .finally(() => setLoading(false));
-  }, [sessionUser, authLoading]);
+  }, [sessionUser, authLoading, selectedYear]);
+
+  const yearOptions = getYearOptions();
+
+  const yearSelector = (
+    <div className="flex items-center gap-3 mb-6">
+      <label className="text-sm font-semibold text-[var(--color-dark-brown)]">
+        Tahun:
+      </label>
+      <select
+        value={selectedYear ?? ""}
+        onChange={(e) => {
+          const val = e.target.value;
+          if (val) setSelectedYear(Number(val));
+        }}
+        className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-sm font-medium text-[var(--color-dark-brown)] shadow-sm focus:outline-none focus:ring-2 focus:ring-[var(--color-dark-brown)] focus:border-transparent"
+      >
+        {yearOptions.map((year) => (
+          <option key={year} value={year}>
+            {year}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
 
   if (authLoading) {
     return (
@@ -107,6 +148,7 @@ export default function KadesDashboard() {
       <div>
         {pageHeader}
         <div className="container">
+          {yearSelector}
           <CardSkeleton />
         </div>
       </div>
@@ -118,9 +160,12 @@ export default function KadesDashboard() {
       <div>
         {pageHeader}
         <div className="container">
+          {yearSelector}
           <div className="glass-panel p-8 text-center">
             <p className="text-muted-foreground">
-              Belum ada data realisasi PBB. Silakan impor data terlebih dahulu.
+              {selectedYear
+                ? `Belum ada data realisasi untuk tahun ${selectedYear}.`
+                : "Belum ada data realisasi PBB. Silakan impor data terlebih dahulu."}
             </p>
           </div>
         </div>
@@ -133,6 +178,7 @@ export default function KadesDashboard() {
       {pageHeader}
 
       <div className="container">
+        {yearSelector}
         <div className="space-y-6">
           <RealisasiSummaryCard
             totalPbb={data.totalPbb}

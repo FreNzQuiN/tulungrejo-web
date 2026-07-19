@@ -64,7 +64,7 @@ export async function POST(request: Request) {
     await resetRateLimit(`login:email:${normalizedEmail}`);
 
     await setSessionCookie({
-      id: String(user.id),
+      id: user.id,
       email: user.email,
       name: user.name,
       role: user.role,

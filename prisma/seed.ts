@@ -163,7 +163,6 @@ async function main() {
 
   console.log("  ✓ VillageProfile seeded");
 
-  // BlockImage — read from .secret/ or use placeholder
   const secretDir = path.join(__dirname, "..", ".secret");
   const blockImgRegex = /^Desa Tulungrejo Blok (\d{3})([a-z])\.webp$/;
   let blockImages: {
@@ -197,7 +196,6 @@ async function main() {
     console.log("  ⚠ .secret/ not accessible, using placeholder images");
   }
 
-  // Fallback: generate placeholder if none found
   if (blockImages.length === 0) {
     const subBloks = ["a", "b", "c"] as const;
     for (let b = 1; b <= 13; b++) {
@@ -245,7 +243,6 @@ async function main() {
     "#0d9488",
   ];
 
-  // Inline seed (was MDX)
   const articlesData = [
     {
       title: "Musyawarah Perencanaan Pembangunan Desa Tulungrejo Tahun 2027",
@@ -787,7 +784,6 @@ Desa Tulungrejo menyimpan **potensi sumber daya alam** yang sangat berupa *sumbe
   }
   console.log(`  ✓ ${articlesData.length} Articles seeded`);
 
-  // Verify critical data
   const stats = await prisma.villageStats.findFirst({ orderBy: { id: "asc" } });
   console.log(
     "  → VillageStats:",

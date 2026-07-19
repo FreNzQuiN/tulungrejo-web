@@ -1,7 +1,7 @@
 import type { UserRole } from "@/lib/types";
 
 export interface SessionUser {
-  id: string;
+  id: number;
   email: string;
   name: string;
   role: UserRole;

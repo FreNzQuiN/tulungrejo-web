@@ -5,6 +5,50 @@ import { requireRole } from "@/lib/auth/guards";
 import { safeJsonParse } from "@/lib/utils";
 import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
 import { getVillageProfile } from "@/lib/desa-queries";
+import type { Administratif, OrgMember, TugasFungsi } from "@/lib/types";
+
+function isArrayOf<T>(
+  arr: unknown,
+  guard: (item: unknown) => item is T,
+): arr is T[] {
+  return Array.isArray(arr) && arr.every(guard);
+}
+
+function isOrgMember(v: unknown): v is OrgMember {
+  return (
+    typeof v === "object" &&
+    v !== null &&
+    typeof (v as Record<string, unknown>).role === "string" &&
+    typeof (v as Record<string, unknown>).name === "string"
+  );
+}
+
+function isTugasFungsiItem(v: unknown): v is TugasFungsi {
+  return (
+    typeof v === "object" &&
+    v !== null &&
+    typeof (v as Record<string, unknown>).jabatan === "string" &&
+    typeof (v as Record<string, unknown>).tugas === "string"
+  );
+}
+
+function isAdministratif(v: unknown): v is Administratif {
+  if (typeof v !== "object" || v === null || Array.isArray(v)) return false;
+  const keys: (keyof Administratif)[] = [
+    "koordinat",
+    "batasUtara",
+    "batasSelatan",
+    "batasTimur",
+    "batasBarat",
+    "luasWilayah",
+    "mataPencaharianUtama",
+    "saranaPendidikan",
+    "saranaKesehatan",
+  ];
+  return keys.every(
+    (k) => typeof (v as Record<string, unknown>)[k] === "string",
+  );
+}
 
 export async function GET(req: NextRequest) {
   if (!(await checkApiRateLimit(req))) return rateLimitResponse();
@@ -41,67 +85,32 @@ export async function PUT(req: NextRequest) {
 
   if (
     misi !== undefined &&
-    (!Array.isArray(misi) || !misi.every((s: unknown) => typeof s === "string"))
+    !isArrayOf(misi, (s): s is string => typeof s === "string")
   ) {
     return NextResponse.json(
       { error: "Misi harus berupa array of string" },
       { status: 400 },
     );
   }
+
   if (
     strukturOrganisasi !== undefined &&
-    (!Array.isArray(strukturOrganisasi) ||
-      !strukturOrganisasi.every(
-        (s: unknown) =>
-          typeof s === "object" &&
-          s !== null &&
-          typeof (s as Record<string, unknown>).role === "string" &&
-          typeof (s as Record<string, unknown>).name === "string",
-      ))
+    !isArrayOf(strukturOrganisasi, isOrgMember)
   ) {
     return NextResponse.json(
       { error: "Struktur organisasi harus berupa array of { role, name }" },
       { status: 400 },
     );
   }
-  if (
-    tugasFungsi !== undefined &&
-    (!Array.isArray(tugasFungsi) ||
-      !tugasFungsi.every(
-        (s: unknown) =>
-          typeof s === "object" &&
-          s !== null &&
-          typeof (s as Record<string, unknown>).jabatan === "string" &&
-          typeof (s as Record<string, unknown>).tugas === "string",
-      ))
-  ) {
+
+  if (tugasFungsi !== undefined && !isArrayOf(tugasFungsi, isTugasFungsiItem)) {
     return NextResponse.json(
       { error: "Tugas fungsi harus berupa array of { jabatan, tugas }" },
       { status: 400 },
     );
   }
-  if (
-    administratif !== undefined &&
-    (typeof administratif !== "object" ||
-      administratif === null ||
-      Array.isArray(administratif) ||
-      !(
-        [
-          "koordinat",
-          "batasUtara",
-          "batasSelatan",
-          "batasTimur",
-          "batasBarat",
-          "luasWilayah",
-          "mataPencaharianUtama",
-          "saranaPendidikan",
-          "saranaKesehatan",
-        ] as const
-      ).every(
-        (k) =>
-          typeof (administratif as Record<string, unknown>)[k] === "string",
-      ))
-  ) {
+
+  if (administratif !== undefined && !isAdministratif(administratif)) {
     return NextResponse.json(
       {
         error:

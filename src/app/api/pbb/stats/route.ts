@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { requireRole, unwrapSession, getAssignedBlok } from "@/lib/auth/guards";
 import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
 import { prisma } from "@/lib/prisma";
+import { getCurrentTaxYear } from "@/lib/pbb-tax-year";
 
 export async function GET(req: NextRequest) {
   if (!(await checkApiRateLimit(req))) return rateLimitResponse();
@@ -10,7 +11,7 @@ export async function GET(req: NextRequest) {
   if ("error" in auth) return auth.error;
 
   try {
-    const currentYear = new Date().getFullYear();
+    const currentYear = getCurrentTaxYear();
     const session = unwrapSession(auth);
     const assignedBlok =
       session?.user?.role === "pamong_pajak"
@@ -57,6 +58,7 @@ export async function GET(req: NextRequest) {
       paid: paidCount,
       unpaid: unpaidCount,
       percentage,
+      tahun: currentYear,
     });
   } catch (err) {
     console.error("PBB stats error:", err);

@@ -126,26 +126,34 @@ async function importSpop(
       }
     }
 
-    const countBefore = await prisma.fields.count();
-    let totalProcessed = 0;
+    let totalAffected = 0;
+    let totalRows = 0;
 
     for (let i = 0; i < fields.length; i += BATCH_SIZE) {
       const batch = fields.slice(i, i + BATCH_SIZE);
       try {
         const { sql, params } = buildBatchSql(batch);
-        await prisma.$executeRawUnsafe(sql, ...params);
-        totalProcessed += batch.length;
+        const affected = await prisma.$executeRawUnsafe(sql, ...params);
+        totalAffected += affected;
+        totalRows += batch.length;
       } catch (err) {
         console.error("Import SPOP batch error:", err);
         summary.errors.push(`Gagal import batch ${i / BATCH_SIZE + 1}.`);
       }
     }
 
-    const countAfter = await prisma.fields.count();
-    summary.fields.inserted = countAfter - countBefore;
-    summary.fields.updated = totalProcessed - (countAfter - countBefore);
+    function computeInserted(rows: number, affected: number) {
+      // MySQL: ON DUPLICATE KEY UPDATE returns 1 per insert, 2 per update
+      return Math.max(0, 2 * rows - affected);
+    }
+    function computeUpdated(rows: number, affected: number) {
+      return Math.max(0, affected - rows);
+    }
+    summary.fields.inserted = computeInserted(totalRows, totalAffected);
+    summary.fields.updated = computeUpdated(totalRows, totalAffected);
     console.info("Import SPOP selesai:", {
-      totalProcessed,
+      totalRows,
+      totalAffected,
       inserted: summary.fields.inserted,
       updated: summary.fields.updated,
     });

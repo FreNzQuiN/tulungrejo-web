@@ -20,7 +20,7 @@ export function sanitizeSearch(input: string | null): string | null {
   const sanitized = input
     .trim()
     .slice(0, 100)
-    .replace(/[<>"'`;%_]/g, "");
+    .replace(/[<>"'`;]/g, "");
 
   return sanitized || null;
 }

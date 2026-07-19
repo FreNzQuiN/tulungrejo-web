@@ -31,6 +31,26 @@ export async function GET(
   return NextResponse.json(article);
 }
 
+async function ensureArticleOwnership(
+  slug: string,
+  userId: number,
+): Promise<NextResponse | null> {
+  const existing = await prisma.article.findUnique({
+    where: { slug },
+    select: { authorId: true },
+  });
+  if (!existing) {
+    return NextResponse.json(
+      { error: "Artikel tidak ditemukan" },
+      { status: 404 },
+    );
+  }
+  if (existing.authorId === null || existing.authorId !== userId) {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+  return null;
+}
+
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ slug: string }> },
@@ -42,22 +62,11 @@ export async function PUT(
 
   const { slug } = await params;
 
-  const existing = await prisma.article.findUnique({
-    where: { slug },
-    select: { authorId: true },
-  });
-  if (!existing) {
-    return NextResponse.json(
-      { error: "Artikel tidak ditemukan" },
-      { status: 404 },
-    );
-  }
-  if (
-    existing.authorId !== null &&
-    existing.authorId !== Number(auth.session.user.id)
-  ) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const ownershipError = await ensureArticleOwnership(
+    slug,
+    auth.session.user.id,
+  );
+  if (ownershipError) return ownershipError;
 
   const body = await req.json();
   const {
@@ -148,22 +157,11 @@ export async function DELETE(
 
   const { slug } = await params;
 
-  const existing = await prisma.article.findUnique({
-    where: { slug },
-    select: { authorId: true },
-  });
-  if (!existing) {
-    return NextResponse.json(
-      { error: "Artikel tidak ditemukan" },
-      { status: 404 },
-    );
-  }
-  if (
-    existing.authorId !== null &&
-    existing.authorId !== Number(auth.session.user.id)
-  ) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
+  const ownershipError = await ensureArticleOwnership(
+    slug,
+    auth.session.user.id,
+  );
+  if (ownershipError) return ownershipError;
 
   try {
     const deleted = await deleteArticle(slug);
