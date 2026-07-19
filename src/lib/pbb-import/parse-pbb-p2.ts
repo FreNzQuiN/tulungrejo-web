@@ -40,14 +40,12 @@ export function parsePbbP2(workbook: XLSX.WorkBook): RealisasiRecord | null {
   const num = (idx: number): number => {
     const raw = dataRow[idx];
     if (raw == null) return 0;
-    const n =
-      typeof raw === "number"
-        ? raw
-        : Number(
-            String(raw)
-              .replace(/[^0-9,.-]/g, "")
-              .replace(",", "."),
-          );
+    if (typeof raw === "number") return raw;
+    const s = String(raw).replace(/[^0-9,.\-]/g, "");
+    if (!s) return 0;
+    const n = s.includes(",")
+      ? Number(s.replace(/\./g, "").replace(",", "."))
+      : Number(s.replace(/,/g, ""));
     return Number.isNaN(n) ? 0 : n;
   };
   const big = (idx: number): bigint => BigInt(Math.round(num(idx)));

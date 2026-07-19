@@ -20,21 +20,6 @@ export const ROLE_DISPLAY: Record<UserRole, string> = {
   jurnalis: "jurnalis",
 };
 
-export interface User {
-  id: number;
-  email: string;
-  name: string;
-  role: UserRole;
-}
-
-export interface VillageStats {
-  jumlahKK: number;
-  jumlahPenduduk: number;
-  lakiLaki: number;
-  perempuan: number;
-  updatedAt: string;
-}
-
 export interface ArticleFrontmatter {
   title: string;
   slug: string;
@@ -117,11 +102,3 @@ export interface PaymentRecord {
   notes: string | null;
   markerName: string | null;
 }
-
-export type Category =
-  | "Kegiatan Desa"
-  | "Pembangunan"
-  | "Pemberdayaan"
-  | "Kesehatan"
-  | "Pertanian"
-  | "Pengumuman";

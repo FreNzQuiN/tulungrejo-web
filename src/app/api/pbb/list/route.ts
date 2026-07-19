@@ -61,6 +61,19 @@ export async function GET(req: NextRequest) {
       statusOverride = PAYMENT_STATUS.BELUM_LUNAS;
     }
 
+    if (
+      status &&
+      status !== PAYMENT_STATUS.LUNAS &&
+      status !== PAYMENT_STATUS.BELUM_LUNAS
+    ) {
+      return NextResponse.json(
+        {
+          error: `Status tidak valid. Gunakan "${PAYMENT_STATUS.LUNAS}" atau "${PAYMENT_STATUS.BELUM_LUNAS}".`,
+        },
+        { status: 400 },
+      );
+    }
+
     const [total, fields] = await Promise.all([
       prisma.fields.count({ where: fieldsWhere }),
       prisma.fields.findMany({
