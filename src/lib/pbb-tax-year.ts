@@ -21,9 +21,15 @@ export function getCurrentTaxYear(): number {
   return taxYear;
 }
 
+const YEAR_OPTIONS_RANGE = 7;
+const YEAR_OPTIONS_OFFSET = 3;
+
 export function getYearOptions(baseYear?: number): number[] {
   const year = baseYear ?? getCurrentTaxYear();
-  return Array.from({ length: 7 }, (_, i) => year - 3 + i);
+  return Array.from(
+    { length: YEAR_OPTIONS_RANGE },
+    (_, i) => year - YEAR_OPTIONS_OFFSET + i,
+  );
 }
 
 export function getTaxYearFromDate(date: Date): number {

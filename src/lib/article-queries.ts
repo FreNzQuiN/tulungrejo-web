@@ -1,4 +1,5 @@
 import { cacheTag, cacheLife } from "next/cache";
+import { cache } from "react";
 import { prisma } from "./prisma";
 import type { Article, ArticleFrontmatter } from "./types";
 import type { Prisma } from "@prisma/client";
@@ -62,11 +63,12 @@ function toFullArticle(a: {
 }
 
 async function queryAllPublishedArticles(take?: number, skip?: number) {
+  const safeTake = Math.min(take ?? 100, 1000);
   return prisma.article.findMany({
     where: { published: true },
     orderBy: { date: "desc" },
     select: articleListSelect,
-    ...(take !== undefined ? { take } : {}),
+    take: safeTake,
     ...(skip !== undefined ? { skip } : {}),
   });
 }
@@ -101,14 +103,14 @@ async function getAllPublishedArticlesCached(
   return articles.map(toFrontmatter);
 }
 
-export async function getPublishedArticleBySlug(
-  slug: string,
-): Promise<Article | null> {
-  if (process.env.NODE_ENV === "production") {
-    return getPublishedArticleBySlugCached(slug);
-  }
-  return queryPublishedArticleBySlug(slug);
-}
+export const getPublishedArticleBySlug = cache(
+  async (slug: string): Promise<Article | null> => {
+    if (process.env.NODE_ENV === "production") {
+      return getPublishedArticleBySlugCached(slug);
+    }
+    return queryPublishedArticleBySlug(slug);
+  },
+);
 
 async function getPublishedArticleBySlugCached(
   slug: string,
@@ -123,10 +125,11 @@ export async function getAllArticlesForJournalist(
   take?: number,
   skip?: number,
 ): Promise<ArticleFrontmatter[]> {
+  const safeTake = Math.min(take ?? 100, 1000);
   const articles = await prisma.article.findMany({
     orderBy: { date: "desc" },
     select: articleListSelect,
-    ...(take !== undefined ? { take } : {}),
+    take: safeTake,
     ...(skip !== undefined ? { skip } : {}),
   });
   return articles.map(toFrontmatter);

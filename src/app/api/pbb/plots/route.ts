@@ -4,7 +4,7 @@ import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
 import { findFields } from "@/lib/pbb-queries";
 import { sanitizeSearch } from "@/lib/utils";
 
-const MAX_TAKE = 2000;
+const MAX_TAKE = 500;
 
 export async function GET(req: NextRequest) {
   if (!(await checkApiRateLimit(req))) return rateLimitResponse();
