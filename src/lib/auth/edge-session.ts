@@ -4,6 +4,10 @@ import type { SessionUser, Session } from "@/lib/auth/types";
 
 const SECRET_RAW = process.env.JWT_SECRET ?? process.env.AUTH_SECRET;
 if (!SECRET_RAW) throw new Error("JWT_SECRET or AUTH_SECRET must be set");
+if (SECRET_RAW.length < 32)
+  throw new Error(
+    "JWT_SECRET or AUTH_SECRET must be at least 32 characters long",
+  );
 const SECRET = new TextEncoder().encode(SECRET_RAW);
 
 const COOKIE_NAME = "session-token";

@@ -43,22 +43,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const field = await prisma.fields.findUnique({ where: { id: fieldId } });
-    if (!field) {
-      return NextResponse.json(
-        { error: "Bidang tidak ditemukan." },
-        { status: 404 },
-      );
-    }
-
-    const assignedBlok = await getAssignedBlok(auth);
-    if (assignedBlok && field.blok !== assignedBlok) {
-      return NextResponse.json(
-        { error: "Anda tidak memiliki akses ke bidang ini." },
-        { status: 403 },
-      );
-    }
-
     const session = unwrapSession(auth);
     const markedBy = session?.user?.id ?? null;
     const markedAt = new Date();
@@ -66,6 +50,16 @@ export async function POST(req: NextRequest) {
     let actualStatus: PaymentStatus = PAYMENT_STATUS.BELUM_LUNAS;
 
     await prisma.$transaction(async (tx) => {
+      const field = await tx.fields.findUnique({ where: { id: fieldId } });
+      if (!field) {
+        throw new Error("Bidang tidak ditemukan.");
+      }
+
+      const assignedBlok = await getAssignedBlok(auth);
+      if (assignedBlok && field.blok !== assignedBlok) {
+        throw new Error("Anda tidak memiliki akses ke bidang ini.");
+      }
+
       const existing = await tx.payments.findUnique({
         where: { fieldId_year: { fieldId, year: parsedYear } },
       });
@@ -95,6 +89,13 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ success: true, status: actualStatus });
   } catch (err) {
+    const message = err instanceof Error ? err.message : "";
+    if (message === "Bidang tidak ditemukan.") {
+      return NextResponse.json({ error: message }, { status: 404 });
+    }
+    if (message === "Anda tidak memiliki akses ke bidang ini.") {
+      return NextResponse.json({ error: message }, { status: 403 });
+    }
     console.error("PBB toggle error:", err);
     return NextResponse.json(
       { error: "Gagal mengubah status pembayaran." },

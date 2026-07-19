@@ -6,6 +6,10 @@ import type { SessionUser, Session } from "@/lib/auth/types";
 
 const SECRET_RAW = process.env.JWT_SECRET ?? process.env.AUTH_SECRET;
 if (!SECRET_RAW) throw new Error("JWT_SECRET or AUTH_SECRET must be set");
+if (SECRET_RAW.length < 32)
+  throw new Error(
+    "JWT_SECRET or AUTH_SECRET must be at least 32 characters long",
+  );
 const SECRET = new TextEncoder().encode(SECRET_RAW);
 
 const COOKIE_NAME = "session-token";
@@ -62,36 +66,6 @@ export async function getSession(): Promise<Session | null> {
 export async function clearSession(): Promise<void> {
   const cookieStore = await cookies();
   cookieStore.delete(COOKIE_NAME);
-}
-
-export async function getSessionFromRequest(
-  request: Request,
-): Promise<Session | null> {
-  const cookieHeader = request.headers.get("cookie") ?? "";
-  const token = parseCookie(cookieHeader, COOKIE_NAME);
-  if (!token) return null;
-  const user = await verifyToken(token);
-  if (!user) return null;
-
-  const dbUser = await prisma.user.findUnique({
-    where: { id: user.id },
-    select: { role: true },
-  });
-  if (!dbUser || dbUser.role !== user.role) return null;
-
-  return { user };
-}
-
-function parseCookie(cookie: string, name: string): string | null {
-  for (const part of cookie.split(";")) {
-    const eq = part.indexOf("=");
-    if (eq === -1) continue;
-    const key = part.slice(0, eq).trim();
-    if (key === name) {
-      return part.slice(eq + 1).trim();
-    }
-  }
-  return null;
 }
 
 export { setSessionCookie };

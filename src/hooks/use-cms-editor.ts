@@ -48,7 +48,9 @@ export function useCmsEditor<T>(
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const transformRef = useRef(transformResponse);
-  transformRef.current = transformResponse;
+  useEffect(() => {
+    transformRef.current = transformResponse;
+  }, [transformResponse]);
 
   useEffect(() => {
     let cancelled = false;
