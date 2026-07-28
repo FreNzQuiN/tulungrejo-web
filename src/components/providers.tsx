@@ -62,7 +62,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     // Skip polling if no session cookie exists (100% of public visitors)
     if (!document.cookie.includes("session-token=")) return;
 
-    const interval = setInterval(
+    let interval = setInterval(
       async () => {
         try {
           const res = await fetch("/api/auth/me");
@@ -80,7 +80,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
     );
 
     function onVisibilityChange() {
-      if (document.hidden) clearInterval(interval);
+      if (document.hidden) {
+        clearInterval(interval);
+      } else {
+        clearInterval(interval);
+        interval = setInterval(fetchUser, 5 * 60 * 1000);
+      }
     }
     document.addEventListener("visibilitychange", onVisibilityChange);
 

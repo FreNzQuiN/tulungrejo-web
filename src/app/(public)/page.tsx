@@ -40,7 +40,7 @@ async function HomePageContent() {
         </div>
       </header>
 
-      <section id="about-section" className="home-about-section">
+      <section id="about-section" className="home-about-section" tabIndex={-1}>
         <div className="container about-map-grid">
           <div className="about-content">
             <h2>{content.aboutTitle}</h2>

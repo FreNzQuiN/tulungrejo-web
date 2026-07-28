@@ -55,11 +55,7 @@ const nextConfig: NextConfig = {
   // PPR hanya di production — dev triggers HMR reload loop via proxy component
   // generation yang gak bisa di-handle Turbopack dengan baik.
   cacheComponents: !isDev,
-  experimental: {
-    // useCache pisah dari cacheComponents — enable selalu biar cacheTag/cacheLife
-    // jalan, meski PPR mati di dev.
-    useCache: true,
-  },
+  experimental: {},
   allowedDevOrigins: isDev ? getDevOrigins() : [],
   images: {
     remotePatterns: [{ protocol: "https", hostname: "images.unsplash.com" }],
@@ -74,15 +70,6 @@ const nextConfig: NextConfig = {
           { key: "X-Frame-Options", value: "DENY" },
           ...(!isDev
             ? [{ key: "Content-Security-Policy", value: csp("'none'") }]
-            : []),
-        ],
-      },
-      {
-        source: "/admin/:path*",
-        headers: [
-          { key: "X-Frame-Options", value: "SAMEORIGIN" },
-          ...(!isDev
-            ? [{ key: "Content-Security-Policy", value: csp("'self'") }]
             : []),
         ],
       },

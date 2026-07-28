@@ -29,7 +29,9 @@ export function LoginForm() {
     if (process.env.NODE_ENV === "production") return;
     fetch("/api/auth/demo-accounts")
       .then((res) => res.json())
-      .then((data) => setDemoAccounts(data))
+      .then((data) => {
+        if (Array.isArray(data)) setDemoAccounts(data);
+      })
       .catch(() => {});
   }, []);
 

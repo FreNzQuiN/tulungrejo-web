@@ -127,7 +127,7 @@ model Realisasi {
   dibayar      Int
   sisaSppt     Int      @map("sisa_sppt")
   tanggalAmbil DateTime @map("tanggal_ambil")
-  tahun        Int?
+  tahun        Int
   importedAt   DateTime @default(now()) @map("imported_at")
 
   @@unique([kodeDesa, tahun])

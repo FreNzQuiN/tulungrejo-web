@@ -31,7 +31,6 @@ export async function checkApiRateLimit(
   namespace = "api",
 ): Promise<boolean> {
   const ip = getClientIp(req);
-  if (!ip) return true;
 
   const cacheKey = `${namespace}:${ip}`;
 

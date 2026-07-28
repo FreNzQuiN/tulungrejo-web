@@ -6,6 +6,7 @@ const PUBLIC_API_PATHS = [
   "/api/auth/login",
   "/api/auth/logout",
   "/api/auth/me",
+  "/api/auth/demo-accounts",
   "/api/contact",
   "/api/articles/public",
   "/api/homepage",

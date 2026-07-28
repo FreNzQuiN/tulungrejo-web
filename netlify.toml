@@ -20,6 +20,8 @@
   for = "/api/*"
   [headers.values]
     X-Robots-Tag = "noindex"
+    Cache-Control = "no-store"
+    pragma = "no-cache"
 
 [[headers]]
   for = "/_next/static/*"

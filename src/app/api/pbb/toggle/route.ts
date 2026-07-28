@@ -63,7 +63,7 @@ async function togglePayment(
       throw createErr;
     }
   }
-  return PAYMENT_STATUS.BELUM_LUNAS;
+  throw new Error("togglePayment: unreachable");
 }
 
 export async function POST(req: NextRequest) {

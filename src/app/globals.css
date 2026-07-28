@@ -83,10 +83,10 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --color-primary-bg: var(--color-primary-bg, #f0f0f0);
-  --color-secondary-tan: var(--color-secondary-tan, #05595b);
-  --color-dark-brown: var(--color-dark-brown, #062c30);
-  --color-footer-bg: var(--color-footer-bg, #062c30);
+  --color-primary-bg: #f0f0f0;
+  --color-secondary-tan: #05595b;
+  --color-dark-brown: #062c30;
+  --color-footer-bg: #062c30;
   --color-white: var(--color-white, #ffffff);
   --color-dark: var(--color-dark, #1e1711);
   --color-success: var(--color-success, #2e7d32);

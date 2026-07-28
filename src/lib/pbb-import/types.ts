@@ -37,7 +37,7 @@ export interface RealisasiRecord {
   dibayar: number;
   sisaSppt: number;
   tanggalAmbil: Date;
-  tahun: number | null;
+  tahun: number;
 }
 
 export interface ImportSummary {

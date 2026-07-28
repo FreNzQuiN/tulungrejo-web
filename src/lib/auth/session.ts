@@ -1,8 +1,8 @@
-import { SignJWT, jwtVerify } from "jose";
+import { SignJWT } from "jose";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
-import { ALLOWED_ROLES } from "@/lib/types";
 import type { SessionUser, Session } from "@/lib/auth/types";
+import { verifyToken } from "./jwt";
 
 const SECRET_RAW = process.env.JWT_SECRET ?? process.env.AUTH_SECRET;
 if (!SECRET_RAW) throw new Error("JWT_SECRET or AUTH_SECRET must be set");
@@ -29,24 +29,6 @@ export async function signToken(payload: SessionUser): Promise<string> {
     .setExpirationTime("30d")
     .setSubject(String(payload.id))
     .sign(SECRET);
-}
-
-export async function verifyToken(token: string): Promise<SessionUser | null> {
-  try {
-    const { payload } = await jwtVerify(token, SECRET);
-    const role = payload.role as SessionUser["role"];
-    if (!role || !ALLOWED_ROLES.includes(role)) return null;
-    return {
-      id: Number(payload.sub ?? payload.id ?? 0),
-      email: payload.email as string,
-      name: payload.name as string,
-      role,
-      tokenVersion: payload.tokenVersion as number | undefined,
-    };
-  } catch (err) {
-    console.error("verifyToken error:", err);
-    return null;
-  }
 }
 
 async function setSessionCookie(user: SessionUser): Promise<void> {

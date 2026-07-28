@@ -45,7 +45,7 @@ export async function POST(request: Request) {
 
     // Timing-safe comparison — always run bcrypt to prevent user enumeration
     const dummyHash =
-      "$2a$12$LJ3m4ys3Lg3YOCwDqImqXeZ0Gii/8Nh0TWNL0tRQyXa1pHFMz.mWy";
+      "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy";
     const valid = user
       ? await bcrypt.compare(password, user.passwordHash)
       : await bcrypt.compare(password, dummyHash);

@@ -9,7 +9,7 @@ const MAX_TAKE = 500;
 export async function GET(req: NextRequest) {
   if (!(await checkApiRateLimit(req))) return rateLimitResponse();
 
-  const auth = await requireRole(["pamong_pajak"]);
+  const auth = await requireRole(["pamong_pajak", "kepala_desa"]);
   if ("error" in auth) return auth.error;
 
   try {

@@ -16,7 +16,7 @@ export default function Error({
 
   return (
     <div className="min-h-screen flex items-center justify-center">
-      <div className="text-center">
+      <div className="text-center" role="alert">
         <h1 className="text-6xl font-bold text-muted-foreground">500</h1>
         <p className="text-muted-foreground mt-4">Terjadi kesalahan</p>
         <p className="text-muted-foreground/60 text-sm mt-2">
