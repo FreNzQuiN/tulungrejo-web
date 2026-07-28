@@ -3,7 +3,6 @@
 ## Purpose
 
 Documents stable architectural decisions and conventions unique to this project.
-For agent behavior rules, see workspace `~/.config/opencode/AGENTS.md`.
 
 ## Project
 
@@ -15,10 +14,6 @@ Desa Tulungrejo — village website with PBB (property tax) monitoring, article 
 
 ## Architecture Decisions
 
-### FE UI = Absolute Contract
-
-The existing Vite SPA (tulungrejo-frontend) defines what must exist. All data shapes, routes, and behaviors are sourced from the FE. Backend adapts to serve these shapes.
-
 ### Route Groups
 
 Three groups, each with different auth requirements:
@@ -27,11 +22,7 @@ Three groups, each with different auth requirements:
 - `(auth)/` — login page only
 - `(dashboard)/` — role-gated. Protected by `src/proxy.ts` which redirects unauthorized users to `/login`.
 
-Page files live under their group directory. Routes mirror the Vite SPA paths.
-
-### Role Display Mapping
-
-Prisma `Role` enum uses different values from what FE displays. See `src/lib/types.ts` (`ROLE_DISPLAY`). Do not change the Prisma enum — FE strings are display-only.
+Page files live under their group directory.
 
 ### Database
 
@@ -65,14 +56,22 @@ Defined in `src/lib/constants.ts` (`CATEGORIES`).
 
 ## Conventions
 
-- **No code comments.** Self-documenting code.
+- **NO CODE COMMENTS.** Self-documenting code.
+- No self-explanatory comment inside code block. IF ANY, FLAG IT AS VIOLATION ISSUE even if it was pre-existing.
 - `@/*` → `./src/*`
 - Passwords: bcryptjs.
 - Security headers, CSP, cookies: see `next.config.ts`.
-- ⚠ Next.js deprecated the "middleware" naming convention. This project uses `src/proxy.ts` as Next.js 16 new standard. Do not flag it as broken or issue (already working).
 
 ---
 
 ## Deployment
 
 Netlify via `@netlify/plugin-nextjs`. Config: `netlify.toml`. Build: `npm run build`.
+
+# HARD RULES USERS ADD MANUALLY:
+
+You are dealing with new next.js 16. Do not flag this as an issue:
+- second args in revalidateTags "max" is true. Acknowledge your limited knowledge it to prevent burning tokens.
+- ⚠ Next.js deprecated the "middleware" naming convention. This project uses `src/proxy.ts` as Next.js 16 new standard. Do not flag it as broken or issue (already working).
+
+ALWAYS run `npm run lint` for eslint AND `npx tsc --noEmit` AS FINAL VERIFICATION THAT YOU WRITE THE NEWEST RECOMMENDED CODE CONVENTION. If issues flagged, DO NOT TAKE THE SHORTEST PATH!
