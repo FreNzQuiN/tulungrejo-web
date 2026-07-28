@@ -3,6 +3,7 @@ import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth/guards";
 import { safeJsonParse } from "@/lib/utils";
+import { validateArticleImage } from "@/lib/constants";
 import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
 import { getVillageProfile } from "@/lib/desa-queries";
 import type { Administratif, OrgMember, TugasFungsi } from "@/lib/types";
@@ -77,7 +78,14 @@ export async function PUT(req: NextRequest) {
   if ("error" in auth) return auth.error;
 
   const body = await req.json();
-  const { visi, misi, strukturOrganisasi, tugasFungsi, administratif } = body;
+  const {
+    visi,
+    misi,
+    strukturOrganisasi,
+    strukturOrganisasiImage,
+    tugasFungsi,
+    administratif,
+  } = body;
 
   if (!visi) {
     return NextResponse.json({ error: "Visi harus diisi" }, { status: 400 });
@@ -120,6 +128,25 @@ export async function PUT(req: NextRequest) {
     );
   }
 
+  if (strukturOrganisasiImage !== undefined) {
+    if (
+      strukturOrganisasiImage !== null &&
+      typeof strukturOrganisasiImage !== "string"
+    ) {
+      return NextResponse.json(
+        { error: "Gambar struktur organisasi tidak valid" },
+        { status: 400 },
+      );
+    }
+    if (typeof strukturOrganisasiImage === "string") {
+      const err = validateArticleImage(strukturOrganisasiImage);
+      if (err) {
+        return NextResponse.json({ error: err }, { status: 400 });
+      }
+    }
+    // null = clear the image, string = validated base64 — both fall through to update
+  }
+
   try {
     const profile = await prisma.villageProfile.findFirst({
       orderBy: { id: "asc" },
@@ -139,6 +166,9 @@ export async function PUT(req: NextRequest) {
         ...(tugasFungsi !== undefined && {
           tugasFungsi: JSON.stringify(tugasFungsi),
         }),
+        ...(strukturOrganisasiImage !== undefined && {
+          strukturOrganisasiImage: strukturOrganisasiImage, // null or base64 string
+        }),
         ...(administratif !== undefined && {
           administratif: JSON.stringify(administratif),
         }),
@@ -151,6 +181,7 @@ export async function PUT(req: NextRequest) {
       visi: updated.visi,
       misi: safeJsonParse(updated.misi, []),
       strukturOrganisasi: safeJsonParse(updated.strukturOrganisasi, []),
+      strukturOrganisasiImage: updated.strukturOrganisasiImage ?? undefined,
       tugasFungsi: safeJsonParse(updated.tugasFungsi, []),
       administratif: safeJsonParse(updated.administratif, {}),
     });

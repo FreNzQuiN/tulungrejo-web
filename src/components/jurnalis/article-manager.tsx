@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import { Plus, ArrowLeft } from "lucide-react";
 import type { ArticleFrontmatter } from "@/lib/types";
@@ -81,6 +81,24 @@ export function ArticleManager() {
   const [form, setForm] = useState<ArticleForm>(EMPTY_FORM);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+  const [originalForm, setOriginalForm] = useState<ArticleForm>(EMPTY_FORM);
+
+  function isEqual(a: ArticleForm, b: ArticleForm): boolean {
+    return (
+      a.title === b.title &&
+      a.slug === b.slug &&
+      a.category === b.category &&
+      a.summary === b.summary &&
+      a.content === b.content &&
+      a.image === b.image
+    );
+  }
+
+  const hasChanges = useMemo(
+    () => !isEqual(form, originalForm),
+    [form, originalForm],
+  );
 
   const fetchArticles = useCallback(async (abortSignal?: AbortSignal) => {
     const res = await fetch("/api/articles", { signal: abortSignal });
@@ -106,16 +124,20 @@ export function ArticleManager() {
   }, [fetchArticles]);
 
   async function refreshArticles() {
+    setRefreshing(true);
     try {
       setArticles(await fetchArticles());
     } catch (err) {
       console.error("refreshArticles error:", err);
       toast.error("Gagal memuat daftar artikel");
+    } finally {
+      setRefreshing(false);
     }
   }
 
   function resetForm() {
     setForm(EMPTY_FORM);
+    setOriginalForm(EMPTY_FORM);
     setImagePreview(null);
     setIsAdding(false);
     setEditingSlug(null);
@@ -164,20 +186,24 @@ export function ArticleManager() {
   async function handleEdit(article: ArticleFrontmatter) {
     setEditingSlug(article.slug);
     setImagePreview(article.image || null);
-    setForm({
+    const initialForm: ArticleForm = {
       title: article.title,
       slug: article.slug,
       category: article.category,
       summary: article.summary,
       content: "",
       image: article.image || "",
-    });
+    };
+    setForm(initialForm);
+    setOriginalForm(initialForm);
 
     try {
       const res = await fetch(`/api/articles/${article.slug}`);
       if (res.ok) {
         const full = await res.json();
-        setForm((prev) => ({ ...prev, content: full.content || "" }));
+        const updatedForm = { ...initialForm, content: full.content || "" };
+        setForm(updatedForm);
+        setOriginalForm(updatedForm);
       } else {
         toast.error("Gagal memuat konten artikel");
       }
@@ -244,7 +270,14 @@ export function ArticleManager() {
       <div className="cms-section-header">
         <h3>Kelola Artikel</h3>
         {!isAdding && !editingSlug && (
-          <Button size="sm" onClick={() => setIsAdding(true)}>
+          <Button
+            size="sm"
+            onClick={() => {
+              setIsAdding(true);
+              setOriginalForm(EMPTY_FORM);
+            }}
+            disabled={refreshing}
+          >
             <Plus size={16} />
             Terbitkan Artikel
           </Button>
@@ -263,6 +296,7 @@ export function ArticleManager() {
           imagePreview={imagePreview}
           saving={saving}
           editingSlug={editingSlug}
+          hasChanges={hasChanges}
           setForm={setForm}
           setImagePreview={setImagePreview}
           onTitleChange={handleTitleChange}
@@ -272,11 +306,15 @@ export function ArticleManager() {
       )}
 
       {!isAdding && !editingSlug && (
-        <ArticleList
-          articles={articles}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
+        <div
+          className={`relative ${refreshing ? "opacity-50 pointer-events-none" : ""}`}
+        >
+          <ArticleList
+            articles={articles}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
+          />
+        </div>
       )}
     </div>
   );

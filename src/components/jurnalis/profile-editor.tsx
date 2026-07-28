@@ -1,16 +1,21 @@
 "use client";
 
+import { useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
-import { Save, X } from "lucide-react";
+import { Save, X, ImageUp, Trash as TrashIcon } from "lucide-react";
+import Image from "next/image";
 import type { VillageProfile } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCmsEditor } from "@/hooks/use-cms-editor";
+import { resizeImage } from "@/lib/client-utils";
+import { MAX_IMAGE_SIZE } from "@/lib/constants";
 
 interface ProfileForm {
   visi: string;
   misi: string;
   strukturOrganisasi: string;
+  strukturOrganisasiImage: string | null;
   tugasFungsi: string;
   administratif: {
     koordinat: string;
@@ -49,6 +54,7 @@ function villageProfileToForm(data: VillageProfile): ProfileForm {
     visi: data.visi || "",
     misi: (data.misi || []).join("\n"),
     strukturOrganisasi: strukturStr,
+    strukturOrganisasiImage: data.strukturOrganisasiImage ?? null,
     tugasFungsi: tugasFungsiStr,
     administratif: {
       koordinat: data.administratif?.koordinat || "",
@@ -100,6 +106,7 @@ export function ProfileEditor() {
       visi: "",
       misi: "",
       strukturOrganisasi: "",
+      strukturOrganisasiImage: null,
       tugasFungsi: "",
       administratif: EMPTY_ADMIN,
     },
@@ -151,12 +158,44 @@ export function ProfileEditor() {
         visi: editor.data.visi,
         misi: misiArray,
         strukturOrganisasi: strukturArray,
+        strukturOrganisasiImage: editor.data.strukturOrganisasiImage,
         tugasFungsi: tugasFungsiArray,
         administratif: editor.data.administratif,
       },
       "Profil desa berhasil diperbarui",
       "Gagal memperbarui profil desa",
     );
+  }
+
+  const [orgImageUploading, setOrgImageUploading] = useState(false);
+
+  async function handleOrganisasiImagePick(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > MAX_IMAGE_SIZE) {
+      toast.error("Ukuran gambar maksimal 5MB");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("Hanya file gambar yang diperbolehkan");
+      return;
+    }
+
+    setOrgImageUploading(true);
+    try {
+      const dataUri = await resizeImage(file);
+      editor.setData((p) => ({ ...p, strukturOrganisasiImage: dataUri }));
+    } catch (e) {
+      console.error(e);
+      toast.error("Gagal memproses gambar");
+    } finally {
+      setOrgImageUploading(false);
+    }
+  }
+
+  function handleRemoveOrganisasiImage() {
+    editor.setData((p) => ({ ...p, strukturOrganisasiImage: null }));
   }
 
   const ADMIN_FIELDS: {
@@ -211,19 +250,52 @@ export function ProfileEditor() {
       </div>
 
       <div className="form-group">
-        <label>Struktur Organisasi (satu baris per jabatan: nama)</label>
-        <textarea
-          className="form-textarea"
-          value={editor.data.strukturOrganisasi}
-          onChange={(e) =>
-            editor.setData((p) => ({
-              ...p,
-              strukturOrganisasi: e.target.value,
-            }))
-          }
-          rows={4}
-          placeholder="Kepala Desa: Ir. H. Sulaiman Basri"
-        />
+        <label>Struktur Organisasi (Gambar)</label>
+        <div className="flex gap-3 items-start">
+          <label
+            className={`cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+              orgImageUploading
+                ? "opacity-50 pointer-events-none border-muted bg-muted text-muted-foreground"
+                : "border-input bg-background hover:bg-accent hover:text-accent-foreground"
+            }`}
+          >
+            <ImageUp size={16} />
+            {orgImageUploading ? "Memproses..." : "Pilih Gambar"}
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={handleOrganisasiImagePick}
+              disabled={orgImageUploading}
+            />
+          </label>
+          {editor.data.strukturOrganisasiImage && (
+            <button
+              type="button"
+              onClick={handleRemoveOrganisasiImage}
+              className="inline-flex items-center gap-1 px-3 py-2 text-sm text-red-600 hover:text-red-700 transition-colors"
+            >
+              <TrashIcon size={14} />
+              Hapus
+            </button>
+          )}
+        </div>
+        {editor.data.strukturOrganisasiImage ? (
+          <div className="mt-3 relative w-full max-w-[600px] rounded-lg overflow-hidden border">
+            <Image
+              src={editor.data.strukturOrganisasiImage}
+              alt="Struktur Organisasi"
+              width={600}
+              height={400}
+              className="w-full h-auto object-contain"
+              unoptimized
+            />
+          </div>
+        ) : (
+          <p className="text-[12px] text-muted-foreground mt-1.5">
+            Format: JPG, PNG, WebP. Maks 5MB. Akan diresize otomatis ke 1920px.
+          </p>
+        )}
       </div>
 
       <div className="form-group">

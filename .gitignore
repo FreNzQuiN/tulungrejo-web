@@ -26,6 +26,7 @@ prisma/migrations/
 # agent tooling artifacts
 .audit/
 .playwright-mcp/
+.codegraph
 
 # next.js auto-generated
 next-env.d.ts

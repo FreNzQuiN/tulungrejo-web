@@ -1,8 +1,10 @@
 "use client";
 
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { CONTACT_INFO } from "@/lib/desa-data";
+import type { ContactInfo } from "@/lib/types";
+import { CONTACT_INFO as FALLBACK_CONTACT } from "@/lib/desa-data";
 import { MapPin, Mail, Phone, Clock } from "lucide-react";
 
 const FOOTER_LINKS = [
@@ -14,6 +16,20 @@ const FOOTER_LINKS = [
 
 export function Footer() {
   const tahun = new Date().getFullYear();
+  const [contact, setContact] = useState<ContactInfo | null>(null);
+
+  useEffect(() => {
+    fetch("/api/contact")
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data: ContactInfo | null) => {
+        if (data) setContact(data);
+      })
+      .catch(() => {
+        /* use fallback */
+      });
+  }, []);
+
+  const c = contact ?? FALLBACK_CONTACT;
 
   return (
     <footer className="footer-container">
@@ -39,7 +55,7 @@ export function Footer() {
               mewujudkan pembangunan desa yang berkelanjutan dan akuntabel.
             </p>
             <a
-              href="https://maps.app.goo.gl/8pmYVyobaWnepjNF8"
+              href={`https://www.google.com/maps?q=${encodeURIComponent(c.address)}`}
               target="_blank"
               rel="noopener noreferrer"
               className="footer-coordinates"
@@ -65,31 +81,26 @@ export function Footer() {
             <ul className="contact-list">
               <li>
                 <MapPin size={16} className="contact-icon" />
-                <span>{CONTACT_INFO.address}</span>
+                <span>{c.address}</span>
               </li>
               <li>
                 <Phone size={16} className="contact-icon" />
-                <a href={`tel:${CONTACT_INFO.phone}`} className="text-inherit">
-                  {CONTACT_INFO.phone}
+                <a href={`tel:${c.phone}`} className="text-inherit">
+                  {c.phone}
                 </a>
               </li>
               <li>
                 <Mail size={16} className="contact-icon" />
-                <a
-                  href={`mailto:${CONTACT_INFO.email}`}
-                  className="text-inherit"
-                >
-                  {CONTACT_INFO.email}
+                <a href={`mailto:${c.email}`} className="text-inherit">
+                  {c.email}
                 </a>
               </li>
               <li>
                 <Clock size={16} className="contact-icon" />
                 <span>
-                  {CONTACT_INFO.jamKerja}
+                  {c.jamKerja}
                   <br />
-                  <span className="text-xs opacity-70">
-                    {CONTACT_INFO.jamLibur}
-                  </span>
+                  <span className="text-xs opacity-70">{c.jamLibur}</span>
                 </span>
               </li>
             </ul>

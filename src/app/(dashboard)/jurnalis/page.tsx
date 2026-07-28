@@ -26,6 +26,20 @@ const ProfileEditor = dynamic(
   { loading: () => <Skeleton className="h-64 w-full rounded-lg" /> },
 );
 
+const ContactEditor = dynamic(
+  () =>
+    import("@/components/jurnalis/contact-editor").then((m) => m.ContactEditor),
+  { loading: () => <Skeleton className="h-64 w-full rounded-lg" /> },
+);
+
+const HomepageEditor = dynamic(
+  () =>
+    import("@/components/jurnalis/homepage-editor").then(
+      (m) => m.HomepageEditor,
+    ),
+  { loading: () => <Skeleton className="h-64 w-full rounded-lg" /> },
+);
+
 function JurnalisSkeleton() {
   return (
     <div>
@@ -83,10 +97,14 @@ export default function JurnalisPage() {
     switch (activeTab) {
       case "articles":
         return <ArticleManager />;
+      case "homepage":
+        return <HomepageEditor />;
       case "stats":
         return <StatsEditor />;
       case "profile":
         return <ProfileEditor />;
+      case "contact":
+        return <ContactEditor />;
       default:
         return <ArticleManager />;
     }

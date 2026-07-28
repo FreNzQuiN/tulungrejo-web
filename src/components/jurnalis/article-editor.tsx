@@ -15,6 +15,7 @@ interface ArticleEditorProps {
   imagePreview: string | null;
   saving: boolean;
   editingSlug: string | null;
+  hasChanges: boolean;
   setForm: React.Dispatch<React.SetStateAction<ArticleForm>>;
   setImagePreview: React.Dispatch<React.SetStateAction<string | null>>;
   onTitleChange: (title: string) => void;
@@ -27,6 +28,7 @@ export function ArticleEditor({
   imagePreview,
   saving,
   editingSlug,
+  hasChanges,
   setForm,
   setImagePreview,
   onTitleChange,
@@ -172,7 +174,7 @@ export function ArticleEditor({
           <X size={16} />
           Batal
         </Button>
-        <Button size="sm" onClick={onSave} disabled={saving}>
+        <Button size="sm" onClick={onSave} disabled={saving || !hasChanges}>
           <Save size={16} />
           {saving ? "Menyimpan..." : editingSlug ? "Perbarui" : "Terbitkan"}
         </Button>

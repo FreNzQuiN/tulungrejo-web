@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, BarChart3, Edit } from "lucide-react";
+import { FileText, BarChart3, Edit, Phone, Home } from "lucide-react";
 
 interface CMSLayoutProps {
   activeTab: string;
@@ -10,8 +10,10 @@ interface CMSLayoutProps {
 
 const TABS = [
   { id: "articles", label: "Kelola Artikel", icon: FileText },
+  { id: "homepage", label: "Halaman Depan", icon: Home },
   { id: "stats", label: "Kelola Statistik", icon: BarChart3 },
   { id: "profile", label: "Kelola Profil Desa", icon: Edit },
+  { id: "contact", label: "Kelola Kontak", icon: Phone },
 ];
 
 export function CMSLayout({

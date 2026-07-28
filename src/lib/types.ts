@@ -62,6 +62,7 @@ export interface VillageProfile {
   visi: string;
   misi: string[];
   strukturOrganisasi: OrgMember[];
+  strukturOrganisasiImage?: string;
   tugasFungsi: TugasFungsi[];
   administratif: Administratif;
 }
@@ -101,4 +102,27 @@ export interface PaymentRecord {
   markedAt: string | null;
   notes: string | null;
   markerName: string | null;
+}
+
+export interface SocialMediaLink {
+  platform: string;
+  url: string;
+}
+
+export interface ContactInfo {
+  address: string;
+  phone: string;
+  email: string;
+  jamKerja: string;
+  jamLibur: string;
+  socialMedia: SocialMediaLink[];
+}
+
+export interface HomepageContent {
+  heroTitle: string;
+  heroSubtitle: string;
+  heroDescription: string;
+  aboutTitle: string;
+  aboutParagraphs: string[];
+  googleMapsUrl: string;
 }
