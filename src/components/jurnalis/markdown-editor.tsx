@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeSanitize from "rehype-sanitize";
 import {
   Bold,
   Italic,
@@ -111,12 +112,15 @@ export function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
   );
 
   return (
-    <div className="md-editor">
-      <div className="md-editor-tab-bar">
+    <div className="md-editor" id="md-editor-panel">
+      <div className="md-editor-tab-bar" role="tablist">
         <button
           className={`md-editor-tab${mode === "edit" ? " md-editor-tab-active" : ""}`}
           onClick={() => setMode("edit")}
           type="button"
+          role="tab"
+          aria-selected={mode === "edit"}
+          aria-controls="md-editor-panel"
         >
           Edit
         </button>
@@ -124,6 +128,9 @@ export function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
           className={`md-editor-tab${mode === "preview" ? " md-editor-tab-active" : ""}`}
           onClick={() => setMode("preview")}
           type="button"
+          role="tab"
+          aria-selected={mode === "preview"}
+          aria-controls="md-editor-panel"
         >
           Preview
         </button>
@@ -131,7 +138,11 @@ export function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
 
       {mode === "edit" && (
         <>
-          <div className="md-editor-toolbar">
+          <div
+            className="md-editor-toolbar"
+            role="toolbar"
+            aria-label="Alat format teks"
+          >
             <ToolbarButton
               icon={<Bold size={14} />}
               label="Bold"
@@ -219,8 +230,11 @@ export function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
       )}
 
       {mode === "preview" && (
-        <div className="md-editor-preview prose max-w-none">
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+        <div className="md-editor-preview prose max-w-none" aria-live="polite">
+          <ReactMarkdown
+            remarkPlugins={[remarkGfm]}
+            rehypePlugins={[rehypeSanitize]}
+          >
             {value || "*Belum ada konten*"}
           </ReactMarkdown>
         </div>
@@ -246,6 +260,7 @@ function ToolbarButton({
       onClick={onClick}
       title={shortcut ? `${label} (${shortcut})` : label}
       type="button"
+      aria-label={label}
     >
       {icon}
     </button>

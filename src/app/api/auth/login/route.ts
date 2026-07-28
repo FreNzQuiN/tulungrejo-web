@@ -23,7 +23,7 @@ export async function POST(request: Request) {
     const normalizedEmail = email.toLowerCase();
 
     const ip = getClientIp({ headers: request.headers });
-    if (ip) {
+    if (ip && ip !== "unknown") {
       const ipLimit = await checkRateLimit(`login:ip:${ip}`, undefined, true);
       if (!ipLimit.allowed) {
         return NextResponse.json({ error: "RATE_LIMITED" }, { status: 429 });
@@ -58,7 +58,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (ip) {
+    if (ip && ip !== "unknown") {
       await resetRateLimit(`login:ip:${ip}`);
     }
     await resetRateLimit(`login:email:${normalizedEmail}`);

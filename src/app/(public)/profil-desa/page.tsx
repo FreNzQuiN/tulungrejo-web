@@ -5,8 +5,10 @@ import { OrgChartImage } from "@/components/org-chart-image";
 import type { Administratif } from "@/lib/types";
 
 async function ProfileContent() {
-  const profile = await getVillageProfile();
-  const stats = await getVillageStats();
+  const [profile, stats] = await Promise.all([
+    getVillageProfile(),
+    getVillageStats(),
+  ]);
 
   return <ProfileDisplay profile={profile} stats={stats} />;
 }
@@ -42,9 +44,10 @@ async function ProfileDisplay({
   const kaurs = profile.strukturOrganisasi.filter((p) =>
     p.role.toLowerCase().startsWith("kaur"),
   );
-  const kadus = profile.strukturOrganisasi.filter((p) =>
-    p.role.toLowerCase().startsWith("kepala dusun"),
-  );
+  const kadus = profile.strukturOrganisasi.filter((p) => {
+    const r = p.role.toLowerCase();
+    return r.startsWith("kepala dusun") || r.startsWith("kamituwo");
+  });
 
   return (
     <div className="container">

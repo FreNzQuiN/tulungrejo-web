@@ -23,23 +23,22 @@ export async function GET(req: NextRequest) {
     let paidCount: number;
 
     if (assignedBlok) {
-      const fieldIds = (
-        await prisma.fields.findMany({
-          where: { blok: assignedBlok },
-          select: { id: true },
-        })
-      ).map((f) => f.id);
+      const fields = await prisma.fields.findMany({
+        where: { blok: assignedBlok },
+        select: { id: true },
+      });
+      const fieldIds = fields.map((f) => f.id);
 
-      [totalFields, paidCount] = await Promise.all([
-        prisma.fields.count({ where: fieldFilter }),
-        prisma.payments.count({
+      [totalFields, paidCount] = [
+        fields.length,
+        await prisma.payments.count({
           where: {
             year: currentYear,
             status: "lunas",
             fieldId: { in: fieldIds },
           },
         }),
-      ]);
+      ];
     } else {
       [totalFields, paidCount] = await Promise.all([
         prisma.fields.count(),

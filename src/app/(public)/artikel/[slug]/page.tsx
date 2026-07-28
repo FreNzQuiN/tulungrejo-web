@@ -5,6 +5,7 @@ import Image from "next/image";
 import type { Metadata } from "next";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeSanitize from "rehype-sanitize";
 import { getPublishedArticleBySlug } from "@/lib/article-queries";
 import { ArrowLeft, Calendar } from "lucide-react";
 import { ARTICLE_IMAGE_FALLBACK, SITE_URL } from "@/lib/constants";
@@ -18,7 +19,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const article = await getPublishedArticleBySlug(slug);
-  if (!article) return {};
+  if (!article) return { title: "Artikel Tidak Ditemukan" };
 
   const url = `${SITE_URL}/artikel/${slug}`;
   const image = article.image
@@ -92,7 +93,7 @@ async function ArticleContent({
             alt={article.title}
             fill
             unoptimized
-            loading="eager"
+            loading="lazy"
             sizes="100vw"
             className="object-cover"
           />
@@ -118,7 +119,10 @@ async function ArticleContent({
             {article.title}
           </h1>
           <div className="prose max-w-none text-[15px] leading-[1.7] md:text-[16px] md:leading-[1.8]">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeSanitize]}
+            >
               {article.content}
             </ReactMarkdown>
           </div>

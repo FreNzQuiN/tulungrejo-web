@@ -65,16 +65,38 @@ export async function POST(req: NextRequest) {
       });
 
       if (!existing) {
-        await tx.payments.create({
-          data: {
-            fieldId,
-            year: parsedYear,
-            status: PAYMENT_STATUS.LUNAS,
-            markedBy,
-            markedAt,
-          },
-        });
-        actualStatus = PAYMENT_STATUS.LUNAS;
+        try {
+          await tx.payments.create({
+            data: {
+              fieldId,
+              year: parsedYear,
+              status: PAYMENT_STATUS.LUNAS,
+              markedBy,
+              markedAt,
+            },
+          });
+          actualStatus = PAYMENT_STATUS.LUNAS;
+        } catch (createErr: any) {
+          // P2002 = concurrent create won the race; toggle existing record
+          if (createErr?.code === "P2002") {
+            const concurrent = await tx.payments.findUnique({
+              where: { fieldId_year: { fieldId, year: parsedYear } },
+            });
+            if (concurrent) {
+              const toggled =
+                concurrent.status === PAYMENT_STATUS.LUNAS
+                  ? PAYMENT_STATUS.BELUM_LUNAS
+                  : PAYMENT_STATUS.LUNAS;
+              await tx.payments.update({
+                where: { fieldId_year: { fieldId, year: parsedYear } },
+                data: { status: toggled, markedBy, markedAt },
+              });
+              actualStatus = toggled;
+            }
+          } else {
+            throw createErr;
+          }
+        }
       } else {
         actualStatus =
           existing.status === PAYMENT_STATUS.LUNAS

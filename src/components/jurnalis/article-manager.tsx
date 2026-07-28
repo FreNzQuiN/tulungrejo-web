@@ -124,9 +124,10 @@ export function ArticleManager() {
   }, [fetchArticles]);
 
   async function refreshArticles() {
+    const ac = new AbortController();
     setRefreshing(true);
     try {
-      setArticles(await fetchArticles());
+      setArticles(await fetchArticles(ac.signal));
     } catch (err) {
       console.error("refreshArticles error:", err);
       toast.error("Gagal memuat daftar artikel");
@@ -194,20 +195,22 @@ export function ArticleManager() {
       content: "",
       image: article.image || "",
     };
-    setForm(initialForm);
-    setOriginalForm(initialForm);
 
     try {
       const res = await fetch(`/api/articles/${article.slug}`);
       if (res.ok) {
         const full = await res.json();
-        const updatedForm = { ...initialForm, content: full.content || "" };
-        setForm(updatedForm);
-        setOriginalForm(updatedForm);
+        const readyForm = { ...initialForm, content: full.content || "" };
+        setForm(readyForm);
+        setOriginalForm(readyForm);
       } else {
+        setForm(initialForm);
+        setOriginalForm(initialForm);
         toast.error("Gagal memuat konten artikel");
       }
     } catch (err) {
+      setForm(initialForm);
+      setOriginalForm(initialForm);
       console.error("handleEdit error:", err);
       toast.error("Gagal memuat konten artikel");
     }

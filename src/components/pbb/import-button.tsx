@@ -11,6 +11,11 @@ export function ImportButton() {
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File terlalu besar. Maksimal 10 MB.");
+      e.target.value = "";
+      return;
+    }
 
     setLoading(true);
     const formData = new FormData();

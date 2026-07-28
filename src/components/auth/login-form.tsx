@@ -106,6 +106,12 @@ export function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
               className="form-input form-input--login w-full pl-4 pr-10 py-3"
               required
+              autoComplete="email"
+            />
+            <Mail
+              size={16}
+              aria-hidden="true"
+              className="absolute right-4 bottom-[14px] text-muted-foreground"
             />
             <Mail
               size={16}
@@ -124,6 +130,12 @@ export function LoginForm() {
               onChange={(e) => setPassword(e.target.value)}
               className="form-input form-input--login w-full pl-4 pr-10 py-3"
               required
+              autoComplete="current-password"
+            />
+            <Key
+              size={16}
+              aria-hidden="true"
+              className="absolute right-4 bottom-[14px] text-muted-foreground"
             />
             <Key
               size={16}
@@ -132,8 +144,11 @@ export function LoginForm() {
           </div>
 
           {error && (
-            <div className="w-full flex items-center gap-2 rounded px-[14px] py-[10px] mb-5 bg-red-100 text-red-700 text-sm font-semibold">
-              <AlertCircle size={14} />
+            <div
+              role="alert"
+              className="w-full flex items-center gap-2 rounded px-[14px] py-[10px] mb-5 bg-red-100 text-red-700 text-sm font-semibold"
+            >
+              <AlertCircle size={14} aria-hidden="true" />
               <span>{error}</span>
             </div>
           )}

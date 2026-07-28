@@ -68,6 +68,12 @@ export function FieldCard({
                   ? "var(--color-danger)"
                   : "var(--color-success)",
             }}
+            aria-busy={toggling === field.id}
+            aria-label={
+              field.status === PAYMENT_STATUS.LUNAS
+                ? "Tandai Belum Bayar"
+                : "Verifikasi Bayar"
+            }
           >
             {toggling === field.id
               ? "..."

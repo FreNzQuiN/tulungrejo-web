@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { createPortal } from "react-dom";
 import Image from "next/image";
 import { X, ZoomIn } from "lucide-react";
@@ -8,27 +8,54 @@ import { X, ZoomIn } from "lucide-react";
 export function OrgChartImage({ src, alt }: { src: string; alt: string }) {
   const [zoomed, setZoomed] = useState(false);
   const [scale, setScale] = useState(1);
+  const dialogRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!zoomed) return;
 
-    const scrollY = window.scrollY;
-    const body = document.body;
-    body.style.position = "fixed";
-    body.style.top = `-${scrollY}px`;
-    body.style.width = "100%";
+    document.body.style.overflow = "hidden";
 
     const handler = (e: KeyboardEvent) => {
       if (e.key === "Escape") setZoomed(false);
     };
     document.addEventListener("keydown", handler);
 
+    const focusableSelector =
+      'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"]), textarea, input, select';
+    const dialog = dialogRef.current;
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+
+    requestAnimationFrame(() => {
+      if (!dialog) return;
+      const first = dialog.querySelector<HTMLElement>(focusableSelector);
+      first?.focus();
+    });
+
+    const trapFocus = (e: KeyboardEvent) => {
+      if (e.key !== "Tab" || !dialog) return;
+      const focusable = dialog.querySelectorAll<HTMLElement>(focusableSelector);
+      if (focusable.length === 0) return;
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    };
+    document.addEventListener("keydown", trapFocus);
+
     return () => {
-      body.style.position = "";
-      body.style.top = "";
-      body.style.width = "";
-      window.scrollTo(0, scrollY);
+      document.body.style.overflow = "";
       document.removeEventListener("keydown", handler);
+      document.removeEventListener("keydown", trapFocus);
+      previouslyFocused?.focus();
     };
   }, [zoomed]);
 
@@ -40,6 +67,16 @@ export function OrgChartImage({ src, alt }: { src: string; alt: string }) {
           setZoomed(true);
           setScale(1);
         }}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setZoomed(true);
+            setScale(1);
+          }
+        }}
+        role="button"
+        tabIndex={0}
+        aria-label={`${alt} — Klik untuk memperbesar`}
       >
         <Image
           src={src}
@@ -58,14 +95,17 @@ export function OrgChartImage({ src, alt }: { src: string; alt: string }) {
       {zoomed &&
         createPortal(
           <div
+            ref={dialogRef}
             role="dialog"
             aria-modal="true"
+            aria-label="Struktur Organisasi — Tampilan Diperbesar"
             className="fixed inset-0 z-[9999] bg-black/80"
             onClick={() => setZoomed(false)}
           >
             <button
               type="button"
               onClick={() => setZoomed(false)}
+              aria-label="Tutup tampilan diperbesar"
               className="absolute top-4 right-4 text-white/80 hover:text-white transition-colors z-10"
             >
               <X size={28} />

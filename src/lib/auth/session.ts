@@ -37,7 +37,7 @@ export async function verifyToken(token: string): Promise<SessionUser | null> {
     const role = payload.role as SessionUser["role"];
     if (!role || !ALLOWED_ROLES.includes(role)) return null;
     return {
-      id: Number(payload.sub ?? payload.id),
+      id: Number(payload.sub ?? payload.id ?? 0),
       email: payload.email as string,
       name: payload.name as string,
       role,

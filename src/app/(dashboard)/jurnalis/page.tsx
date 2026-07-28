@@ -93,6 +93,17 @@ export default function JurnalisPage() {
   const { user: sessionUser, isLoading: statusLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("articles");
 
+  function handleTabChange(tab: string) {
+    if (tab === activeTab) return;
+    if (activeTab === "articles") {
+      const confirmed = window.confirm(
+        "Anda memiliki perubahan yang belum disimpan. Yakin ingin meninggalkan halaman ini?",
+      );
+      if (!confirmed) return;
+    }
+    setActiveTab(tab);
+  }
+
   const renderContent = () => {
     switch (activeTab) {
       case "articles":
@@ -126,7 +137,7 @@ export default function JurnalisPage() {
         </div>
       </div>
       <div className="container">
-        <CMSLayout activeTab={activeTab} onTabChange={setActiveTab}>
+        <CMSLayout activeTab={activeTab} onTabChange={handleTabChange}>
           {renderContent()}
         </CMSLayout>
       </div>

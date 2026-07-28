@@ -9,7 +9,7 @@ import type { RealisasiView } from "@/lib/types";
 import { AccessDenied } from "@/components/auth/access-denied";
 import { RealisasiSummaryCard } from "@/components/kades/realisasi-summary-card";
 import { StatCard } from "@/components/kades/stat-card";
-import { getYearOptions } from "@/lib/pbb-tax-year";
+import { getYearOptions, getCurrentTaxYear } from "@/lib/pbb-tax-year";
 import { formatCurrency } from "@/lib/utils";
 
 function formatDate(iso: string): string {
@@ -54,15 +54,14 @@ export default function KadesDashboard() {
   const { user: sessionUser, isLoading: authLoading } = useAuth();
   const [data, setData] = useState<RealisasiView | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [selectedYear, setSelectedYear] = useState<number>(getCurrentTaxYear());
 
   useEffect(() => {
     if (authLoading) return;
     if (sessionUser?.role !== "kepala_desa") return;
 
-    const url = selectedYear
-      ? `/api/pbb/realisasi?tahun=${selectedYear}`
-      : "/api/pbb/realisasi";
+    setLoading(true);
+    const url = `/api/pbb/realisasi?tahun=${selectedYear}`;
 
     fetch(url)
       .then((res) => {
@@ -74,18 +73,13 @@ export default function KadesDashboard() {
         return res.json();
       })
       .then((json: RealisasiView | null) => {
-        if (json) {
-          setData(json);
-          if (json.tahun != null && selectedYear === null) {
-            setSelectedYear(json.tahun);
-          }
-        }
+        if (json) setData(json);
       })
       .catch((err) => {
         toast.error(err.message);
       })
       .finally(() => setLoading(false));
-  }, [sessionUser, authLoading, selectedYear]);
+  }, [sessionUser?.id, authLoading, selectedYear]);
 
   const yearOptions = getYearOptions();
 
@@ -95,7 +89,7 @@ export default function KadesDashboard() {
         Tahun:
       </label>
       <select
-        value={selectedYear ?? ""}
+        value={selectedYear}
         onChange={(e) => {
           const val = e.target.value;
           if (val) setSelectedYear(Number(val));
@@ -163,9 +157,7 @@ export default function KadesDashboard() {
           {yearSelector}
           <div className="glass-panel p-8 text-center">
             <p className="text-muted-foreground">
-              {selectedYear
-                ? `Belum ada data realisasi untuk tahun ${selectedYear}.`
-                : "Belum ada data realisasi PBB. Silakan impor data terlebih dahulu."}
+              {`Belum ada data realisasi untuk tahun ${selectedYear}.`}
             </p>
           </div>
         </div>

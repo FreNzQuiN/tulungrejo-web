@@ -19,14 +19,36 @@ export function Footer() {
   const [contact, setContact] = useState<ContactInfo | null>(null);
 
   useEffect(() => {
-    fetch("/api/contact")
+    const cached = sessionStorage.getItem("footer-contact");
+    const cachedTime = sessionStorage.getItem("footer-contact-time");
+
+    if (
+      cached &&
+      cachedTime &&
+      Date.now() - Number(cachedTime) < 5 * 60 * 1000
+    ) {
+      try {
+        setContact(JSON.parse(cached));
+        return;
+      } catch {
+        /* fall through to fetch */
+      }
+    }
+
+    const abortController = new AbortController();
+
+    fetch("/api/contact", { signal: abortController.signal })
       .then((res) => (res.ok ? res.json() : null))
       .then((data: ContactInfo | null) => {
-        if (data) setContact(data);
+        if (data) {
+          setContact(data);
+          sessionStorage.setItem("footer-contact", JSON.stringify(data));
+          sessionStorage.setItem("footer-contact-time", String(Date.now()));
+        }
       })
-      .catch(() => {
-        /* use fallback */
-      });
+      .catch(() => {});
+
+    return () => abortController.abort();
   }, []);
 
   const c = contact ?? FALLBACK_CONTACT;

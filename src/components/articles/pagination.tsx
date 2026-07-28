@@ -28,7 +28,11 @@ export function Pagination({
   }
 
   return (
-    <div className="flex justify-center items-center gap-2 mt-8">
+    <div
+      className="flex justify-center items-center gap-2 mt-8"
+      role="navigation"
+      aria-label="Navigasi halaman artikel"
+    >
       <button
         className="flex items-center justify-center w-10 h-10 rounded-md border border-gray-300 bg-white text-dark-brown font-bold cursor-pointer transition-all hover:bg-gray-100 hover:border-dark-brown disabled:opacity-40 disabled:cursor-not-allowed"
         disabled={currentPage === 1}
@@ -43,6 +47,7 @@ export function Pagination({
           <span
             key={`ellipsis-${i}`}
             className="w-10 text-center text-muted-foreground text-sm"
+            aria-hidden="true"
           >
             ...
           </span>
@@ -51,7 +56,7 @@ export function Pagination({
             key={page}
             className={`flex items-center justify-center w-10 h-10 rounded-md border font-bold cursor-pointer transition-all ${currentPage === page ? "bg-dark-brown text-white border-dark-brown" : "border-gray-300 bg-white text-dark-brown hover:bg-gray-100 hover:border-dark-brown"}`}
             onClick={() => onPageChange(page)}
-            aria-label={`Halaman ${page}`}
+            aria-label={`Ke halaman ${page}`}
             aria-current={currentPage === page ? "page" : undefined}
           >
             {page}

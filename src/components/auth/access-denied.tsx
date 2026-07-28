@@ -1,15 +1,12 @@
 "use client";
 
 import { ShieldAlert } from "lucide-react";
-import { useRouter } from "next/navigation";
 
 interface AccessDeniedProps {
   message: string;
 }
 
 export function AccessDenied({ message }: AccessDeniedProps) {
-  const router = useRouter();
-
   return (
     <div className="animate-fade-in">
       <div className="container min-h-[70vh] flex justify-center items-center py-10">
@@ -25,12 +22,17 @@ export function AccessDenied({ message }: AccessDeniedProps) {
           </div>
           <h2 className="text-dark-brown text-[24px] mb-3">Akses Ditolak</h2>
           <p className="footer-desc text-muted-foreground mb-6">{message}</p>
-          <button
-            onClick={() => router.push("/login")}
-            className="btn btn-primary"
-          >
-            Masuk Portal Kredensial
-          </button>
+          <div className="flex flex-col gap-3">
+            <button
+              onClick={() => window.history.back()}
+              className="btn btn-outline"
+            >
+              Kembali ke Halaman Sebelumnya
+            </button>
+            <a href="/" className="btn btn-primary">
+              Ke Halaman Utama
+            </a>
+          </div>
         </div>
       </div>
     </div>

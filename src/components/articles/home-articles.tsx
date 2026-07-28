@@ -24,7 +24,12 @@ export function HomeArticles({ articles }: { articles: ArticleFrontmatter[] }) {
   }
 
   return (
-    <section id="articles-section" className="home-articles-section">
+    <section
+      id="articles-section"
+      className="home-articles-section"
+      role="region"
+      aria-label="Kabar dan berita desa"
+    >
       <div className="container">
         <div className="section-header">
           <h2>Kabar & Berita Desa</h2>

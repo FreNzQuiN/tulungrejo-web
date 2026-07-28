@@ -13,6 +13,11 @@ interface StatsData {
   perempuan: number;
 }
 
+function safeNumber(v: string): number {
+  if (v === "") return 0;
+  return Number(v);
+}
+
 function StatsEditorSkeleton() {
   return (
     <div className="cms-content-card">
@@ -77,6 +82,7 @@ export function StatsEditor() {
 
       {populationMismatch && (
         <div
+          role="alert"
           className="flex items-center gap-2 px-4 py-3 mb-5 text-[13px] font-semibold"
           style={{
             backgroundColor: "var(--color-danger-bg)",
@@ -84,15 +90,16 @@ export function StatsEditor() {
             borderRadius: "var(--radius-sm)",
           }}
         >
-          <AlertTriangle size={16} />
+          <AlertTriangle size={16} aria-hidden="true" />
           Jumlah laki-laki + perempuan tidak sama dengan total penduduk
         </div>
       )}
 
       <div className="cms-grid-inputs-2">
         <div className="form-group">
-          <label>Jumlah KK</label>
+          <label htmlFor="stats-jumlahKK">Jumlah KK</label>
           <input
+            id="stats-jumlahKK"
             className="form-input"
             type="number"
             min={0}
@@ -100,14 +107,16 @@ export function StatsEditor() {
             onChange={(e) =>
               editor.setData((p) => ({
                 ...p,
-                jumlahKK: Number(e.target.value),
+                jumlahKK: safeNumber(e.target.value),
               }))
             }
+            aria-label="Jumlah KK"
           />
         </div>
         <div className="form-group">
-          <label>Jumlah Penduduk</label>
+          <label htmlFor="stats-jumlahPenduduk">Jumlah Penduduk</label>
           <input
+            id="stats-jumlahPenduduk"
             className="form-input"
             type="number"
             min={0}
@@ -115,14 +124,16 @@ export function StatsEditor() {
             onChange={(e) =>
               editor.setData((p) => ({
                 ...p,
-                jumlahPenduduk: Number(e.target.value),
+                jumlahPenduduk: safeNumber(e.target.value),
               }))
             }
+            aria-label="Jumlah Penduduk"
           />
         </div>
         <div className="form-group">
-          <label>Laki-laki</label>
+          <label htmlFor="stats-lakiLaki">Laki-laki</label>
           <input
+            id="stats-lakiLaki"
             className="form-input"
             type="number"
             min={0}
@@ -130,14 +141,16 @@ export function StatsEditor() {
             onChange={(e) =>
               editor.setData((p) => ({
                 ...p,
-                lakiLaki: Number(e.target.value),
+                lakiLaki: safeNumber(e.target.value),
               }))
             }
+            aria-label="Laki-laki"
           />
         </div>
         <div className="form-group">
-          <label>Perempuan</label>
+          <label htmlFor="stats-perempuan">Perempuan</label>
           <input
+            id="stats-perempuan"
             className="form-input"
             type="number"
             min={0}
@@ -145,9 +158,10 @@ export function StatsEditor() {
             onChange={(e) =>
               editor.setData((p) => ({
                 ...p,
-                perempuan: Number(e.target.value),
+                perempuan: safeNumber(e.target.value),
               }))
             }
+            aria-label="Perempuan"
           />
         </div>
       </div>

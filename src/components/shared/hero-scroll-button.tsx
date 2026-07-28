@@ -5,11 +5,13 @@ import { ArrowRight } from "lucide-react";
 export function HeroScrollButton() {
   return (
     <button
-      onClick={() =>
-        document
-          .getElementById("about-section")
-          ?.scrollIntoView({ behavior: "smooth" })
-      }
+      onClick={() => {
+        const section = document.getElementById("about-section");
+        if (section) {
+          section.scrollIntoView({ behavior: "smooth" });
+          section.focus({ preventScroll: true });
+        }
+      }}
       className="btn btn-primary"
     >
       Jelajahi Profil Desa <ArrowRight size={16} />

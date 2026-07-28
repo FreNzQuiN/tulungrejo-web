@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/components/providers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
@@ -81,6 +81,21 @@ export default function PBBPage() {
     setPage,
     togglePayment,
   } = usePbbFields(canAccess, authLoading);
+
+  // Sync selectedBlok ↔ blokFilter bidirectionally
+  const prevBlokFilter = useRef(blokFilter);
+  const prevSelectedBlok = useRef(selectedBlok);
+
+  useEffect(() => {
+    if (prevBlokFilter.current !== blokFilter) {
+      prevBlokFilter.current = blokFilter;
+      prevSelectedBlok.current = blokFilter;
+      setSelectedBlok(blokFilter);
+    } else if (prevSelectedBlok.current !== selectedBlok) {
+      prevSelectedBlok.current = selectedBlok;
+      setBlokFilter(selectedBlok);
+    }
+  }, [blokFilter, selectedBlok]);
 
   if (authLoading) {
     return <ListSkeleton />;

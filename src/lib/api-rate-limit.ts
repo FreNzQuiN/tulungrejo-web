@@ -17,7 +17,12 @@ function getCached(key: string): RateLimitResult | null {
 }
 
 function setCached(key: string, result: RateLimitResult): void {
-  if (cache.size >= MAX_CACHE_SIZE) cache.clear();
+  if (cache.size >= MAX_CACHE_SIZE) {
+    // Random eviction instead of bulk clear — preserves most cache entries
+    const keys = Array.from(cache.keys());
+    const randomKey = keys[Math.floor(Math.random() * keys.length)]!;
+    cache.delete(randomKey);
+  }
   cache.set(key, { result, expiresAt: Date.now() + CACHE_TTL_MS });
 }
 

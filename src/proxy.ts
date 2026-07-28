@@ -7,6 +7,10 @@ const PUBLIC_API_PATHS = [
   "/api/auth/logout",
   "/api/auth/me",
   "/api/contact",
+  "/api/articles/public",
+  "/api/homepage",
+  "/api/profile",
+  "/api/stats",
 ];
 
 export async function proxy(request: NextRequest) {
@@ -57,8 +61,12 @@ export async function proxy(request: NextRequest) {
 export const config = {
   matcher: [
     "/api/:path*",
+    "/api",
     "/pbb/:path*",
+    "/pbb",
     "/kepala-desa/:path*",
+    "/kepala-desa",
     "/jurnalis/:path*",
+    "/jurnalis",
   ],
 };

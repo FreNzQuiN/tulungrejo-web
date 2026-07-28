@@ -71,26 +71,27 @@ export async function PUT(req: NextRequest) {
     const existing = await prisma.contactInfo.findFirst({
       orderBy: { id: "asc" },
     });
-    if (!existing) {
-      return NextResponse.json(
-        { error: "Contact info not found" },
-        { status: 404 },
-      );
-    }
 
-    const updated = await prisma.contactInfo.update({
-      where: { id: existing.id },
-      data: {
-        ...(address !== undefined && { address }),
-        ...(phone !== undefined && { phone }),
-        ...(email !== undefined && { email }),
-        ...(jamKerja !== undefined && { jamKerja }),
-        ...(jamLibur !== undefined && { jamLibur }),
-        ...(socialMedia !== undefined && {
-          socialMedia: JSON.stringify(socialMedia),
-        }),
-      },
-    });
+    const data = {
+      ...(address !== undefined && { address }),
+      ...(phone !== undefined && { phone }),
+      ...(email !== undefined && { email }),
+      ...(jamKerja !== undefined && { jamKerja }),
+      ...(jamLibur !== undefined && { jamLibur }),
+      ...(socialMedia !== undefined && {
+        socialMedia: JSON.stringify(socialMedia),
+      }),
+    };
+
+    let updated;
+    if (!existing) {
+      updated = await prisma.contactInfo.create({ data: data as any });
+    } else {
+      updated = await prisma.contactInfo.update({
+        where: { id: existing.id },
+        data,
+      });
+    }
 
     revalidateTag("contact-info", "max");
 

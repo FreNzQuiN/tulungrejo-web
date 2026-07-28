@@ -57,11 +57,11 @@ model VillageStats {
 model VillageProfile {
   id                 Int      @id @default(autoincrement())
   visi               String   @default("")
-  misi               String   @db.Text                    // JSON array of strings, default "[]" handled in app
-  strukturOrganisasi       String   @db.Text              // JSON array of {role, name}, default "[]" handled in app
-  strukturOrganisasiImage String?  @db.MediumText         // base64 data URI of org chart image
-  tugasFungsi              String   @db.Text              // JSON array of {jabatan, tugas}, default "[]" handled in app
-  administratif      String   @db.Text                    // JSON object, default "{}" handled in app
+  misi               String   @db.Text @default("[]")
+  strukturOrganisasi       String   @db.Text @default("[]")
+  strukturOrganisasiImage String?  @db.MediumText
+  tugasFungsi              String   @db.Text @default("[]")
+  administratif      String   @db.Text @default("{}")
   updatedAt          DateTime @updatedAt @map("updated_at")
 
   @@map("village_profile")

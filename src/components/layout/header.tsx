@@ -2,20 +2,75 @@
 
 import Link from "next/link";
 import Image from "next/image";
-import { useState } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/providers";
 import { NAV_ITEMS, DASHBOARD_NAV } from "@/lib/constants";
 import { ROLE_DISPLAY, type UserRole } from "@/lib/types";
 import { LogOut, User, Menu, X } from "lucide-react";
 
+function isActive(href: string, pathname: string): boolean {
+  if (href === "/") return pathname === "/";
+  return pathname === href || pathname.startsWith(href + "/");
+}
+
 export function Header() {
   const pathname = usePathname();
   const { user, signOut } = useAuth();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const panelRef = useRef<HTMLDivElement>(null);
+  const toggleRef = useRef<HTMLButtonElement>(null);
 
   const role = user?.role as UserRole | undefined;
   const dashConfig = role ? DASHBOARD_NAV[role] : null;
+
+  const focusableSelector =
+    'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"]), textarea, input, select';
+
+  const handleKeyDown = useCallback(
+    (e: KeyboardEvent) => {
+      if (!mobileOpen) return;
+      if (e.key === "Escape") {
+        setMobileOpen(false);
+        toggleRef.current?.focus();
+        return;
+      }
+      if (e.key !== "Tab" || !panelRef.current) return;
+      const focusable =
+        panelRef.current.querySelectorAll<HTMLElement>(focusableSelector);
+      if (focusable.length === 0) return;
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      if (e.shiftKey) {
+        if (document.activeElement === first) {
+          e.preventDefault();
+          last.focus();
+        }
+      } else {
+        if (document.activeElement === last) {
+          e.preventDefault();
+          first.focus();
+        }
+      }
+    },
+    [mobileOpen],
+  );
+
+  useEffect(() => {
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [handleKeyDown]);
+
+  useEffect(() => {
+    if (mobileOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [mobileOpen]);
 
   return (
     <div className="navbar-container">
@@ -43,7 +98,7 @@ export function Header() {
             <Link
               key={item.href}
               href={item.href}
-              className={`nav-link ${pathname === item.href ? "nav-link-active" : ""}`}
+              className={`nav-link ${isActive(item.href, pathname) ? "nav-link-active" : ""}`}
             >
               {item.label}
             </Link>
@@ -79,22 +134,31 @@ export function Header() {
         </nav>
 
         <button
+          ref={toggleRef}
           className="navbar-mobile-toggle"
           onClick={() => setMobileOpen(!mobileOpen)}
+          aria-expanded={mobileOpen}
+          aria-controls="mobile-menu-panel"
+          aria-label={mobileOpen ? "Tutup menu navigasi" : "Buka menu navigasi"}
         >
           {mobileOpen ? <X size={24} /> : <Menu size={24} />}
         </button>
       </div>
 
       {mobileOpen && (
-        <div className="navbar-mobile-panel">
+        <div
+          ref={panelRef}
+          id="mobile-menu-panel"
+          className="navbar-mobile-panel"
+          aria-hidden={!mobileOpen}
+        >
           <nav className="mobile-links">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
                 onClick={() => setMobileOpen(false)}
-                className={`nav-link ${pathname === item.href ? "nav-link-active" : ""}`}
+                className={`nav-link ${isActive(item.href, pathname) ? "nav-link-active" : ""}`}
               >
                 {item.label}
               </Link>

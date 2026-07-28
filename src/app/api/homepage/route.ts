@@ -59,18 +59,27 @@ export async function PUT(req: NextRequest) {
     );
   }
 
-  if (
-    googleMapsUrl !== undefined &&
-    (typeof googleMapsUrl !== "string" ||
-      !googleMapsUrl.startsWith("https://www.google.com/maps/embed"))
-  ) {
-    return NextResponse.json(
-      {
-        error:
-          "URL Google Maps tidak valid. Gunakan embed URL dari Google Maps",
-      },
-      { status: 400 },
-    );
+  if (googleMapsUrl !== undefined) {
+    try {
+      const parsed = new URL(googleMapsUrl);
+      if (
+        parsed.hostname !== "www.google.com" ||
+        !parsed.pathname.startsWith("/maps/embed")
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "URL Google Maps tidak valid. Gunakan embed URL dari Google Maps",
+          },
+          { status: 400 },
+        );
+      }
+    } catch {
+      return NextResponse.json(
+        { error: "URL Google Maps tidak valid" },
+        { status: 400 },
+      );
+    }
   }
 
   try {

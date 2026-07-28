@@ -24,7 +24,7 @@ export function CMSLayout({
   return (
     <div className="dashboard-layout">
       <aside className="cms-sidebar">
-        <nav>
+        <nav aria-label="CMS Navigation" role="tablist">
           {TABS.map((tab) => {
             const Icon = tab.icon;
             return (
@@ -32,6 +32,9 @@ export function CMSLayout({
                 key={tab.id}
                 onClick={() => onTabChange(tab.id)}
                 className={`cms-sidebar-btn ${activeTab === tab.id ? "cms-sidebar-btn-active" : ""}`}
+                role="tab"
+                aria-selected={activeTab === tab.id}
+                aria-current={activeTab === tab.id ? "page" : undefined}
               >
                 <Icon size={18} />
                 <span>{tab.label}</span>
