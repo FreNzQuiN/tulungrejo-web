@@ -34,10 +34,21 @@ export async function checkApiRateLimit(
   if (!ip) return true;
 
   const cacheKey = `${namespace}:${ip}`;
+
+  // For unknown IPs, use a stricter shared limit
+  if (ip === "unknown") {
+    const rl = await checkRateLimit(
+      `${namespace}:unknown`,
+      { windowMs: 60_000, maxAttempts: 10 },
+      true,
+    );
+    return rl.allowed;
+  }
+
   const cached = getCached(cacheKey);
   if (cached) return cached.allowed;
 
-  const rl = await checkRateLimit(cacheKey, RATE_LIMIT_PRESETS.api);
+  const rl = await checkRateLimit(cacheKey, RATE_LIMIT_PRESETS.api, true);
   setCached(cacheKey, rl);
   return rl.allowed;
 }

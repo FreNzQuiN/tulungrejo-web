@@ -12,6 +12,7 @@ const BATCH_SIZE = 500;
 export async function importExcel(
   buffer: Buffer,
   fileName: string,
+  assignedBlok?: string | null,
 ): Promise<ImportSummary> {
   const workbook = XLSX.read(buffer, { type: "buffer" });
   const fileType = detectFileType(workbook, fileName);
@@ -19,10 +20,11 @@ export async function importExcel(
     fields: { inserted: 0, updated: 0 },
     realisasi: { inserted: 0 },
     errors: [],
+    warnings: [],
   };
 
   if (fileType === "spop") {
-    await importSpop(workbook, summary);
+    await importSpop(workbook, summary, assignedBlok);
   } else if (fileType === "pbbp2") {
     await importPbbP2(workbook, summary);
   } else {
@@ -109,6 +111,7 @@ function buildBatchSql(fields: ReturnType<typeof parseSpopSheet>[number][]): {
 async function importSpop(
   workbook: XLSX.WorkBook,
   summary: ImportSummary,
+  assignedBlok?: string | null,
 ): Promise<void> {
   try {
     const fields = parseSpopSheet(workbook);
@@ -117,8 +120,17 @@ async function importSpop(
       return;
     }
 
+    const scopedFields = assignedBlok
+      ? fields.filter((f) => f.blok === assignedBlok)
+      : fields;
+    if (assignedBlok && scopedFields.length !== fields.length) {
+      summary.warnings.push(
+        `Beberapa baris di luar blok ${assignedBlok} diabaikan.`,
+      );
+    }
+
     const lspopAgg = parseLspopSheet(workbook);
-    for (const field of fields) {
+    for (const field of scopedFields) {
       const agg = lspopAgg.get(`${field.blok}|${field.noBidang}`);
       if (agg) {
         field.buildingArea = agg.buildingArea;
@@ -129,8 +141,8 @@ async function importSpop(
     let totalAffected = 0;
     let totalRows = 0;
 
-    for (let i = 0; i < fields.length; i += BATCH_SIZE) {
-      const batch = fields.slice(i, i + BATCH_SIZE);
+    for (let i = 0; i < scopedFields.length; i += BATCH_SIZE) {
+      const batch = scopedFields.slice(i, i + BATCH_SIZE);
       try {
         const { sql, params } = buildBatchSql(batch);
         const affected = await prisma.$executeRawUnsafe(sql, ...params);

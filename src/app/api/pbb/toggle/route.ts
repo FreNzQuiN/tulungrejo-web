@@ -47,14 +47,17 @@ async function togglePayment(
             ? PAYMENT_STATUS.BELUM_LUNAS
             : PAYMENT_STATUS.LUNAS;
         await tx.payments.update({
-          where: { fieldId_year: { fieldId, year } },
+          where: { fieldId_year: { fieldId, year }, status: existing.status },
           data: { status: toggled, markedBy, markedAt },
         });
         return toggled;
       });
     } catch (createErr: unknown) {
       const err = createErr as Record<string, unknown>;
-      if (err?.code === "P2002" && attempt < TOGGLE_MAX_RETRIES - 1) {
+      if (
+        (err?.code === "P2002" || err?.code === "P2025") &&
+        attempt < TOGGLE_MAX_RETRIES - 1
+      ) {
         continue;
       }
       throw createErr;

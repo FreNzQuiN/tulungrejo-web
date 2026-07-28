@@ -8,9 +8,29 @@ import { HOMEPAGE_CONTENT } from "../src/lib/desa-data";
 async function main() {
   console.log("Seeding database...");
 
-  const passwordPamong = await bcrypt.hash("pamong123", 10);
-  const passwordKades = await bcrypt.hash("kades123", 10);
-  const passwordJurnalis = await bcrypt.hash("jurnalis123", 10);
+  const PAMONG_PASSWORD = process.env.SEED_PAMONG_PASSWORD ?? "pamong123";
+  const KADES_PASSWORD = process.env.SEED_KADES_PASSWORD ?? "kades123";
+  const JURNALIS_PASSWORD = process.env.SEED_JURNALIS_PASSWORD ?? "jurnalis123";
+
+  if (!process.env.SEED_PAMONG_PASSWORD) {
+    console.warn(
+      "[seed] Using default pamong password — set SEED_PAMONG_PASSWORD env var",
+    );
+  }
+  if (!process.env.SEED_KADES_PASSWORD) {
+    console.warn(
+      "[seed] Using default kades password — set SEED_KADES_PASSWORD env var",
+    );
+  }
+  if (!process.env.SEED_JURNALIS_PASSWORD) {
+    console.warn(
+      "[seed] Using default jurnalis password — set SEED_JURNALIS_PASSWORD env var",
+    );
+  }
+
+  const passwordPamong = await bcrypt.hash(PAMONG_PASSWORD, 10);
+  const passwordKades = await bcrypt.hash(KADES_PASSWORD, 10);
+  const passwordJurnalis = await bcrypt.hash(JURNALIS_PASSWORD, 10);
 
   await prisma.user.upsert({
     where: { email: "pamong@tulungrejo.desa.id" },

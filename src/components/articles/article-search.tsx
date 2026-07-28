@@ -16,6 +16,7 @@ export function ArticleSearch({
   return (
     <form
       role="search"
+      onSubmit={(e) => e.preventDefault()}
       className="glass-panel flex gap-4 px-6 py-5 mb-8 items-center flex-wrap"
     >
       <div className="relative flex-1 min-w-[200px]">

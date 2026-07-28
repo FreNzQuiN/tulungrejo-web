@@ -21,6 +21,13 @@ export async function GET(
   if ("error" in auth) return auth.error;
 
   const { slug } = await params;
+
+  const ownershipError = await ensureArticleOwnership(
+    slug,
+    auth.session.user.id,
+  );
+  if (ownershipError) return ownershipError;
+
   const article = await getArticleBySlugAll(slug);
   if (!article) {
     return NextResponse.json(
@@ -112,6 +119,22 @@ export async function PUT(
   }
   if (content !== undefined && (typeof content !== "string" || !content)) {
     return NextResponse.json({ error: "Konten tidak valid" }, { status: 400 });
+  }
+  if (content !== undefined && content.length > 100000) {
+    return NextResponse.json(
+      { error: "Konten terlalu panjang (maks 100.000 karakter)" },
+      { status: 400 },
+    );
+  }
+  if (
+    content !== undefined &&
+    typeof content === "string" &&
+    content.length > 100000
+  ) {
+    return NextResponse.json(
+      { error: "Konten terlalu panjang (max 100.000 karakter)" },
+      { status: 400 },
+    );
   }
   if (image !== undefined && typeof image === "string") {
     const imgErr = validateArticleImage(image);

@@ -86,6 +86,12 @@ export async function POST(req: NextRequest) {
   if (!content || typeof content !== "string") {
     return NextResponse.json({ error: "Konten harus diisi" }, { status: 400 });
   }
+  if (content.length > 100000) {
+    return NextResponse.json(
+      { error: "Konten terlalu panjang (maks 100.000 karakter)" },
+      { status: 400 },
+    );
+  }
   if (image && typeof image === "string") {
     const imgErr = validateArticleImage(image);
     if (imgErr) {

@@ -68,7 +68,6 @@ export function Providers({ children }: { children: React.ReactNode }) {
           const res = await fetch("/api/auth/me");
           if (!res.ok) {
             setUser(null);
-            setIsLoading(false);
           } else {
             const data = await res.json();
             if (!data.user) setUser(null);
@@ -80,14 +79,20 @@ export function Providers({ children }: { children: React.ReactNode }) {
       5 * 60 * 1000,
     );
 
-    return () => clearInterval(interval);
+    function onVisibilityChange() {
+      if (document.hidden) clearInterval(interval);
+    }
+    document.addEventListener("visibilitychange", onVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
   }, [isLoading]);
 
   const refresh = useCallback(async () => {
-    setIsLoading(true);
     const u = await fetchUser();
-    setUser(u);
-    setIsLoading(false);
+    if (u) setUser(u);
   }, []);
 
   const signOut = useCallback(async () => {

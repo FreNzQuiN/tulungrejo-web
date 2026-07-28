@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
       Number(searchParams.get("take")) || MAX_TAKE,
       MAX_TAKE,
     );
-    const skip = Number(searchParams.get("skip")) || 0;
+    const skip = Math.max(0, Number(searchParams.get("skip")) || 0);
 
     const session = unwrapSession(auth);
     if (session?.user?.role === "pamong_pajak") {
@@ -114,8 +114,8 @@ export async function GET(req: NextRequest) {
       blok: f.blok,
       noBidang: f.noBidang,
       dusun: f.dusun,
-      landArea: f.landArea ? Number(f.landArea) : null,
-      buildingArea: f.buildingArea ? Number(f.buildingArea) : null,
+      landArea: f.landArea != null ? Number(f.landArea) : null,
+      buildingArea: f.buildingArea != null ? Number(f.buildingArea) : null,
       status: statusMap.get(f.id) ?? PAYMENT_STATUS.BELUM_LUNAS,
     }));
 

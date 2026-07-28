@@ -107,10 +107,6 @@ export function LoginForm() {
               aria-hidden="true"
               className="absolute right-4 bottom-[14px] text-muted-foreground"
             />
-            <Mail
-              size={16}
-              className="absolute right-4 bottom-[14px] text-muted-foreground"
-            />
           </div>
 
           <div className="form-group relative mb-6">
@@ -129,10 +125,6 @@ export function LoginForm() {
             <Key
               size={16}
               aria-hidden="true"
-              className="absolute right-4 bottom-[14px] text-muted-foreground"
-            />
-            <Key
-              size={16}
               className="absolute right-4 bottom-[14px] text-muted-foreground"
             />
           </div>

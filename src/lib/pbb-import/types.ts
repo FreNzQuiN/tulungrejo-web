@@ -44,6 +44,7 @@ export interface ImportSummary {
   fields: { inserted: number; updated: number };
   realisasi: { inserted: number };
   errors: string[];
+  warnings: string[];
 }
 
 export type FileType = "spop" | "pbbp2" | "unknown";
