@@ -16,24 +16,27 @@ const FOOTER_LINKS = [
 
 export function Footer() {
   const tahun = new Date().getFullYear();
-  const [contact, setContact] = useState<ContactInfo | null>(null);
+
+  // Hydrate from sessionStorage synchronously — avoids setState-in-effect
+  const [contact, setContact] = useState<ContactInfo | null>(() => {
+    try {
+      const cached = sessionStorage.getItem("footer-contact");
+      const cachedTime = sessionStorage.getItem("footer-contact-time");
+      if (
+        cached &&
+        cachedTime &&
+        Date.now() - Number(cachedTime) < 5 * 60 * 1000
+      ) {
+        return JSON.parse(cached) as ContactInfo;
+      }
+    } catch {
+      /* ignore */
+    }
+    return null;
+  });
 
   useEffect(() => {
-    const cached = sessionStorage.getItem("footer-contact");
-    const cachedTime = sessionStorage.getItem("footer-contact-time");
-
-    if (
-      cached &&
-      cachedTime &&
-      Date.now() - Number(cachedTime) < 5 * 60 * 1000
-    ) {
-      try {
-        setContact(JSON.parse(cached));
-        return;
-      } catch {
-        /* fall through to fetch */
-      }
-    }
+    if (contact) return;
 
     const abortController = new AbortController();
 
@@ -49,7 +52,7 @@ export function Footer() {
       .catch(() => {});
 
     return () => abortController.abort();
-  }, []);
+  }, [contact]);
 
   const c = contact ?? FALLBACK_CONTACT;
 

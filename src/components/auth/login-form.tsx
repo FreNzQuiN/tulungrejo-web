@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Key, Mail, AlertCircle } from "lucide-react";
 
@@ -10,26 +10,11 @@ const ROLE_REDIRECTS: Record<string, string> = {
   jurnalis: "/jurnalis",
 };
 
-const DEMO_ACCOUNTS =
-  process.env.NODE_ENV !== "production"
-    ? [
-        {
-          label: "Pamong",
-          email: "pamong@tulungrejo.desa.id",
-          password: "pamong123",
-        },
-        {
-          label: "Kades",
-          email: "kades@tulungrejo.desa.id",
-          password: "kades123",
-        },
-        {
-          label: "Jurnalis",
-          email: "jurnalis@tulungrejo.desa.id",
-          password: "jurnalis123",
-        },
-      ]
-    : [];
+interface DemoAccount {
+  label: string;
+  email: string;
+  password: string;
+}
 
 export function LoginForm() {
   const searchParams = useSearchParams();
@@ -38,6 +23,15 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [demoAccounts, setDemoAccounts] = useState<DemoAccount[]>([]);
+
+  useEffect(() => {
+    if (process.env.NODE_ENV === "production") return;
+    fetch("/api/auth/demo-accounts")
+      .then((res) => res.json())
+      .then((data) => setDemoAccounts(data))
+      .catch(() => {});
+  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -159,7 +153,7 @@ export function LoginForm() {
                 Akun Demo / Prototype:
               </strong>
               <div className="flex flex-col gap-2">
-                {DEMO_ACCOUNTS.map((acc) => (
+                {demoAccounts.map((acc) => (
                   <div
                     key={acc.label}
                     onClick={() => {

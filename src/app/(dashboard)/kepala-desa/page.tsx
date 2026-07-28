@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, startTransition } from "react";
 import { useAuth } from "@/components/providers";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -55,15 +55,20 @@ export default function KadesDashboard() {
   const [data, setData] = useState<RealisasiView | null>(null);
   const [loading, setLoading] = useState(true);
   const [selectedYear, setSelectedYear] = useState<number>(getCurrentTaxYear());
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
     if (sessionUser?.role !== "kepala_desa") return;
 
-    setLoading(true);
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    startTransition(() => setLoading(true));
     const url = `/api/pbb/realisasi?tahun=${selectedYear}`;
 
-    fetch(url)
+    fetch(url, { signal: controller.signal })
       .then((res) => {
         if (res.status === 404) {
           setData(null);
@@ -76,10 +81,13 @@ export default function KadesDashboard() {
         if (json) setData(json);
       })
       .catch((err) => {
+        if (err instanceof Error && err.name === "AbortError") return;
         toast.error(err.message);
       })
-      .finally(() => setLoading(false));
-  }, [sessionUser?.id, authLoading, selectedYear]);
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+  }, [sessionUser?.id, sessionUser?.role, authLoading, selectedYear]);
 
   const yearOptions = getYearOptions();
 

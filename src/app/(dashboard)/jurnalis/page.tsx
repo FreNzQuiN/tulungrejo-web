@@ -4,6 +4,7 @@ import { useState } from "react";
 import dynamic from "next/dynamic";
 import { useAuth } from "@/components/providers";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AccessDenied } from "@/components/auth/access-denied";
 import { CMSLayout } from "@/components/jurnalis/cms-layout";
 import { ArticleManagerSkeleton } from "@/components/jurnalis/article-manager";
 
@@ -95,12 +96,10 @@ export default function JurnalisPage() {
 
   function handleTabChange(tab: string) {
     if (tab === activeTab) return;
-    if (activeTab === "articles") {
-      const confirmed = window.confirm(
-        "Anda memiliki perubahan yang belum disimpan. Yakin ingin meninggalkan halaman ini?",
-      );
-      if (!confirmed) return;
-    }
+    const confirmed = window.confirm(
+      "Anda memiliki perubahan yang belum disimpan. Yakin ingin meninggalkan halaman ini?",
+    );
+    if (!confirmed) return;
     setActiveTab(tab);
   }
 
@@ -123,6 +122,10 @@ export default function JurnalisPage() {
 
   if (statusLoading) {
     return <JurnalisSkeleton />;
+  }
+
+  if (sessionUser?.role !== "jurnalis") {
+    return <AccessDenied message="Halaman ini hanya untuk Jurnalis." />;
   }
 
   return (

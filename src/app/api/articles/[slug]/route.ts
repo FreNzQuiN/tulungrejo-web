@@ -45,7 +45,7 @@ async function ensureArticleOwnership(
       { status: 404 },
     );
   }
-  if (existing.authorId !== null && existing.authorId !== userId) {
+  if (existing.authorId !== userId) {
     return NextResponse.json({ error: "Forbidden" }, { status: 403 });
   }
   return null;

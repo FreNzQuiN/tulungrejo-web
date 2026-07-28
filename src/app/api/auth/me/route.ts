@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getSession } from "@/lib/auth/session";
+import { prisma } from "@/lib/prisma";
 import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
 
 export async function GET(req: NextRequest) {
@@ -10,6 +11,16 @@ export async function GET(req: NextRequest) {
     if (!session) {
       return NextResponse.json({ user: null }, { status: 200 });
     }
+
+    // Cross-check DB role consistency to avoid ghost sessions
+    const dbUser = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true },
+    });
+    if (!dbUser || dbUser.role !== session.user.role) {
+      return NextResponse.json({ user: null }, { status: 200 });
+    }
+
     return NextResponse.json({ user: session.user });
   } catch (err) {
     console.error("Session fetch error:", err);

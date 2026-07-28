@@ -43,15 +43,14 @@ export async function POST(request: Request) {
       where: { email: normalizedEmail },
     });
 
-    if (!user) {
-      return NextResponse.json(
-        { error: "Email atau kata sandi salah." },
-        { status: 401 },
-      );
-    }
+    // Timing-safe comparison — always run bcrypt to prevent user enumeration
+    const dummyHash =
+      "$2a$12$LJ3m4ys3Lg3YOCwDqImqXeZ0Gii/8Nh0TWNL0tRQyXa1pHFMz.mWy";
+    const valid = user
+      ? await bcrypt.compare(password, user.passwordHash)
+      : await bcrypt.compare(password, dummyHash);
 
-    const valid = await bcrypt.compare(password, user.passwordHash);
-    if (!valid) {
+    if (!user || !valid) {
       return NextResponse.json(
         { error: "Email atau kata sandi salah." },
         { status: 401 },
@@ -68,6 +67,7 @@ export async function POST(request: Request) {
       email: user.email,
       name: user.name,
       role: user.role,
+      tokenVersion: user.tokenVersion,
     });
 
     return NextResponse.json({ success: true, role: user.role });

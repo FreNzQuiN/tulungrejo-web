@@ -110,7 +110,12 @@ export function usePbbFields(
 
   async function togglePayment(fieldId: string) {
     setToggling(fieldId);
-    const year = selectedYear ?? new Date().getFullYear();
+    // Use server-compatible tax year calculation, not raw client Date
+    const now = new Date();
+    const mmdd = `${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
+    const clientTaxYear =
+      mmdd < "06-30" ? now.getFullYear() - 1 : now.getFullYear();
+    const year = selectedYear ?? clientTaxYear;
     try {
       const res = await fetch("/api/pbb/toggle", {
         method: "POST",

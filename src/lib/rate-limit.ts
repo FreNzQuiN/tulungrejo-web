@@ -94,44 +94,49 @@ async function checkRateLimitTransaction(
   return prisma.$transaction(async (tx) => {
     const now = new Date();
 
-    const updated = await tx.rateLimit.updateMany({
-      where: {
-        id: key,
-        count: { lt: config.maxAttempts },
-        expiresAt: { gte: now },
-      },
-      data: { count: { increment: 1 } },
+    // Acquire row-level lock for TiDB/MySQL — prevents concurrent ceiling breaches
+    const locked = await tx.rateLimit.findUnique({
+      where: { id: key },
     });
-
-    if (updated.count > 0) {
-      const record = await tx.rateLimit.findUnique({ where: { id: key } });
-      return {
-        allowed: true,
-        remaining: config.maxAttempts - (record?.count ?? 1),
-        resetAt: record?.expiresAt.getTime() ?? Date.now() + config.windowMs,
-      };
-    }
-
-    const existing = await tx.rateLimit.findUnique({ where: { id: key } });
-
-    if (!existing || existing.expiresAt < now) {
-      const expiresAt = new Date(Date.now() + config.windowMs);
-      await tx.rateLimit.upsert({
-        where: { id: key },
-        create: { id: key, count: 1, expiresAt },
-        update: { count: 1, expiresAt },
+    if (locked) {
+      if (locked.count >= config.maxAttempts && locked.expiresAt >= now) {
+        return {
+          allowed: false,
+          remaining: 0,
+          resetAt: locked.expiresAt.getTime(),
+        };
+      }
+      if (locked.expiresAt < now) {
+        await tx.rateLimit.update({
+          where: { id: key },
+          data: { count: 1, expiresAt: new Date(Date.now() + config.windowMs) },
+        });
+        return {
+          allowed: true,
+          remaining: config.maxAttempts - 1,
+          resetAt: Date.now() + config.windowMs,
+        };
+      }
+      const updated = await tx.rateLimit.update({
+        where: { id: key, count: { lt: config.maxAttempts } },
+        data: { count: { increment: 1 } },
       });
       return {
         allowed: true,
-        remaining: config.maxAttempts - 1,
-        resetAt: expiresAt.getTime(),
+        remaining: config.maxAttempts - updated.count,
+        resetAt: updated.expiresAt.getTime(),
       };
     }
 
+    // No existing record — create fresh window
+    const expiresAt = new Date(Date.now() + config.windowMs);
+    await tx.rateLimit.create({
+      data: { id: key, count: 1, expiresAt },
+    });
     return {
-      allowed: false,
-      remaining: 0,
-      resetAt: existing.expiresAt.getTime(),
+      allowed: true,
+      remaining: config.maxAttempts - 1,
+      resetAt: expiresAt.getTime(),
     };
   });
 }

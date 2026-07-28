@@ -23,6 +23,7 @@ model User {
   passwordHash String   @map("password_hash")
   name         String
   role         Role     @default(pamong_pajak)
+  tokenVersion Int      @default(0) @map("token_version")
   assignedBlok   String?   @map("assigned_blok")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
@@ -90,6 +91,7 @@ model Fields {
   payments      Payments[]
 
   @@unique([blok, noBidang])
+  @@index([dusun])
   @@map("fields")
 }
 
@@ -186,5 +188,6 @@ model Article {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@index([authorId])
   @@map("articles")
 }

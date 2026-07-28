@@ -1,6 +1,5 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/components/providers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
@@ -61,8 +60,6 @@ export default function PBBPage() {
   const isKades = role === "kepala_desa";
   const canAccess = isPamong || isKades;
 
-  const [selectedBlok, setSelectedBlok] = useState("");
-
   const {
     fields,
     loading,
@@ -81,21 +78,6 @@ export default function PBBPage() {
     setPage,
     togglePayment,
   } = usePbbFields(canAccess, authLoading);
-
-  // Sync selectedBlok ↔ blokFilter bidirectionally
-  const prevBlokFilter = useRef(blokFilter);
-  const prevSelectedBlok = useRef(selectedBlok);
-
-  useEffect(() => {
-    if (prevBlokFilter.current !== blokFilter) {
-      prevBlokFilter.current = blokFilter;
-      prevSelectedBlok.current = blokFilter;
-      setSelectedBlok(blokFilter);
-    } else if (prevSelectedBlok.current !== selectedBlok) {
-      prevSelectedBlok.current = selectedBlok;
-      setBlokFilter(selectedBlok);
-    }
-  }, [blokFilter, selectedBlok]);
 
   if (authLoading) {
     return <ListSkeleton />;
@@ -127,9 +109,9 @@ export default function PBBPage() {
               <label className="mb-1.5 block text-[11px] font-bold uppercase text-muted-foreground">
                 Pilih Blok
               </label>
-              <BlokSelector value={selectedBlok} onChange={setSelectedBlok} />
+              <BlokSelector value={blokFilter} onChange={setBlokFilter} />
             </div>
-            <BlokViewer blok={selectedBlok} />
+            <BlokViewer blok={blokFilter} />
           </div>
 
           <div className="map-control-panel">

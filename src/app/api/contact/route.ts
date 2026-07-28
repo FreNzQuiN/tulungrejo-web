@@ -60,11 +60,30 @@ export async function PUT(req: NextRequest) {
     return NextResponse.json({ error: "Email harus diisi" }, { status: 400 });
   }
 
-  if (socialMedia !== undefined && !isSocialMediaArray(socialMedia)) {
-    return NextResponse.json(
-      { error: "Social media harus berupa array of { platform, url }" },
-      { status: 400 },
-    );
+  if (socialMedia !== undefined) {
+    if (!isSocialMediaArray(socialMedia)) {
+      return NextResponse.json(
+        { error: "Social media harus berupa array of { platform, url }" },
+        { status: 400 },
+      );
+    }
+    // Server-side URL validation — only http/https allowed
+    for (const link of socialMedia) {
+      try {
+        const parsed = new URL(link.url);
+        if (!["http:", "https:"].includes(parsed.protocol)) {
+          return NextResponse.json(
+            { error: `URL "${link.url}" harus menggunakan http atau https.` },
+            { status: 400 },
+          );
+        }
+      } catch {
+        return NextResponse.json(
+          { error: `URL "${link.url}" tidak valid.` },
+          { status: 400 },
+        );
+      }
+    }
   }
 
   try {

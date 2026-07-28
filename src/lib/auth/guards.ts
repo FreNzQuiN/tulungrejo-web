@@ -22,9 +22,14 @@ export async function requireAuth(): Promise<AuthResult> {
 
   const dbUser = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { role: true, assignedBlok: true },
+    select: { role: true, assignedBlok: true, tokenVersion: true },
   });
-  if (!dbUser || dbUser.role !== session.user.role) {
+  if (
+    !dbUser ||
+    dbUser.role !== session.user.role ||
+    (session.user.tokenVersion !== undefined &&
+      dbUser.tokenVersion !== session.user.tokenVersion)
+  ) {
     return {
       error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
     };

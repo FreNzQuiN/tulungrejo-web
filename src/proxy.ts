@@ -16,7 +16,8 @@ const PUBLIC_API_PATHS = [
 export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
-  if (PUBLIC_API_PATHS.some((p) => path.startsWith(p))) {
+  // Use path-segment matching — prevents prefix bypass (e.g. /api/auth/login-backdoor)
+  if (PUBLIC_API_PATHS.some((p) => path === p || path.startsWith(p + "/"))) {
     return NextResponse.next();
   }
 
@@ -43,7 +44,11 @@ export async function proxy(request: NextRequest) {
 
   const role = session.user.role;
 
-  if (path.startsWith("/pbb") && role !== "pamong_pajak") {
+  if (
+    path.startsWith("/pbb") &&
+    role !== "pamong_pajak" &&
+    role !== "kepala_desa"
+  ) {
     return NextResponse.redirect(new URL("/unauthorized", request.url));
   }
 

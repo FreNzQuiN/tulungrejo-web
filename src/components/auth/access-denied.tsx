@@ -1,6 +1,7 @@
 "use client";
 
 import { ShieldAlert } from "lucide-react";
+import Link from "next/link";
 
 interface AccessDeniedProps {
   message: string;
@@ -29,9 +30,9 @@ export function AccessDenied({ message }: AccessDeniedProps) {
             >
               Kembali ke Halaman Sebelumnya
             </button>
-            <a href="/" className="btn btn-primary">
+            <Link href="/" className="btn btn-primary">
               Ke Halaman Utama
-            </a>
+            </Link>
           </div>
         </div>
       </div>

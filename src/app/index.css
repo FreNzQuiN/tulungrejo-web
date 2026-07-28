@@ -15,8 +15,7 @@
   --color-chart-blue: #4f709c;
   --color-chart-gold: #e5d283;
 
-  --font-heading: "Playfair Display", Georgia, serif;
-  --font-body: "Plus Jakarta Sans", system-ui, -apple-system, sans-serif;
+  /* FE font families as fallback — next/font sets --font-heading/--font-body via class selector */
 
   --shadow-sm: 0 2px 8px rgba(33, 53, 85, 0.05);
   --shadow-md: 0 8px 24px rgba(33, 53, 85, 0.08);

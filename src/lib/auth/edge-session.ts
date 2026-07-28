@@ -22,6 +22,7 @@ async function verifyToken(token: string): Promise<SessionUser | null> {
       email: payload.email as string,
       name: payload.name as string,
       role,
+      tokenVersion: payload.tokenVersion as number | undefined,
     };
   } catch (err) {
     console.error("edge verifyToken error:", err);
