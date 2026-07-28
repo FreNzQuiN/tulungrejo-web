@@ -135,6 +135,43 @@ export async function getAllArticlesForJournalist(
   return articles.map(toFrontmatter);
 }
 
+export async function getAllPublishedArticlesWithMeta(
+  take?: number,
+  skip?: number,
+): Promise<{ data: ArticleFrontmatter[]; total: number }> {
+  const safeTake = Math.min(take ?? 100, 1000);
+  const safeSkip = Math.min(skip ?? 0, 10000);
+  const [articles, total] = await Promise.all([
+    prisma.article.findMany({
+      where: { published: true },
+      orderBy: { date: "desc" },
+      select: articleListSelect,
+      take: safeTake,
+      skip: safeSkip,
+    }),
+    prisma.article.count({ where: { published: true } }),
+  ]);
+  return { data: articles.map(toFrontmatter), total };
+}
+
+export async function getAllArticlesForJournalistWithMeta(
+  take?: number,
+  skip?: number,
+): Promise<{ data: ArticleFrontmatter[]; total: number }> {
+  const safeTake = Math.min(take ?? 100, 1000);
+  const safeSkip = Math.min(skip ?? 0, 10000);
+  const [articles, total] = await Promise.all([
+    prisma.article.findMany({
+      orderBy: { date: "desc" },
+      select: articleListSelect,
+      take: safeTake,
+      skip: safeSkip,
+    }),
+    prisma.article.count(),
+  ]);
+  return { data: articles.map(toFrontmatter), total };
+}
+
 export async function getArticleBySlugAll(
   slug: string,
 ): Promise<Article | null> {
@@ -216,12 +253,22 @@ export async function updateArticle(
   });
 }
 
-export async function deleteArticle(slug: string): Promise<boolean> {
+export async function deleteArticle(
+  slug: string,
+): Promise<{ success: true } | { success: false; notFound: boolean }> {
   try {
     await prisma.article.delete({ where: { slug } });
-    return true;
+    return { success: true };
   } catch (err) {
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      "code" in (err as Record<string, unknown>) &&
+      (err as Record<string, unknown>).code === "P2025"
+    ) {
+      return { success: false, notFound: true };
+    }
     console.error("deleteArticle error:", err);
-    return false;
+    throw err;
   }
 }

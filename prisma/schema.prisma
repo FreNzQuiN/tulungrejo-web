@@ -130,6 +130,7 @@ model Realisasi {
   tahun        Int?
   importedAt   DateTime @default(now()) @map("imported_at")
 
+  @@unique([kodeDesa, tahun])
   @@index([importedAt])
   @@map("realisasi")
 }

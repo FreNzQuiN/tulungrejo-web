@@ -38,7 +38,6 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "decap-server": "^3.9.1",
     "dotenv": "^17.4.2",
     "eslint": "^9",
     "eslint-config-next": "16.2.10",
@@ -49,8 +48,7 @@
   },
   "overrides": {
     "uuid": "^11.1.1",
-    "postcss": "^8.5.10",
-    "@hono/node-server": ">=1.19.13"
+    "postcss": "^8.5.10"
   },
   "allowScripts": {
     "@prisma/engines": true,

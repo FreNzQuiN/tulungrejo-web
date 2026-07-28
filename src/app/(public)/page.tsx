@@ -11,7 +11,21 @@ import { getAllPublishedArticles } from "@/lib/article-queries";
 import { ArticlesError } from "@/components/articles/articles-error";
 
 async function HomePageContent() {
-  const content = await getHomepageContent();
+  let content;
+  try {
+    content = await getHomepageContent();
+  } catch {
+    return (
+      <header className="hero-section">
+        <div className="container">
+          <h1 className="hero-title">Desa Tulungrejo</h1>
+          <p className="hero-desc">
+            Selamat datang di portal resmi Pemerintah Desa Tulungrejo
+          </p>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <>
@@ -53,7 +67,13 @@ async function HomePageContent() {
 }
 
 async function StatsSection() {
-  const stats = await getVillageStats();
+  let stats;
+  try {
+    stats = await getVillageStats();
+  } catch {
+    console.error("Gagal memuat statistik desa");
+    return null;
+  }
 
   return (
     <section className="stats-section">
@@ -116,7 +136,7 @@ async function ArticlesSection() {
     console.error("Gagal memuat artikel:", e);
     return <ArticlesError />;
   }
-  if (articles.length === 0) return null;
+  if (!articles || articles.length === 0) return null;
   return <HomeArticles articles={articles} />;
 }
 
@@ -132,8 +152,8 @@ function StatsSkeleton() {
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="stat-card">
               <Skeleton className="mx-auto mb-4 h-12 w-12 rounded-full" />
-              <Skeleton className="mx-auto mb-2 h-8 w-24" />
-              <Skeleton className="mx-auto h-4 w-32" />
+              <Skeleton className="mx-auto mb-2 h-8 w-32" />
+              <Skeleton className="mx-auto h-4 w-40" />
             </div>
           ))}
         </div>
@@ -156,11 +176,11 @@ function ArticlesSkeleton() {
               <Skeleton className="h-48 w-full rounded-none" />
               <div className="article-body">
                 <Skeleton className="mb-3 h-5 w-16" />
-                <Skeleton className="mb-2 h-6 w-full" />
-                <Skeleton className="mb-4 h-6 w-3/4" />
+                <Skeleton className="mb-2 h-5 w-3/4" />
+                <Skeleton className="mb-2 h-5 w-full" />
                 <Skeleton className="mb-1 h-4 w-full" />
                 <Skeleton className="mb-1 h-4 w-5/6" />
-                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-4 w-1/2" />
               </div>
             </div>
           ))}

@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { requireRole } from "@/lib/auth/guards";
 import {
-  getAllArticlesForJournalist,
+  getAllArticlesForJournalistWithMeta,
   createArticle,
   checkSlugExists,
 } from "@/lib/article-queries";
@@ -19,9 +19,16 @@ export async function GET(req: NextRequest) {
     Number(req.nextUrl.searchParams.get("take")) || 100,
     500,
   );
-  const skip = Number(req.nextUrl.searchParams.get("skip")) || 0;
-  const articles = await getAllArticlesForJournalist(take, skip);
-  return NextResponse.json(articles);
+  const skip = Math.max(0, Number(req.nextUrl.searchParams.get("skip")) || 0);
+  const { data: articles, total } = await getAllArticlesForJournalistWithMeta(
+    take,
+    skip,
+  );
+  const page = Math.floor(skip / take) + 1;
+  return NextResponse.json({
+    data: articles,
+    meta: { total, page, pageSize: take, hasMore: skip + take < total },
+  });
 }
 
 export async function POST(req: NextRequest) {
@@ -31,8 +38,17 @@ export async function POST(req: NextRequest) {
   if ("error" in auth) return auth.error;
 
   const body = await req.json();
-  const { title, slug, category, summary, content, image, tags, published } =
-    body;
+  const {
+    title,
+    slug,
+    category,
+    summary,
+    content,
+    image,
+    tags,
+    published,
+    date,
+  } = body;
 
   if (!title || title.length > 255) {
     return NextResponse.json(
@@ -77,14 +93,24 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  if (date !== undefined) {
+    const parsed = new Date(date);
+    if (Number.isNaN(parsed.getTime())) {
+      return NextResponse.json(
+        { error: "Format tanggal tidak valid" },
+        { status: 400 },
+      );
+    }
+  }
+
   try {
     const author = auth.session.user?.name ?? "Jurnalis";
-    const today = new Date().toISOString().substring(0, 10);
+    const defaultDate = new Date().toISOString().substring(0, 10);
     const articleSlug = await createArticle(
       {
         title,
         slug,
-        date: today,
+        date: date ?? defaultDate,
         author,
         category,
         summary,

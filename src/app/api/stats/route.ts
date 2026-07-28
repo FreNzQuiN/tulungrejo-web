@@ -76,7 +76,10 @@ export async function PUT(req: NextRequest) {
       orderBy: { id: "asc" },
     });
     if (!existing) {
-      return NextResponse.json({ error: "Stats not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Statistik tidak ditemukan" },
+        { status: 404 },
+      );
     }
 
     const updated = await prisma.villageStats.update({

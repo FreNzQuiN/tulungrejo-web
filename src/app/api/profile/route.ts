@@ -152,7 +152,10 @@ export async function PUT(req: NextRequest) {
       orderBy: { id: "asc" },
     });
     if (!profile) {
-      return NextResponse.json({ error: "Profile not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Profil desa tidak ditemukan" },
+        { status: 404 },
+      );
     }
 
     const updated = await prisma.villageProfile.update({

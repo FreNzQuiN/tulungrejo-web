@@ -59,6 +59,12 @@ export async function PUT(req: NextRequest) {
   if (!email) {
     return NextResponse.json({ error: "Email harus diisi" }, { status: 400 });
   }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    return NextResponse.json(
+      { error: "Format email tidak valid" },
+      { status: 400 },
+    );
+  }
 
   if (socialMedia !== undefined) {
     if (!isSocialMediaArray(socialMedia)) {
@@ -91,20 +97,19 @@ export async function PUT(req: NextRequest) {
       orderBy: { id: "asc" },
     });
 
-    const data = {
+    const data: Parameters<typeof prisma.contactInfo.create>[0]["data"] = {
       ...(address !== undefined && { address }),
       ...(phone !== undefined && { phone }),
       ...(email !== undefined && { email }),
       ...(jamKerja !== undefined && { jamKerja }),
       ...(jamLibur !== undefined && { jamLibur }),
-      ...(socialMedia !== undefined && {
-        socialMedia: JSON.stringify(socialMedia),
-      }),
+      socialMedia:
+        socialMedia !== undefined ? JSON.stringify(socialMedia) : "[]",
     };
 
     let updated;
     if (!existing) {
-      updated = await prisma.contactInfo.create({ data: data as any });
+      updated = await prisma.contactInfo.create({ data });
     } else {
       updated = await prisma.contactInfo.update({
         where: { id: existing.id },

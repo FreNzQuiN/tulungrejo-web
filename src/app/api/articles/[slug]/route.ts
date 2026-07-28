@@ -78,6 +78,7 @@ export async function PUT(
     image,
     tags,
     published,
+    date,
   } = body;
 
   if (title !== undefined && (!title || title.length > 255)) {
@@ -119,6 +120,16 @@ export async function PUT(
     }
   }
 
+  if (date !== undefined) {
+    const parsed = new Date(date);
+    if (Number.isNaN(parsed.getTime())) {
+      return NextResponse.json(
+        { error: "Format tanggal tidak valid" },
+        { status: 400 },
+      );
+    }
+  }
+
   try {
     await updateArticle(slug, {
       ...(title !== undefined && { title }),
@@ -129,6 +140,7 @@ export async function PUT(
       ...(image !== undefined && { image }),
       ...(tags !== undefined && { tags }),
       ...(published !== undefined && { published }),
+      ...(date !== undefined && { date }),
     });
 
     const finalSlug = newSlug ?? slug;
@@ -164,12 +176,14 @@ export async function DELETE(
   if (ownershipError) return ownershipError;
 
   try {
-    const deleted = await deleteArticle(slug);
-    if (!deleted) {
-      return NextResponse.json(
-        { error: "Artikel tidak ditemukan" },
-        { status: 404 },
-      );
+    const result = await deleteArticle(slug);
+    if (!result.success) {
+      if (result.notFound) {
+        return NextResponse.json(
+          { error: "Artikel tidak ditemukan" },
+          { status: 404 },
+        );
+      }
     }
     revalidateTag("articles", "max");
     revalidateTag(`article-${slug}`, "max");

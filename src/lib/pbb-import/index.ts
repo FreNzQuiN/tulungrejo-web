@@ -176,7 +176,32 @@ async function importPbbP2(
       return;
     }
 
-    await prisma.realisasi.create({ data: record });
+    if (record.tahun !== null) {
+      await prisma.realisasi.upsert({
+        where: {
+          kodeDesa_tahun: {
+            kodeDesa: record.kodeDesa,
+            tahun: record.tahun,
+          },
+        },
+        create: record,
+        update: {
+          kodeKec: record.kodeKec,
+          kecamatan: record.kecamatan,
+          desa: record.desa,
+          totalPbb: record.totalPbb,
+          totalBayar: record.totalBayar,
+          persen: record.persen,
+          kurangBayar: record.kurangBayar,
+          totalSppt: record.totalSppt,
+          dibayar: record.dibayar,
+          sisaSppt: record.sisaSppt,
+          tanggalAmbil: record.tanggalAmbil,
+        },
+      });
+    } else {
+      await prisma.realisasi.create({ data: record });
+    }
     summary.realisasi.inserted++;
     console.info("Import PBB-P2 selesai: realisasi tersimpan");
   } catch (err) {
