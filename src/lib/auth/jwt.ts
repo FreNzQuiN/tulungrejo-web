@@ -17,8 +17,7 @@ export async function verifyToken(token: string): Promise<SessionUser | null> {
       email: String(payload.email ?? ""),
       name: String(payload.name ?? ""),
       role,
-      tokenVersion:
-        payload.tokenVersion != null ? Number(payload.tokenVersion) : undefined,
+      tokenVersion: Number(payload.tokenVersion ?? 0),
     };
   } catch (err) {
     console.error("verifyToken error:", err);

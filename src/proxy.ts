@@ -26,7 +26,7 @@ export async function proxy(request: NextRequest) {
 
   const session = await getSessionFromRequestEdge(request);
 
-  const isApiRoute = path.startsWith("/api/");
+  const isApiRoute = path === "/api" || path.startsWith("/api/");
   const isDashboardRoute =
     path.startsWith("/pbb") ||
     path.startsWith("/kepala-desa") ||

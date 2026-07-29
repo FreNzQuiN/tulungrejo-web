@@ -26,6 +26,14 @@ function setCached(key: string, result: RateLimitResult): void {
   cache.set(key, { result, expiresAt: Date.now() + CACHE_TTL_MS });
 }
 
+function fingerprint(str: string): string {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h).toString(36);
+}
+
 export async function checkApiRateLimit(
   req: Request,
   namespace = "api",
@@ -34,10 +42,12 @@ export async function checkApiRateLimit(
 
   const cacheKey = `${namespace}:${ip}`;
 
-  // For unknown IPs, use a stricter shared limit
+  // For unknown IPs, differentiate by User-Agent to prevent shared-exhaustion
   if (ip === "unknown") {
+    const ua = req.headers.get("user-agent") ?? "";
+    const uaFingerprint = namespace + ":unknown:" + fingerprint(ua);
     const rl = await checkRateLimit(
-      `${namespace}:unknown`,
+      uaFingerprint,
       { windowMs: 60_000, maxAttempts: 10 },
       true,
     );

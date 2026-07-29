@@ -36,7 +36,7 @@ export function ArticleList({ articles, onEdit, onDelete }: ArticleListProps) {
             </tr>
           </thead>
           <tbody>
-            <tr>
+            <tr role="status" aria-live="polite">
               <td
                 colSpan={4}
                 className="text-center p-10 text-muted-foreground"

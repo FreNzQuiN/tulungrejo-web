@@ -155,28 +155,21 @@ async function importSpop(
 
     for (let i = 0; i < scopedFields.length; i += BATCH_SIZE) {
       const batch = scopedFields.slice(i, i + BATCH_SIZE);
-      const batchErrors: string[] = [];
-      for (const field of batch) {
-        try {
-          const { sql, params } = buildBatchSql([field]);
-          await prisma.$executeRawUnsafe(sql, ...params);
+      try {
+        const { sql, params } = buildBatchSql(batch);
+        await prisma.$executeRawUnsafe(sql, ...params);
+        for (const field of batch) {
           if (existingNops.has(field.nop)) {
             updatedCount++;
           } else {
             insertedCount++;
             existingNops.add(field.nop);
           }
-        } catch {
-          batchErrors.push(
-            `Baris ${field.nop ?? field.noUrut ?? "?"} gagal diimport.`,
-          );
         }
-      }
-      if (batchErrors.length > 0) {
+      } catch {
         summary.errors.push(
-          `Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${batchErrors.length} baris gagal.`,
+          `Batch ${Math.floor(i / BATCH_SIZE) + 1} gagal diimport.`,
         );
-        batchErrors.forEach((e) => summary.errors.push("  " + e));
       }
     }
 

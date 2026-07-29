@@ -193,14 +193,6 @@ export async function getAllArticlesForJournalistWithMeta(
   return { data: articles.map(toFrontmatter), total };
 }
 
-export async function getArticleBySlugAll(
-  slug: string,
-): Promise<Article | null> {
-  const article = await prisma.article.findUnique({ where: { slug } });
-  if (!article) return null;
-  return toFullArticle(article);
-}
-
 export async function checkSlugExists(
   slug: string,
   excludeSlug?: string,

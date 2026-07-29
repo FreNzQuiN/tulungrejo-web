@@ -72,10 +72,20 @@ export async function PUT(req: NextRequest) {
   }
 
   if (googleMapsUrl !== undefined) {
-    if (
-      !googleMapsUrl.startsWith("https://www.google.com/maps/embed") &&
-      !googleMapsUrl.startsWith("https://maps.google.com/")
-    ) {
+    try {
+      const parsed = new URL(googleMapsUrl);
+      const allowedHosts = [
+        "www.google.com",
+        "maps.google.com",
+        "maps.google.co.id",
+      ];
+      if (
+        !allowedHosts.includes(parsed.hostname) ||
+        !parsed.pathname.startsWith("/maps/embed")
+      ) {
+        throw new Error("Invalid URL");
+      }
+    } catch {
       return NextResponse.json(
         {
           error:

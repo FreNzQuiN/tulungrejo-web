@@ -63,6 +63,13 @@ export async function PUT(
 
   const { slug } = await params;
 
+  // Ownership check before any mutation
+  const { error: ownershipError } = await getOwnedArticle(
+    slug,
+    auth.session.user.id,
+  );
+  if (ownershipError) return ownershipError;
+
   let body: Record<string, unknown>;
   try {
     body = await req.json();

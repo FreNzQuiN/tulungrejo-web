@@ -20,8 +20,7 @@ export async function GET(req: NextRequest) {
     if (
       !dbUser ||
       dbUser.role !== session.user.role ||
-      (session.user.tokenVersion !== undefined &&
-        dbUser.tokenVersion !== session.user.tokenVersion)
+      (dbUser.tokenVersion ?? 0) !== (session.user.tokenVersion ?? 0)
     ) {
       return NextResponse.json({ user: null }, { status: 200 });
     }

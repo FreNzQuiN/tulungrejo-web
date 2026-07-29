@@ -31,31 +31,7 @@ export function LoginForm() {
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          const accounts: DemoAccount[] = [
-            {
-              label: "Pamong",
-              email: "pamong@tulungrejo.desa.id",
-              password: "pamong123",
-            },
-            {
-              label: "Kades",
-              email: "kades@tulungrejo.desa.id",
-              password: "kades123",
-            },
-            {
-              label: "Jurnalis",
-              email: "jurnalis@tulungrejo.desa.id",
-              password: "jurnalis123",
-            },
-          ];
-          const withPassword = data.map(
-            (d: { label: string; email: string }) =>
-              accounts.find((a) => a.email === d.email) || {
-                ...d,
-                password: "",
-              },
-          );
-          setDemoAccounts(withPassword);
+          setDemoAccounts(data as DemoAccount[]);
         }
       })
       .catch(() => {
