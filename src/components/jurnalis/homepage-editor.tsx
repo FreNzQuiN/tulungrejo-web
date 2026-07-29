@@ -1,10 +1,14 @@
 "use client";
 
+import { useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
-import { Save, X } from "lucide-react";
+import { Save, X, ImageUp, TrashIcon } from "lucide-react";
+import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCmsEditor } from "@/hooks/use-cms-editor";
+import { resizeImage } from "@/lib/client-utils";
+import { MAX_IMAGE_SIZE } from "@/lib/constants";
 import type { HomepageContent } from "@/lib/types";
 
 function HomepageEditorSkeleton() {
@@ -40,6 +44,7 @@ export function HomepageEditor({
       heroTitle: "",
       heroSubtitle: "",
       heroDescription: "",
+      heroImage: null,
       aboutTitle: "",
       aboutParagraphs: [],
       googleMapsUrl: "",
@@ -80,6 +85,37 @@ export function HomepageEditor({
       "Konten halaman depan berhasil diperbarui",
       "Gagal memperbarui konten halaman depan",
     );
+  }
+
+  const [heroImageUploading, setHeroImageUploading] = useState(false);
+
+  async function handleHeroImagePick(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > MAX_IMAGE_SIZE) {
+      toast.error("Ukuran gambar maksimal 5MB");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("Hanya file gambar yang diperbolehkan");
+      return;
+    }
+
+    setHeroImageUploading(true);
+    try {
+      const dataUri = await resizeImage(file);
+      editor.setData((p) => ({ ...p, heroImage: dataUri }));
+    } catch (e) {
+      console.error(e);
+      toast.error("Gagal memproses gambar");
+    } finally {
+      setHeroImageUploading(false);
+    }
+  }
+
+  function handleRemoveHeroImage() {
+    editor.setData((p) => ({ ...p, heroImage: null }));
   }
 
   if (editor.loading) {
@@ -132,6 +168,56 @@ export function HomepageEditor({
           rows={3}
           placeholder="Pusat informasi dan kegiatan kemasyarakatan..."
         />
+      </div>
+
+      <div className="form-group">
+        <label>Gambar Hero</label>
+        <div className="flex gap-3 items-start">
+          <label
+            className={`cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+              heroImageUploading
+                ? "opacity-50 pointer-events-none border-muted bg-muted text-muted-foreground"
+                : "border-input bg-background hover:bg-accent hover:text-accent-foreground"
+            }`}
+          >
+            <ImageUp size={16} />
+            {heroImageUploading ? "Memproses..." : "Pilih Gambar"}
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={handleHeroImagePick}
+              disabled={heroImageUploading}
+            />
+          </label>
+          {editor.data.heroImage && (
+            <button
+              type="button"
+              onClick={handleRemoveHeroImage}
+              className="inline-flex items-center gap-1 px-3 py-2 text-sm text-red-600 hover:text-red-700 transition-colors"
+            >
+              <TrashIcon size={14} />
+              Hapus
+            </button>
+          )}
+        </div>
+        {editor.data.heroImage ? (
+          <div className="mt-3 relative w-full max-w-[600px] rounded-lg overflow-hidden border">
+            <Image
+              src={editor.data.heroImage}
+              alt="Gambar Hero"
+              width={600}
+              height={400}
+              className="w-full h-auto object-contain"
+              unoptimized
+            />
+          </div>
+        ) : (
+          <p className="text-[12px] text-muted-foreground mt-1.5">
+            Format: JPG, PNG, WebP. Maks 5MB. Akan diresize otomatis ke 1920px.
+            Kosongkan untuk menggunakan gambar default.
+          </p>
+        )}
       </div>
 
       <div className="form-group">

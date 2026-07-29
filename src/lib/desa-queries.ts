@@ -153,6 +153,7 @@ async function fetchHomepageContent(): Promise<HomepageContent> {
     heroTitle: db.heroTitle,
     heroSubtitle: db.heroSubtitle,
     heroDescription: db.heroDescription,
+    heroImage: db.heroImage,
     aboutTitle: db.aboutTitle,
     aboutParagraphs: safeJsonParse<string[]>(
       db.aboutParagraphs,

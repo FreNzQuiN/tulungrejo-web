@@ -1,4 +1,3 @@
-import { Suspense } from "react";
 import type { Metadata } from "next";
 import { Providers } from "@/components/providers";
 import { Playfair_Display, Plus_Jakarta_Sans } from "next/font/google";
@@ -40,9 +39,7 @@ export default function RootLayout({
         className="min-h-full flex flex-col"
         style={{ fontFamily: "var(--font-body)" }}
       >
-        <Suspense fallback={null}>
-          <Providers>{children}</Providers>
-        </Suspense>
+        <Providers>{children}</Providers>
       </body>
     </html>
   );

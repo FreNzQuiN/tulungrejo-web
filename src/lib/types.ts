@@ -122,6 +122,7 @@ export interface HomepageContent {
   heroTitle: string;
   heroSubtitle: string;
   heroDescription: string;
+  heroImage: string | null;
   aboutTitle: string;
   aboutParagraphs: string[];
   googleMapsUrl: string;

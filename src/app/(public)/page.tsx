@@ -31,7 +31,16 @@ async function HomePageContent() {
 
   return (
     <>
-      <header className="hero-section">
+      <header
+        className="hero-section"
+        style={
+          content.heroImage
+            ? ({
+                "--hero-bg-image": `url("${content.heroImage}")`,
+              } as React.CSSProperties)
+            : undefined
+        }
+      >
         <div className="container">
           <p className="hero-subtitle">{content.heroSubtitle}</p>
           <h1 className="hero-title">{content.heroTitle}</h1>

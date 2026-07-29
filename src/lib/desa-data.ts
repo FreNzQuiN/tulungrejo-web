@@ -107,6 +107,7 @@ export const HOMEPAGE_CONTENT = {
   heroSubtitle: "Portal Resmi Pemerintah Desa",
   heroDescription:
     "Pusat informasi dan kegiatan kemasyarakatan Desa Tulungrejo, Kecamatan Wates, Kab. Blitar.",
+  heroImage: null,
   aboutTitle: "Mengenal Desa Tulungrejo",
   aboutParagraphs: [
     "Desa Tulungrejo secara administratif terletak di Kecamatan Wates, Kabupaten Blitar, Jawa Timur. Dikelilingi oleh perbukitan dan kawasan hutan yang masih asri, desa ini memiliki tanah yang subur dan potensi sumber daya alam yang melimpah untuk dikembangkan.",

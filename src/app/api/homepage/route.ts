@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth/guards";
 import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
 import { getHomepageContent } from "@/lib/desa-queries";
+import { validateArticleImage } from "@/lib/constants";
 
 function isStringArray(v: unknown): v is string[] {
   return Array.isArray(v) && v.every((s) => typeof s === "string");
@@ -45,6 +46,7 @@ export async function PUT(req: NextRequest) {
     heroTitle,
     heroSubtitle,
     heroDescription,
+    heroImage,
     aboutTitle,
     aboutParagraphs,
     googleMapsUrl,
@@ -52,6 +54,7 @@ export async function PUT(req: NextRequest) {
     heroTitle?: string;
     heroSubtitle?: string;
     heroDescription?: string;
+    heroImage?: string | null;
     aboutTitle?: string;
     aboutParagraphs?: string[];
     googleMapsUrl?: string;
@@ -96,6 +99,22 @@ export async function PUT(req: NextRequest) {
     }
   }
 
+  if (heroImage !== undefined) {
+    if (heroImage !== null && typeof heroImage !== "string") {
+      return NextResponse.json(
+        { error: "Gambar hero tidak valid" },
+        { status: 400 },
+      );
+    }
+    if (typeof heroImage === "string") {
+      const err = validateArticleImage(heroImage);
+      if (err) {
+        return NextResponse.json({ error: err }, { status: 400 });
+      }
+    }
+    // null = clear the image, string = validated base64 — both fall through
+  }
+
   try {
     const existing = await prisma.homepageContent.findFirst({
       orderBy: { id: "asc" },
@@ -110,6 +129,7 @@ export async function PUT(req: NextRequest) {
         aboutParagraphs: JSON.stringify(aboutParagraphs),
       }),
       ...(googleMapsUrl !== undefined && { googleMapsUrl }),
+      ...(heroImage !== undefined && { heroImage }),
     };
 
     if (!existing) {
