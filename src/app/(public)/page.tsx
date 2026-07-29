@@ -4,6 +4,7 @@ import { CountUp } from "@/components/shared/count-up";
 import { HeroScrollButton } from "@/components/shared/hero-scroll-button";
 import { HomeArticles } from "@/components/articles/home-articles";
 import { Users, Home as HomeIcon } from "lucide-react";
+import { connection } from "next/server";
 
 import { getVillageStats } from "@/lib/desa-queries";
 import { getHomepageContent } from "@/lib/desa-queries";
@@ -11,6 +12,7 @@ import { getAllPublishedArticles } from "@/lib/article-queries";
 import { ArticlesError } from "@/components/articles/articles-error";
 
 async function HomePageContent() {
+  await connection();
   let content;
   try {
     content = await getHomepageContent();
@@ -67,6 +69,7 @@ async function HomePageContent() {
 }
 
 async function StatsSection() {
+  await connection();
   let stats;
   try {
     stats = await getVillageStats();
@@ -129,6 +132,7 @@ async function StatsSection() {
 }
 
 async function ArticlesSection() {
+  await connection();
   let articles;
   try {
     articles = await getAllPublishedArticles(6);

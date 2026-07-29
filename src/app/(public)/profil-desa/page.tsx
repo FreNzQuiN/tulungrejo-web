@@ -1,10 +1,12 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { Compass, School, HeartPulse, Award, Loader2 } from "lucide-react";
 import { getVillageProfile, getVillageStats } from "@/lib/desa-queries";
 import { OrgChartImage } from "@/components/org-chart-image";
 import type { Administratif } from "@/lib/types";
 
 async function ProfileContent() {
+  await connection();
   const [profile, stats] = await Promise.all([
     getVillageProfile(),
     getVillageStats(),

@@ -52,9 +52,7 @@ function getDevOrigins(): string[] {
 }
 
 const nextConfig: NextConfig = {
-  // PPR hanya di production — dev triggers HMR reload loop via proxy component
-  // generation yang gak bisa di-handle Turbopack dengan baik.
-  cacheComponents: !isDev,
+  cacheComponents: true,
   experimental: {},
   allowedDevOrigins: isDev ? getDevOrigins() : [],
   images: {

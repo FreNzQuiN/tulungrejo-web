@@ -58,11 +58,11 @@ model VillageStats {
 model VillageProfile {
   id                 Int      @id @default(autoincrement())
   visi               String   @default("")
-  misi               String   @db.Text @default("[]")
-  strukturOrganisasi       String   @db.Text @default("[]")
+  misi               String   @db.Text
+  strukturOrganisasi       String   @db.Text
   strukturOrganisasiImage String?  @db.MediumText
-  tugasFungsi              String   @db.Text @default("[]")
-  administratif      String   @db.Text @default("{}")
+  tugasFungsi              String   @db.Text
+  administratif      String   @db.Text
   updatedAt          DateTime @updatedAt @map("updated_at")
 
   @@map("village_profile")
