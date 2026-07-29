@@ -136,13 +136,26 @@ async function ArticlesSection() {
     console.error("Gagal memuat artikel:", e);
     return <ArticlesError />;
   }
-  if (!articles || articles.length === 0) return null;
+  if (!articles || articles.length === 0) {
+    return (
+      <section className="home-articles-section">
+        <div className="container">
+          <div className="section-header">
+            <h2>Kabar & Artikel Desa</h2>
+          </div>
+          <p className="text-center text-muted-foreground py-12">
+            Belum ada artikel untuk ditampilkan.
+          </p>
+        </div>
+      </section>
+    );
+  }
   return <HomeArticles articles={articles} />;
 }
 
 function StatsSkeleton() {
   return (
-    <section className="stats-section">
+    <section className="stats-section" aria-busy={true}>
       <div className="container">
         <div className="section-header">
           <Skeleton className="mx-auto mb-2 h-8 w-56" />
@@ -164,7 +177,7 @@ function StatsSkeleton() {
 
 function ArticlesSkeleton() {
   return (
-    <section className="home-articles-section">
+    <section className="home-articles-section" aria-busy={true}>
       <div className="container">
         <div className="section-header">
           <Skeleton className="mx-auto mb-2 h-8 w-56" />

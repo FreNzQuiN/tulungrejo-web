@@ -77,6 +77,12 @@ export async function PUT(req: NextRequest) {
       { status: 400 },
     );
   }
+  if (!/^[0-9\s\-()+]+$/.test(phone)) {
+    return NextResponse.json(
+      { error: "Format nomor telepon tidak valid" },
+      { status: 400 },
+    );
+  }
 
   if (socialMedia !== undefined) {
     if (!isSocialMediaArray(socialMedia)) {

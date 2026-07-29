@@ -5,7 +5,7 @@ import { type FieldView, PAYMENT_STATUS } from "@/lib/types";
 interface FieldCardProps {
   field: FieldView;
   isPamong: boolean;
-  toggling: string | null;
+  toggling: Set<string>;
   onToggle: (fieldId: string) => void;
 }
 
@@ -60,7 +60,7 @@ export function FieldCard({
         <div className="citizen-card-footer">
           <button
             onClick={() => onToggle(field.id)}
-            disabled={toggling === field.id}
+            disabled={toggling.has(field.id)}
             className="btn btn-primary btn-sm px-[10px] py-1 text-[11px]"
             style={{
               backgroundColor:
@@ -68,14 +68,14 @@ export function FieldCard({
                   ? "var(--color-danger)"
                   : "var(--color-success)",
             }}
-            aria-busy={toggling === field.id}
+            aria-busy={toggling.has(field.id)}
             aria-label={
               field.status === PAYMENT_STATUS.LUNAS
                 ? "Tandai Belum Bayar"
                 : "Verifikasi Bayar"
             }
           >
-            {toggling === field.id
+            {toggling.has(field.id)
               ? "..."
               : field.status === PAYMENT_STATUS.LUNAS
                 ? "Tandai Belum Bayar"

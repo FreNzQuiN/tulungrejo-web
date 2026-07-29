@@ -108,7 +108,8 @@ export function useCmsEditor<T>(
           body: JSON.stringify(body),
         });
         if (res.ok) {
-          const raw = await res.json();
+          const text = await res.text();
+          const raw = text ? JSON.parse(text) : null;
           const fn = transformRef.current;
           const updated = fn ? fn(raw) : (raw as T);
           setData(updated);

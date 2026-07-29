@@ -13,8 +13,12 @@ export async function GET(req: NextRequest) {
     });
     if (!stats) {
       return NextResponse.json(
-        { error: "Statistik tidak ditemukan" },
-        { status: 404 },
+        { jumlahKK: 0, jumlahPenduduk: 0, lakiLaki: 0, perempuan: 0 },
+        {
+          headers: {
+            "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+          },
+        },
       );
     }
     return NextResponse.json(

@@ -63,6 +63,7 @@ export function sanitizeBlok(val: unknown): string | null {
   const s = String(val).trim().padStart(3, "0");
   if (!/^\d{3}$/.test(s)) return null;
   if (s === "000") return null;
+  if (!BLOK_TO_DUSUN[s]) return null;
   return s;
 }
 

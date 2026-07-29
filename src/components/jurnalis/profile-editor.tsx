@@ -2,7 +2,14 @@
 
 import { useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
-import { Save, X, ImageUp, Trash as TrashIcon } from "lucide-react";
+import {
+  Save,
+  X,
+  Plus,
+  ImageUp,
+  Trash2,
+  Trash as TrashIcon,
+} from "lucide-react";
 import Image from "next/image";
 import type { VillageProfile } from "@/lib/types";
 import { Button } from "@/components/ui/button";
@@ -14,9 +21,9 @@ import { MAX_IMAGE_SIZE } from "@/lib/constants";
 interface ProfileForm {
   visi: string;
   misi: string;
-  strukturOrganisasi: string;
+  strukturOrganisasi: { role: string; name: string }[];
   strukturOrganisasiImage: string | null;
-  tugasFungsi: string;
+  tugasFungsi: { jabatan: string; tugas: string }[];
   administratif: {
     koordinat: string;
     batasUtara: string;
@@ -43,19 +50,12 @@ const EMPTY_ADMIN = {
 };
 
 function villageProfileToForm(data: VillageProfile): ProfileForm {
-  const strukturStr = (data.strukturOrganisasi || [])
-    .map((m: { role: string; name: string }) => `${m.role}: ${m.name}`)
-    .join("\n");
-  const tugasFungsiStr = (data.tugasFungsi || [])
-    .map((t: { jabatan: string; tugas: string }) => `${t.jabatan}: ${t.tugas}`)
-    .join("\n");
-
   return {
     visi: data.visi || "",
     misi: (data.misi || []).join("\n"),
-    strukturOrganisasi: strukturStr,
+    strukturOrganisasi: data.strukturOrganisasi || [],
     strukturOrganisasiImage: data.strukturOrganisasiImage ?? null,
-    tugasFungsi: tugasFungsiStr,
+    tugasFungsi: data.tugasFungsi || [],
     administratif: {
       koordinat: data.administratif?.koordinat || "",
       batasUtara: data.administratif?.batasUtara || "",
@@ -107,9 +107,9 @@ export function ProfileEditor({
     {
       visi: "",
       misi: "",
-      strukturOrganisasi: "",
+      strukturOrganisasi: [],
       strukturOrganisasiImage: null,
-      tugasFungsi: "",
+      tugasFungsi: [],
       administratif: EMPTY_ADMIN,
     },
     "Gagal memuat profil desa",
@@ -128,33 +128,13 @@ export function ProfileEditor({
       .map((s) => s.trim())
       .filter(Boolean);
 
-    const strukturArray = editor.data.strukturOrganisasi
-      .split("\n")
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .map((line) => {
-        const colonIdx = line.indexOf(":");
-        return colonIdx > 0
-          ? {
-              role: line.slice(0, colonIdx).trim(),
-              name: line.slice(colonIdx + 1).trim(),
-            }
-          : { role: line, name: "" };
-      });
+    const strukturArray = editor.data.strukturOrganisasi.filter(
+      (s) => s.role.trim() || s.name.trim(),
+    );
 
-    const tugasFungsiArray = editor.data.tugasFungsi
-      .split("\n")
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .map((line) => {
-        const colonIdx = line.indexOf(":");
-        return colonIdx > 0
-          ? {
-              jabatan: line.slice(0, colonIdx).trim(),
-              tugas: line.slice(colonIdx + 1).trim(),
-            }
-          : { jabatan: line, tugas: "" };
-      });
+    const tugasFungsiArray = editor.data.tugasFungsi.filter(
+      (t) => t.jabatan.trim() || t.tugas.trim(),
+    );
 
     await editor.save(
       {
@@ -168,6 +148,52 @@ export function ProfileEditor({
       "Profil desa berhasil diperbarui",
       "Gagal memperbarui profil desa",
     );
+  }
+
+  function addStruktur() {
+    editor.setData((p) => ({
+      ...p,
+      strukturOrganisasi: [...p.strukturOrganisasi, { role: "", name: "" }],
+    }));
+  }
+
+  function removeStruktur(idx: number) {
+    editor.setData((p) => ({
+      ...p,
+      strukturOrganisasi: p.strukturOrganisasi.filter((_, i) => i !== idx),
+    }));
+  }
+
+  function updateStruktur(idx: number, field: "role" | "name", value: string) {
+    editor.setData((p) => {
+      const updated = p.strukturOrganisasi.map((item, i) =>
+        i === idx ? { ...item, [field]: value } : item,
+      );
+      return { ...p, strukturOrganisasi: updated };
+    });
+  }
+
+  function addTugas() {
+    editor.setData((p) => ({
+      ...p,
+      tugasFungsi: [...p.tugasFungsi, { jabatan: "", tugas: "" }],
+    }));
+  }
+
+  function removeTugas(idx: number) {
+    editor.setData((p) => ({
+      ...p,
+      tugasFungsi: p.tugasFungsi.filter((_, i) => i !== idx),
+    }));
+  }
+
+  function updateTugas(idx: number, field: "jabatan" | "tugas", value: string) {
+    editor.setData((p) => {
+      const updated = p.tugasFungsi.map((item, i) =>
+        i === idx ? { ...item, [field]: value } : item,
+      );
+      return { ...p, tugasFungsi: updated };
+    });
   }
 
   const [orgImageUploading, setOrgImageUploading] = useState(false);
@@ -302,18 +328,94 @@ export function ProfileEditor({
       </div>
 
       <div className="form-group">
-        <label>
-          Tugas dan Fungsi (satu baris per jabatan: deskripsi tugas)
+        <label className="flex items-center gap-3">
+          Struktur Organisasi (Nama dan Peran)
+          <button
+            type="button"
+            onClick={addStruktur}
+            className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+          >
+            <Plus size={14} />
+            Tambah
+          </button>
         </label>
-        <textarea
-          className="form-textarea"
-          value={editor.data.tugasFungsi}
-          onChange={(e) =>
-            editor.setData((p) => ({ ...p, tugasFungsi: e.target.value }))
-          }
-          rows={4}
-          placeholder="Kepala Desa: Menyelenggarakan Pemerintahan Desa..."
-        />
+        <div className="space-y-2 mt-2">
+          {editor.data.strukturOrganisasi.length === 0 && (
+            <p className="text-[12px] text-muted-foreground">
+              Belum ada entri struktur organisasi. Klik &ldquo;Tambah&rdquo;
+              untuk menambahkan.
+            </p>
+          )}
+          {editor.data.strukturOrganisasi.map((item, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              <input
+                className="form-input flex-1"
+                value={item.role}
+                onChange={(e) => updateStruktur(idx, "role", e.target.value)}
+                placeholder="Peran (Kepala Desa...)"
+              />
+              <input
+                className="form-input flex-[2]"
+                value={item.name}
+                onChange={(e) => updateStruktur(idx, "name", e.target.value)}
+                placeholder="Nama"
+              />
+              <button
+                type="button"
+                onClick={() => removeStruktur(idx)}
+                className="p-2 text-red-500 hover:text-red-700 transition-colors"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="form-group">
+        <label className="flex items-center gap-3">
+          Tugas dan Fungsi
+          <button
+            type="button"
+            onClick={addTugas}
+            className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+          >
+            <Plus size={14} />
+            Tambah
+          </button>
+        </label>
+        <div className="space-y-2 mt-2">
+          {editor.data.tugasFungsi.length === 0 && (
+            <p className="text-[12px] text-muted-foreground">
+              Belum ada entri tugas dan fungsi. Klik &ldquo;Tambah&rdquo; untuk
+              menambahkan.
+            </p>
+          )}
+          {editor.data.tugasFungsi.map((item, idx) => (
+            <div key={idx} className="flex items-start gap-2">
+              <input
+                className="form-input flex-1"
+                value={item.jabatan}
+                onChange={(e) => updateTugas(idx, "jabatan", e.target.value)}
+                placeholder="Jabatan (Kepala Desa...)"
+              />
+              <textarea
+                className="form-textarea flex-[2]"
+                value={item.tugas}
+                onChange={(e) => updateTugas(idx, "tugas", e.target.value)}
+                rows={2}
+                placeholder="Deskripsi tugas"
+              />
+              <button
+                type="button"
+                onClick={() => removeTugas(idx)}
+                className="p-2 text-red-500 hover:text-red-700 transition-colors"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
 
       <label className="block font-semibold text-sm mb-3 text-dark-brown">

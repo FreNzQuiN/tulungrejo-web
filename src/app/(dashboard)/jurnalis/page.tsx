@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useAuth } from "@/components/providers";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -100,6 +100,17 @@ export default function JurnalisPage() {
     },
     [],
   );
+
+  useEffect(() => {
+    const hasDirty = Object.values(dirtyTabs).some(Boolean);
+    if (hasDirty) {
+      const handler = (e: BeforeUnloadEvent) => {
+        e.preventDefault();
+      };
+      window.addEventListener("beforeunload", handler);
+      return () => window.removeEventListener("beforeunload", handler);
+    }
+  }, [dirtyTabs]);
 
   function handleTabChange(tab: string) {
     if (tab === activeTab) return;

@@ -44,7 +44,7 @@ export async function requireRole(
   const result = await requireAuth();
   if (isError(result)) return result;
 
-  const role = result.session.user?.role as UserRole | undefined;
+  const role = result.session.user.role as UserRole | undefined;
   if (!role || !allowedRoles.includes(role)) {
     return {
       error: NextResponse.json({ error: "Forbidden" }, { status: 403 }),

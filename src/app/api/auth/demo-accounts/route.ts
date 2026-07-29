@@ -10,13 +10,11 @@ export async function GET() {
     {
       label: "Pamong",
       email: "pamong@tulungrejo.desa.id",
-      password: "pamong123",
     },
-    { label: "Kades", email: "kades@tulungrejo.desa.id", password: "kades123" },
+    { label: "Kades", email: "kades@tulungrejo.desa.id" },
     {
       label: "Jurnalis",
       email: "jurnalis@tulungrejo.desa.id",
-      password: "jurnalis123",
     },
   ]);
 }

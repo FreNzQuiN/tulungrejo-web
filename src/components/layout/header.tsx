@@ -79,7 +79,7 @@ export function Header() {
           <div className="logo-badge">
             <Image
               src="/logo.png"
-              alt="Logo"
+              alt=""
               className="logo-img"
               width={36}
               height={36}
@@ -93,7 +93,7 @@ export function Header() {
           </div>
         </Link>
 
-        <nav className="navbar-desktop">
+        <nav className="navbar-desktop" aria-label="Navigasi utama">
           {NAV_ITEMS.map((item) => (
             <Link
               key={item.href}
@@ -117,6 +117,11 @@ export function Header() {
               <div className="user-profile-badge">
                 <User size={14} />
                 <span className="user-profile-name">{user.name}</span>
+                {role && (
+                  <span className="text-[10px] opacity-70 block">
+                    {ROLE_DISPLAY[role]}
+                  </span>
+                )}
               </div>
               <button
                 onClick={() => signOut()}
@@ -152,7 +157,7 @@ export function Header() {
           className="navbar-mobile-panel"
           aria-hidden={!mobileOpen}
         >
-          <nav className="mobile-links">
+          <nav className="mobile-links" aria-label="Navigasi mobile">
             {NAV_ITEMS.map((item) => (
               <Link
                 key={item.href}

@@ -12,10 +12,26 @@ async function togglePayment(
   year: number,
   markedBy: number | null,
   markedAt: Date,
+  session: { user: { id: number } } | null,
+  assignedBlok: string | null,
 ): Promise<PaymentStatus> {
   for (let attempt = 0; attempt < TOGGLE_MAX_RETRIES; attempt++) {
     try {
       return await prisma.$transaction(async (tx) => {
+        // Check field existence and blok access inside the transaction
+        const field = await tx.fields.findUnique({ where: { id: fieldId } });
+        if (!field) {
+          throw Object.assign(new Error("Bidang tidak ditemukan."), {
+            statusCode: 404,
+          });
+        }
+        if (assignedBlok && field.blok !== assignedBlok) {
+          throw Object.assign(
+            new Error("Anda tidak memiliki akses ke bidang ini."),
+            { statusCode: 403 },
+          );
+        }
+
         const existing = await tx.payments.findUnique({
           where: { fieldId_year: { fieldId, year } },
         });
@@ -58,6 +74,7 @@ async function togglePayment(
         (err?.code === "P2002" || err?.code === "P2025") &&
         attempt < TOGGLE_MAX_RETRIES - 1
       ) {
+        await new Promise((r) => setTimeout(r, 50 * (attempt + 1)));
         continue;
       }
       throw createErr;
@@ -71,6 +88,12 @@ export async function POST(req: NextRequest) {
 
   const auth = await requireRole(["pamong_pajak"]);
   if ("error" in auth) return auth.error;
+
+  // CSRF protection: require custom header
+  const csrfHeader = req.headers.get("x-csrf");
+  if (csrfHeader !== "1") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   try {
     const body = await req.json();
@@ -107,34 +130,27 @@ export async function POST(req: NextRequest) {
     const session = unwrapSession(auth);
     const markedBy = session?.user?.id ?? null;
     const markedAt = new Date();
-
-    // Check field and blok access outside the toggle retry loop
-    const field = await prisma.fields.findUnique({ where: { id: fieldId } });
-    if (!field) {
-      return NextResponse.json(
-        { error: "Bidang tidak ditemukan." },
-        { status: 404 },
-      );
-    }
-
     const assignedBlok = await getAssignedBlok(auth);
-    if (assignedBlok && field.blok !== assignedBlok) {
-      return NextResponse.json(
-        { error: "Anda tidak memiliki akses ke bidang ini." },
-        { status: 403 },
-      );
-    }
 
     const actualStatus = await togglePayment(
       fieldId,
       parsedYear,
       markedBy,
       markedAt,
+      session,
+      assignedBlok,
     );
 
     return NextResponse.json({ success: true, status: actualStatus });
   } catch (err) {
     console.error("PBB toggle error:", err);
+    const e = err as Record<string, unknown>;
+    if (e.statusCode && typeof e.statusCode === "number") {
+      return NextResponse.json(
+        { error: (e.message as string) || "Gagal mengubah status pembayaran." },
+        { status: e.statusCode },
+      );
+    }
     return NextResponse.json(
       { error: "Gagal mengubah status pembayaran." },
       { status: 500 },

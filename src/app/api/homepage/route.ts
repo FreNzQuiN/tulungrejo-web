@@ -72,23 +72,15 @@ export async function PUT(req: NextRequest) {
   }
 
   if (googleMapsUrl !== undefined) {
-    try {
-      const parsed = new URL(googleMapsUrl);
-      if (
-        parsed.hostname !== "www.google.com" ||
-        !parsed.pathname.startsWith("/maps/embed")
-      ) {
-        return NextResponse.json(
-          {
-            error:
-              "URL Google Maps tidak valid. Gunakan embed URL dari Google Maps",
-          },
-          { status: 400 },
-        );
-      }
-    } catch {
+    if (
+      !googleMapsUrl.startsWith("https://www.google.com/maps/embed") &&
+      !googleMapsUrl.startsWith("https://maps.google.com/")
+    ) {
       return NextResponse.json(
-        { error: "URL Google Maps tidak valid" },
+        {
+          error:
+            "URL Google Maps tidak valid. Gunakan embed URL dari Google Maps",
+        },
         { status: 400 },
       );
     }

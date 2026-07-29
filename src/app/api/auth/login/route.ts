@@ -61,9 +61,6 @@ export async function POST(request: Request) {
       );
     }
 
-    await resetRateLimit(`login:ip:${ip || "unknown"}`);
-    await resetRateLimit(`login:email:${normalizedEmail}`);
-
     await setSessionCookie({
       id: user.id,
       email: user.email,
@@ -71,6 +68,9 @@ export async function POST(request: Request) {
       role: user.role,
       tokenVersion: user.tokenVersion,
     });
+
+    await resetRateLimit(`login:ip:${ip || "unknown"}`);
+    await resetRateLimit(`login:email:${normalizedEmail}`);
 
     return NextResponse.json({ success: true, role: user.role });
   } catch (err) {

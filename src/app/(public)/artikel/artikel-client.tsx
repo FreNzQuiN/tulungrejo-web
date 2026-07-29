@@ -34,7 +34,7 @@ export function ArtikelClient({
   }, [articles, searchTerm, categoryFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
-  const safePage = Math.min(currentPage, totalPages);
+  const safePage = Math.max(1, Math.min(currentPage, totalPages));
   const paginated = filtered.slice(
     (safePage - 1) * PER_PAGE,
     safePage * PER_PAGE,
@@ -70,7 +70,9 @@ export function ArtikelClient({
         {filtered.length === 0 ? (
           <div className="glass-panel p-[50px] text-center mb-[60px]">
             <p className="text-[16px] text-muted-foreground">
-              Belum ada artikel.
+              {articles.length === 0
+                ? "Belum ada artikel."
+                : "Tidak ada artikel yang sesuai dengan pencarian."}
             </p>
           </div>
         ) : (

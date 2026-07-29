@@ -136,7 +136,7 @@ export async function getAllArticlesForJournalist(
   return articles.map(toFrontmatter);
 }
 
-export async function getAllPublishedArticlesWithMeta(
+async function queryAllPublishedArticlesWithMeta(
   take?: number,
   skip?: number,
 ): Promise<{ data: ArticleFrontmatter[]; total: number }> {
@@ -153,6 +153,26 @@ export async function getAllPublishedArticlesWithMeta(
     prisma.article.count({ where: { published: true } }),
   ]);
   return { data: articles.map(toFrontmatter), total };
+}
+
+export async function getAllPublishedArticlesWithMeta(
+  take?: number,
+  skip?: number,
+): Promise<{ data: ArticleFrontmatter[]; total: number }> {
+  if (process.env.NODE_ENV === "production") {
+    return getAllPublishedArticlesWithMetaCached(take, skip);
+  }
+  return queryAllPublishedArticlesWithMeta(take, skip);
+}
+
+async function getAllPublishedArticlesWithMetaCached(
+  take?: number,
+  skip?: number,
+): Promise<{ data: ArticleFrontmatter[]; total: number }> {
+  "use cache: remote";
+  cacheTag("articles");
+  cacheLife("hours");
+  return queryAllPublishedArticlesWithMeta(take, skip);
 }
 
 export async function getAllArticlesForJournalistWithMeta(

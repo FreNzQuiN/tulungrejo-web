@@ -65,7 +65,7 @@ export function Footer() {
               <div className="footer-logo-badge">
                 <Image
                   src="/logo.png"
-                  alt="Logo Tulungrejo"
+                  alt=""
                   className="logo-img"
                   width={32}
                   height={32}
@@ -129,6 +129,24 @@ export function Footer() {
                 </span>
               </li>
             </ul>
+            {c.socialMedia && c.socialMedia.length > 0 && (
+              <div className="mt-4">
+                <h4 className="mb-2">Media Sosial</h4>
+                <div className="flex flex-wrap gap-2">
+                  {c.socialMedia.map((sm, i) => (
+                    <a
+                      key={i}
+                      href={sm.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-block px-2 py-1 text-xs bg-white/10 rounded hover:bg-white/20 transition-colors"
+                    >
+                      {sm.platform}
+                    </a>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -60,12 +60,18 @@ export function Providers({ children }: { children: React.ReactNode }) {
     if (isLoading) return;
 
     // Skip polling if no session cookie exists (100% of public visitors)
-    if (!document.cookie.includes("session-token=")) return;
+    const hasSessionCookie = document.cookie
+      .split("; ")
+      .some((c) => c.startsWith("session-token="));
+    if (!hasSessionCookie) return;
 
     let pollTimeout: ReturnType<typeof setTimeout>;
 
     async function pollAuth() {
-      if (!document.cookie.includes("session-token=")) {
+      const hasSessionCookie = document.cookie
+        .split("; ")
+        .some((c) => c.startsWith("session-token="));
+      if (!hasSessionCookie) {
         setUser(null);
         return;
       }

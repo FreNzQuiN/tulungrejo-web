@@ -27,7 +27,7 @@ export function RealisasiSummaryCard({
               Target PBB Desa
             </h3>
           </div>
-          <p className="text-[13px] text-[var(--color-muted)]">
+          <p className="text-[13px] text-[var(--color-text-muted-fe)]">
             Total kewajiban pajak bumi & bangunan Desa Tulungrejo
           </p>
         </div>
@@ -38,7 +38,7 @@ export function RealisasiSummaryCard({
           <div className="text-[30px] font-extrabold text-[var(--color-dark-brown)]">
             {formatCurrency(totalPbb)}
           </div>
-          <div className="text-[12px] text-[var(--color-muted)]">
+          <div className="text-[12px] text-[var(--color-text-muted-fe)]">
             Total nominal kewajiban
           </div>
         </div>
@@ -46,7 +46,7 @@ export function RealisasiSummaryCard({
           <span className="text-[28px] font-extrabold text-[var(--color-dark-brown)]">
             {totalSppt}
           </span>
-          <span className="text-[12px] text-[var(--color-muted)] font-medium">
+          <span className="text-[12px] text-[var(--color-text-muted-fe)] font-medium">
             lbr SPPT
           </span>
         </div>
@@ -73,7 +73,7 @@ export function RealisasiSummaryCard({
         <span className="text-[var(--color-dark-brown)]">
           Realisasi Nominal {safePersen}%
         </span>
-        <span className="text-[var(--color-muted)]">
+        <span className="text-[var(--color-text-muted-fe)]">
           SPPT Lunas {dibayar}/{totalSppt}
         </span>
       </div>

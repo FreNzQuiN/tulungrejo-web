@@ -22,9 +22,10 @@ export async function generateMetadata({
   if (!article) return { title: "Artikel Tidak Ditemukan" };
 
   const url = `${SITE_URL}/artikel/${slug}`;
-  const image = article.image
-    ? { url: article.image, width: 1200, height: 630, alt: article.title }
-    : undefined;
+  const image =
+    article.image && article.image.startsWith("http")
+      ? { url: article.image, width: 1200, height: 630, alt: article.title }
+      : undefined;
 
   return {
     title: article.title,
@@ -141,7 +142,7 @@ async function ArticleContent({
 
 function ArticleSkeleton() {
   return (
-    <div className="container py-10 flex-1">
+    <div className="container py-10 flex-1" aria-busy={true}>
       <Skeleton className="mb-6 h-4 w-48" />
       <Skeleton className="mb-8 h-8 w-32" />
       <div className="glass-panel overflow-hidden mb-[60px]">

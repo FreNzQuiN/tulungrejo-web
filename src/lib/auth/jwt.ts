@@ -10,12 +10,15 @@ export async function verifyToken(token: string): Promise<SessionUser | null> {
     const { payload } = await jwtVerify(token, SECRET);
     const role = payload.role as SessionUser["role"];
     if (!role || !ALLOWED_ROLES.includes(role)) return null;
+    const id = Number(payload.sub ?? payload.id);
+    if (!id) return null;
     return {
-      id: Number(payload.sub ?? payload.id ?? 0),
-      email: payload.email as string,
-      name: payload.name as string,
+      id,
+      email: String(payload.email ?? ""),
+      name: String(payload.name ?? ""),
       role,
-      tokenVersion: payload.tokenVersion as number | undefined,
+      tokenVersion:
+        payload.tokenVersion != null ? Number(payload.tokenVersion) : undefined,
     };
   } catch (err) {
     console.error("verifyToken error:", err);

@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default function UnauthorizedPage() {
   return (
-    <div className="min-h-screen flex items-center justify-center" role="alert">
+    <div className="min-h-screen flex items-center justify-center">
       <div className="text-center">
         <h1 className="text-4xl font-bold text-destructive">403</h1>
         <p className="text-muted-foreground mt-2">

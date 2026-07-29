@@ -17,7 +17,7 @@ export interface UsePbbFieldsReturn {
   blokFilter: string;
   statusFilter: string;
   selectedYear: number;
-  toggling: string | null;
+  toggling: Set<string>;
   setSearch: (value: string) => void;
   setBlokFilter: (value: string) => void;
   setStatusFilter: (value: string) => void;
@@ -40,7 +40,7 @@ export function usePbbFields(
   const [statusFilter, setStatusFilterState] = useState("");
   const [selectedYear, setSelectedYearState] =
     useState<number>(getCurrentTaxYear());
-  const [toggling, setToggling] = useState<string | null>(null);
+  const [toggling, setToggling] = useState<Set<string>>(new Set());
   const togglingRef = useRef<Set<string>>(new Set());
   const [refreshKey, setRefreshKey] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
@@ -141,17 +141,17 @@ export function usePbbFields(
 
   async function togglePayment(fieldId: string) {
     if (togglingRef.current.has(fieldId)) return;
-    togglingRef.current.add(fieldId);
-    setToggling(fieldId);
+    // Validate year before setting any loading state
     if (selectedYear !== getCurrentTaxYear()) {
       toast.error("Hanya tahun berjalan yang dapat diubah.");
-      setToggling(null);
       return;
     }
+    togglingRef.current.add(fieldId);
+    setToggling((prev) => new Set(prev).add(fieldId));
     try {
       const res = await fetch("/api/pbb/toggle", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: { "Content-Type": "application/json", "X-CSRF": "1" },
         body: JSON.stringify({ fieldId, year: selectedYear }),
       });
       if (res.ok) {
@@ -179,7 +179,11 @@ export function usePbbFields(
       toast.error("Gagal mengubah status pembayaran.");
     } finally {
       togglingRef.current.delete(fieldId);
-      setToggling(null);
+      setToggling((prev) => {
+        const next = new Set(prev);
+        next.delete(fieldId);
+        return next;
+      });
     }
   }
 

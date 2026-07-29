@@ -157,6 +157,8 @@ export function ContactEditor({
           <label>Nomor Telepon</label>
           <input
             className="form-input"
+            type="tel"
+            pattern="[0-9\s\-()+]+"
             value={editor.data.phone}
             onChange={(e) =>
               editor.setData((p) => ({ ...p, phone: e.target.value }))

@@ -1,5 +1,5 @@
 :root {
-  --color-muted: #665c53;
+  --color-text-muted-fe: #665c53;
 
   /* FE font families as fallback — next/font sets --font-heading/--font-body via class selector */
 
@@ -7,13 +7,11 @@
   --shadow-md: 0 8px 24px rgba(33, 53, 85, 0.08);
   --shadow-lg: 0 16px 40px rgba(33, 53, 85, 0.12);
 
-  --radius-sm: 6px;
-  --radius-md: 12px;
-  --radius-lg: 20px;
-
   --transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 
-  --hero-bg-image: url("https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=1200");
+  --hero-bg-image:
+    linear-gradient(135deg, #059669 0%, #047857 100%),
+    url("https://images.unsplash.com/photo-1500382017468-9049fed747ef?auto=format&fit=crop&q=80&w=1200");
 }
 
 @layer base {
@@ -216,7 +214,7 @@
 
   .page-header p {
     font-size: 16px;
-    color: var(--color-muted);
+    color: var(--color-text-muted-fe);
     max-width: 600px;
     margin: 0 auto;
   }
@@ -426,7 +424,7 @@
   .brand-subtitle {
     display: block;
     font-size: 11px;
-    color: var(--color-muted);
+    color: var(--color-text-muted-fe);
     text-transform: uppercase;
     letter-spacing: 1px;
   }
@@ -440,7 +438,7 @@
   .nav-link {
     font-size: 14px;
     font-weight: 600;
-    color: var(--color-muted);
+    color: var(--color-text-muted-fe);
     padding: 8px 12px;
     border-radius: var(--radius-sm);
   }
@@ -832,7 +830,7 @@
   }
 
   .about-content p {
-    color: var(--color-muted);
+    color: var(--color-text-muted-fe);
     margin-bottom: 20px;
     font-size: 15px;
   }
@@ -911,7 +909,7 @@
 
   .stat-label {
     font-size: 13px;
-    color: var(--color-muted);
+    color: var(--color-text-muted-fe);
     text-transform: uppercase;
     font-weight: 700;
     letter-spacing: 0.5px;
@@ -932,7 +930,7 @@
   }
 
   .section-header p {
-    color: var(--color-muted);
+    color: var(--color-text-muted-fe);
     font-size: 16px;
     max-width: 600px;
     margin: 0 auto;
@@ -1038,7 +1036,7 @@
     align-items: center;
     gap: 4px;
     font-size: 12px;
-    color: var(--color-muted);
+    color: var(--color-text-muted-fe);
     margin-bottom: 8px;
   }
 
@@ -1057,7 +1055,7 @@
 
   .article-summary {
     font-size: 13px;
-    color: var(--color-muted);
+    color: var(--color-text-muted-fe);
     margin-bottom: 20px;
     line-height: 1.5;
     display: -webkit-box;
@@ -1152,7 +1150,7 @@
     display: flex;
     gap: 16px;
     font-size: 13px;
-    color: var(--color-muted);
+    color: var(--color-text-muted-fe);
     margin-bottom: 16px;
   }
 
@@ -1197,7 +1195,7 @@
 
   .login-header p {
     font-size: 14px;
-    color: var(--color-muted);
+    color: var(--color-text-muted-fe);
   }
 
   .login-role-selector {
@@ -1217,7 +1215,7 @@
       color-mix(in srgb, var(--color-chart-blue) 30%, transparent);
     border-radius: var(--radius-sm);
     cursor: pointer;
-    color: var(--color-muted);
+    color: var(--color-text-muted-fe);
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -1303,7 +1301,7 @@
     padding-left: 30px;
     margin-bottom: 16px;
     font-size: 15px;
-    color: var(--color-muted);
+    color: var(--color-text-muted-fe);
   }
 
   .misi-list li::before {
@@ -1356,7 +1354,7 @@
     text-transform: uppercase;
     letter-spacing: 1px;
     font-weight: 700;
-    color: var(--color-muted);
+    color: var(--color-text-muted-fe);
     margin-bottom: 4px;
   }
 
@@ -1440,7 +1438,7 @@
 
   .tupoksi-item p {
     font-size: 14px;
-    color: var(--color-muted);
+    color: var(--color-text-muted-fe);
   }
 
   .pbb-layout {
@@ -1509,7 +1507,7 @@
 
   .citizen-sppt {
     font-size: 11px;
-    color: var(--color-muted);
+    color: var(--color-text-muted-fe);
     font-family: monospace;
     margin-bottom: 6px;
   }
@@ -1661,7 +1659,7 @@
     border: 1px solid
       color-mix(in srgb, var(--color-chart-blue) 20%, transparent);
     border-radius: var(--radius-sm);
-    color: var(--color-muted);
+    color: var(--color-text-muted-fe);
     font-weight: 700;
     font-size: 14px;
     cursor: pointer;
@@ -1753,7 +1751,7 @@
     border: 1px solid
       color-mix(in srgb, var(--color-chart-blue) 20%, transparent);
     font-size: 13px;
-    color: var(--color-muted);
+    color: var(--color-text-muted-fe);
     margin-bottom: 24px;
   }
 
@@ -1783,7 +1781,7 @@
     cursor: pointer;
     border: none;
     background: none;
-    color: var(--color-muted);
+    color: var(--color-text-muted-fe);
     transition: var(--transition);
     border-bottom: 2px solid transparent;
     font-family: var(--font-body);

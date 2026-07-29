@@ -7,7 +7,7 @@ import { parsePbbP2 } from "./parse-pbb-p2";
 import type { ImportSummary } from "./types";
 import { detectFileType } from "./types";
 
-const BATCH_SIZE = 500;
+const BATCH_SIZE = 100;
 
 export async function importExcel(
   buffer: Buffer,
@@ -155,26 +155,28 @@ async function importSpop(
 
     for (let i = 0; i < scopedFields.length; i += BATCH_SIZE) {
       const batch = scopedFields.slice(i, i + BATCH_SIZE);
-      try {
-        const { sql, params } = buildBatchSql(batch);
-        await prisma.$executeRawUnsafe(sql, ...params);
-        // Count inserts vs updates from pre-queried NOPs
-        for (const field of batch) {
+      const batchErrors: string[] = [];
+      for (const field of batch) {
+        try {
+          const { sql, params } = buildBatchSql([field]);
+          await prisma.$executeRawUnsafe(sql, ...params);
           if (existingNops.has(field.nop)) {
             updatedCount++;
           } else {
             insertedCount++;
             existingNops.add(field.nop);
           }
-        }
-      } catch (err) {
-        console.error("Import SPOP batch error:", err);
-        summary.errors.push(`Gagal import batch ${i / BATCH_SIZE + 1}.`);
-        if (insertedCount + updatedCount > 0) {
-          summary.warnings.push(
-            "Data tersimpan sebagian. Beberapa batch gagal dan belum di-rollback.",
+        } catch {
+          batchErrors.push(
+            `Baris ${field.nop ?? field.noUrut ?? "?"} gagal diimport.`,
           );
         }
+      }
+      if (batchErrors.length > 0) {
+        summary.errors.push(
+          `Batch ${Math.floor(i / BATCH_SIZE) + 1}: ${batchErrors.length} baris gagal.`,
+        );
+        batchErrors.forEach((e) => summary.errors.push("  " + e));
       }
     }
 

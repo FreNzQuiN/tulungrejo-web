@@ -227,9 +227,11 @@ export default function PBBPage() {
 
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-1 py-3">
-                <span className="text-xs text-muted-foreground">
-                  {total} bidang
-                </span>
+                {total > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {total} bidang
+                  </span>
+                )}
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setPage(page - 1)}
@@ -251,6 +253,13 @@ export default function PBBPage() {
                     <ChevronRight size={14} />
                   </button>
                 </div>
+              </div>
+            )}
+            {totalPages <= 1 && total > 0 && (
+              <div className="flex items-center justify-between px-1 py-3">
+                <span className="text-xs text-muted-foreground">
+                  {total} bidang
+                </span>
               </div>
             )}
           </div>
