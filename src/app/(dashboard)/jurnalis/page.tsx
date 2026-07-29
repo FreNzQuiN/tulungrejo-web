@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { useAuth } from "@/components/providers";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -93,30 +93,43 @@ function JurnalisSkeleton() {
 export default function JurnalisPage() {
   const { user: sessionUser, isLoading: statusLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("articles");
+  const [dirtyTabs, setDirtyTabs] = useState<Record<string, boolean>>({});
+  const handleDirtyChange = useCallback(
+    (tab: string) => (dirty: boolean) => {
+      setDirtyTabs((prev) => ({ ...prev, [tab]: dirty }));
+    },
+    [],
+  );
 
   function handleTabChange(tab: string) {
     if (tab === activeTab) return;
-    const confirmed = window.confirm(
-      "Anda memiliki perubahan yang belum disimpan. Yakin ingin meninggalkan halaman ini?",
-    );
-    if (!confirmed) return;
+    if (dirtyTabs[activeTab]) {
+      const confirmed = window.confirm(
+        "Anda memiliki perubahan yang belum disimpan. Yakin ingin meninggalkan halaman ini?",
+      );
+      if (!confirmed) return;
+    }
     setActiveTab(tab);
   }
 
   const renderContent = () => {
     switch (activeTab) {
       case "articles":
-        return <ArticleManager />;
+        return (
+          <ArticleManager onDirtyStateChange={handleDirtyChange("articles")} />
+        );
       case "homepage":
-        return <HomepageEditor />;
+        return <HomepageEditor onDirtyChange={handleDirtyChange("homepage")} />;
       case "stats":
-        return <StatsEditor />;
+        return <StatsEditor onDirtyChange={handleDirtyChange("stats")} />;
       case "profile":
-        return <ProfileEditor />;
+        return <ProfileEditor onDirtyChange={handleDirtyChange("profile")} />;
       case "contact":
-        return <ContactEditor />;
+        return <ContactEditor onDirtyChange={handleDirtyChange("contact")} />;
       default:
-        return <ArticleManager />;
+        return (
+          <ArticleManager onDirtyStateChange={handleDirtyChange("articles")} />
+        );
     }
   };
 

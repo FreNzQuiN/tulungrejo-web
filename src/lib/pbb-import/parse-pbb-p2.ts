@@ -43,9 +43,16 @@ export function parsePbbP2(workbook: XLSX.WorkBook): RealisasiRecord | null {
     if (typeof raw === "number") return raw;
     const s = String(raw).replace(/[^0-9,.\-]/g, "");
     if (!s) return 0;
-    const n = s.includes(",")
-      ? Number(s.replace(/\./g, "").replace(",", "."))
-      : Number(s.replace(/,/g, ""));
+
+    // Try Indonesian format (dot=thousands, comma=decimal) first
+    if (s.includes(",")) {
+      const id = Number(s.replace(/\./g, "").replace(/,/g, "."));
+      if (!Number.isNaN(id)) return id;
+    }
+
+    // Fallback: strip all commas (US/European thousands separator)
+    const cleaned = s.replace(/,/g, "");
+    const n = Number(cleaned);
     return Number.isNaN(n) ? 0 : n;
   };
   const big = (idx: number): bigint => BigInt(Math.round(num(idx)));

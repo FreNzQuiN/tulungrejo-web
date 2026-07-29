@@ -4,7 +4,11 @@ import { useRef, useState } from "react";
 import { Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-export function ImportButton() {
+export function ImportButton({
+  onImportSuccess,
+}: {
+  onImportSuccess?: () => void;
+}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
 
@@ -45,6 +49,7 @@ export function ImportButton() {
       } else {
         toast.success("Import selesai.");
       }
+      onImportSuccess?.();
 
       if (data.errors?.length > 0) {
         toast.warning(`${data.errors.length} error ditemukan.`);

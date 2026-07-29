@@ -27,7 +27,7 @@ export function ArtikelClient({
       const matchesSearch =
         !searchTerm ||
         a.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        a.summary.toLowerCase().includes(searchTerm.toLowerCase());
+        (a.summary || "").toLowerCase().includes(searchTerm.toLowerCase());
       const matchesCategory = !categoryFilter || a.category === categoryFilter;
       return matchesSearch && matchesCategory;
     });

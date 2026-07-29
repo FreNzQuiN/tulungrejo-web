@@ -190,5 +190,7 @@ model Article {
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@index([authorId])
+  @@index([published, date])
+  @@index([category])
   @@map("articles")
 }

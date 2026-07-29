@@ -44,8 +44,20 @@ export async function PUT(req: NextRequest) {
   const auth = await requireRole(["jurnalis"]);
   if ("error" in auth) return auth.error;
 
-  const body = await req.json();
-  const { address, phone, email, jamKerja, jamLibur, socialMedia } = body;
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Body tidak valid" }, { status: 400 });
+  }
+  const { address, phone, email, jamKerja, jamLibur, socialMedia } = body as {
+    address?: string;
+    phone?: string;
+    email?: string;
+    jamKerja?: string;
+    jamLibur?: string;
+    socialMedia?: SocialMediaLink[];
+  };
 
   if (!address) {
     return NextResponse.json({ error: "Alamat harus diisi" }, { status: 400 });
@@ -97,23 +109,29 @@ export async function PUT(req: NextRequest) {
       orderBy: { id: "asc" },
     });
 
-    const data: Parameters<typeof prisma.contactInfo.create>[0]["data"] = {
+    const data = {
       ...(address !== undefined && { address }),
       ...(phone !== undefined && { phone }),
       ...(email !== undefined && { email }),
       ...(jamKerja !== undefined && { jamKerja }),
       ...(jamLibur !== undefined && { jamLibur }),
-      socialMedia:
-        socialMedia !== undefined ? JSON.stringify(socialMedia) : "[]",
+      ...(socialMedia !== undefined && {
+        socialMedia: JSON.stringify(socialMedia),
+      }),
     };
 
     let updated;
     if (!existing) {
-      updated = await prisma.contactInfo.create({ data });
+      updated = await prisma.contactInfo.create({
+        data: {
+          socialMedia: "[]",
+          ...data,
+        } as Parameters<typeof prisma.contactInfo.create>[0]["data"],
+      });
     } else {
       updated = await prisma.contactInfo.update({
         where: { id: existing.id },
-        data,
+        data: data as Parameters<typeof prisma.contactInfo.update>[0]["data"],
       });
     }
 

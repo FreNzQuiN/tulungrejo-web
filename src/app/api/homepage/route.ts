@@ -35,7 +35,12 @@ export async function PUT(req: NextRequest) {
   const auth = await requireRole(["jurnalis"]);
   if ("error" in auth) return auth.error;
 
-  const body = await req.json();
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Body tidak valid" }, { status: 400 });
+  }
   const {
     heroTitle,
     heroSubtitle,
@@ -43,7 +48,14 @@ export async function PUT(req: NextRequest) {
     aboutTitle,
     aboutParagraphs,
     googleMapsUrl,
-  } = body;
+  } = body as {
+    heroTitle?: string;
+    heroSubtitle?: string;
+    heroDescription?: string;
+    aboutTitle?: string;
+    aboutParagraphs?: string[];
+    googleMapsUrl?: string;
+  };
 
   if (!heroTitle) {
     return NextResponse.json(
@@ -87,21 +99,29 @@ export async function PUT(req: NextRequest) {
       orderBy: { id: "asc" },
     });
 
-    const data = {
-      heroTitle: heroTitle ?? "",
-      heroSubtitle: heroSubtitle ?? "",
-      heroDescription: heroDescription ?? "",
-      aboutTitle: aboutTitle ?? "",
-      aboutParagraphs: aboutParagraphs ? JSON.stringify(aboutParagraphs) : "[]",
-      googleMapsUrl: googleMapsUrl ?? "",
+    const data: Record<string, unknown> = {
+      ...(heroTitle !== undefined && { heroTitle }),
+      ...(heroSubtitle !== undefined && { heroSubtitle }),
+      ...(heroDescription !== undefined && { heroDescription }),
+      ...(aboutTitle !== undefined && { aboutTitle }),
+      ...(aboutParagraphs !== undefined && {
+        aboutParagraphs: JSON.stringify(aboutParagraphs),
+      }),
+      ...(googleMapsUrl !== undefined && { googleMapsUrl }),
     };
 
     if (!existing) {
-      await prisma.homepageContent.create({ data });
+      await prisma.homepageContent.create({
+        data: data as Parameters<
+          typeof prisma.homepageContent.create
+        >[0]["data"],
+      });
     } else {
       await prisma.homepageContent.update({
         where: { id: existing.id },
-        data,
+        data: data as Parameters<
+          typeof prisma.homepageContent.update
+        >[0]["data"],
       });
     }
 

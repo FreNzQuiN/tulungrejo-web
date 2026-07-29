@@ -26,13 +26,15 @@ export function LoginForm() {
   const [demoAccounts, setDemoAccounts] = useState<DemoAccount[]>([]);
 
   useEffect(() => {
-    if (process.env.NODE_ENV === "production") return;
+    if (process.env.NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS !== "true") return;
     fetch("/api/auth/demo-accounts")
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) setDemoAccounts(data);
       })
-      .catch(() => {});
+      .catch(() => {
+        setDemoAccounts([]);
+      });
   }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -141,7 +143,7 @@ export function LoginForm() {
             </div>
           )}
 
-          {process.env.NODE_ENV !== "production" && (
+          {process.env.NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS === "true" && (
             <div className="admin-desc-box">
               <strong className="block mb-2 text-dark-brown">
                 Akun Demo / Prototype:

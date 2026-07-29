@@ -77,6 +77,7 @@ export default function PBBPage() {
     setSelectedYear,
     setPage,
     togglePayment,
+    refreshFields,
   } = usePbbFields(canAccess, authLoading);
 
   if (authLoading) {
@@ -126,7 +127,7 @@ export default function PBBPage() {
                   Belum
                 </span>
               </div>
-              {isPamong && <ImportButton />}
+              {isPamong && <ImportButton onImportSuccess={refreshFields} />}
             </div>
 
             {selectedYear && (

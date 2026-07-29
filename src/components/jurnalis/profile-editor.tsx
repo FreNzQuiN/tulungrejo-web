@@ -99,7 +99,9 @@ function ProfileEditorSkeleton() {
   );
 }
 
-export function ProfileEditor() {
+export function ProfileEditor({
+  onDirtyChange,
+}: { onDirtyChange?: (dirty: boolean) => void } = {}) {
   const editor = useCmsEditor(
     "/api/profile",
     {
@@ -112,6 +114,7 @@ export function ProfileEditor() {
     },
     "Gagal memuat profil desa",
     (raw) => villageProfileToForm(raw as VillageProfile),
+    onDirtyChange,
   );
 
   async function handleSave() {

@@ -23,8 +23,12 @@ export async function POST(request: Request) {
     const normalizedEmail = email.toLowerCase();
 
     const ip = getClientIp({ headers: request.headers });
-    if (ip && ip !== "unknown") {
-      const ipLimit = await checkRateLimit(`login:ip:${ip}`, undefined, true);
+    {
+      const ipLimit = await checkRateLimit(
+        `login:ip:${ip || "unknown"}`,
+        undefined,
+        true,
+      );
       if (!ipLimit.allowed) {
         return NextResponse.json({ error: "RATE_LIMITED" }, { status: 429 });
       }
@@ -57,9 +61,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (ip && ip !== "unknown") {
-      await resetRateLimit(`login:ip:${ip}`);
-    }
+    await resetRateLimit(`login:ip:${ip || "unknown"}`);
     await resetRateLimit(`login:email:${normalizedEmail}`);
 
     await setSessionCookie({

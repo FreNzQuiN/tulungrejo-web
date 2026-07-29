@@ -12,7 +12,17 @@ export async function GET(req: NextRequest) {
 
   try {
     const tahunParam = req.nextUrl.searchParams.get("tahun");
-    const where = tahunParam ? { tahun: parseInt(tahunParam, 10) } : undefined;
+    const parsedTahun = parseInt(tahunParam ?? "", 10);
+    if (
+      tahunParam &&
+      (Number.isNaN(parsedTahun) || parsedTahun < 2000 || parsedTahun > 2099)
+    ) {
+      return NextResponse.json(
+        { error: "Tahun tidak valid. Gunakan angka antara 2000 dan 2099." },
+        { status: 400 },
+      );
+    }
+    const where = tahunParam ? { tahun: parsedTahun } : undefined;
 
     const record = await prisma.realisasi.findFirst({
       where,

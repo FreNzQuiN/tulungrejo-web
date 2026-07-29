@@ -47,7 +47,9 @@ function ContactEditorSkeleton() {
   );
 }
 
-export function ContactEditor() {
+export function ContactEditor({
+  onDirtyChange,
+}: { onDirtyChange?: (dirty: boolean) => void } = {}) {
   const editor = useCmsEditor(
     "/api/contact",
     {
@@ -60,6 +62,7 @@ export function ContactEditor() {
     },
     "Gagal memuat kontak",
     (raw) => contactToForm(raw as ContactInfo),
+    onDirtyChange,
   );
 
   function addSocialMedia() {

@@ -41,15 +41,13 @@ export function StatCard({
           </span>
         )}
       </div>
-      <div
-        className="h-2 bg-gray-200 rounded-full overflow-hidden mb-1.5"
-        role="progressbar"
-        aria-valuenow={isNaN(progressPercent) ? 0 : progressPercent}
-        aria-valuemin={0}
-        aria-valuemax={100}
-      >
+      <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-1.5">
         <div
           className="h-full rounded-full"
+          role="progressbar"
+          aria-valuenow={isNaN(progressPercent) ? 0 : progressPercent}
+          aria-valuemin={0}
+          aria-valuemax={100}
           style={{
             width: `${isNaN(progressPercent) ? 0 : progressPercent}%`,
             backgroundColor: progressColor,

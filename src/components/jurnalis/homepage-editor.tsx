@@ -31,7 +31,9 @@ function HomepageEditorSkeleton() {
   );
 }
 
-export function HomepageEditor() {
+export function HomepageEditor({
+  onDirtyChange,
+}: { onDirtyChange?: (dirty: boolean) => void } = {}) {
   const editor = useCmsEditor<HomepageContent>(
     "/api/homepage",
     {
@@ -43,6 +45,8 @@ export function HomepageEditor() {
       googleMapsUrl: "",
     },
     "Gagal memuat konten halaman depan",
+    undefined,
+    onDirtyChange,
   );
 
   const paragraphsText = editor.data.aboutParagraphs.join("\n");

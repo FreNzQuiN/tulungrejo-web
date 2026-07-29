@@ -41,11 +41,15 @@ function StatsEditorSkeleton() {
   );
 }
 
-export function StatsEditor() {
+export function StatsEditor({
+  onDirtyChange,
+}: { onDirtyChange?: (dirty: boolean) => void } = {}) {
   const editor = useCmsEditor(
     "/api/stats",
     { jumlahKK: 0, jumlahPenduduk: 0, lakiLaki: 0, perempuan: 0 },
     "Gagal memuat statistik",
+    undefined,
+    onDirtyChange,
   );
 
   const populationMismatch =

@@ -73,7 +73,9 @@ export function ArticleManagerSkeleton() {
   );
 }
 
-export function ArticleManager() {
+export function ArticleManager({
+  onDirtyStateChange,
+}: { onDirtyStateChange?: (dirty: boolean) => void } = {}) {
   const [articles, setArticles] = useState<ArticleFrontmatter[]>([]);
   const [loading, setLoading] = useState(true);
   const [isAdding, setIsAdding] = useState(false);
@@ -100,10 +102,15 @@ export function ArticleManager() {
     [form, originalForm],
   );
 
+  useEffect(() => {
+    onDirtyStateChange?.(hasChanges);
+  }, [hasChanges, onDirtyStateChange]);
+
   const fetchArticles = useCallback(async (abortSignal?: AbortSignal) => {
     const res = await fetch("/api/articles", { signal: abortSignal });
     if (!res.ok) throw new Error("Gagal memuat daftar artikel");
-    return (await res.json()) as ArticleFrontmatter[];
+    const body = await res.json();
+    return (body.data ?? body) as ArticleFrontmatter[];
   }, []);
 
   useEffect(() => {

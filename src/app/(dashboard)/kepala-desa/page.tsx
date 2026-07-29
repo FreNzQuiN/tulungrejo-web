@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, startTransition } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/components/providers";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -54,6 +54,8 @@ export default function KadesDashboard() {
   const { user: sessionUser, isLoading: authLoading } = useAuth();
   const [data, setData] = useState<RealisasiView | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
   const [selectedYear, setSelectedYear] = useState<number>(getCurrentTaxYear());
   const abortRef = useRef<AbortController | null>(null);
 
@@ -65,12 +67,12 @@ export default function KadesDashboard() {
     const controller = new AbortController();
     abortRef.current = controller;
 
-    startTransition(() => setLoading(true));
     const url = `/api/pbb/realisasi?tahun=${selectedYear}`;
 
     fetch(url, { signal: controller.signal })
       .then((res) => {
         if (res.status === 404) {
+          setError(null);
           setData(null);
           return null;
         }
@@ -78,16 +80,20 @@ export default function KadesDashboard() {
         return res.json();
       })
       .then((json: RealisasiView | null) => {
-        if (json) setData(json);
+        if (json) {
+          setError(null);
+          setData(json);
+        }
       })
       .catch((err) => {
         if (err instanceof Error && err.name === "AbortError") return;
-        toast.error(err.message);
+        setError(err instanceof Error ? err.message : "Terjadi kesalahan");
+        toast.error(err instanceof Error ? err.message : "Terjadi kesalahan");
       })
       .finally(() => {
         if (!controller.signal.aborted) setLoading(false);
       });
-  }, [sessionUser?.id, sessionUser?.role, authLoading, selectedYear]);
+  }, [sessionUser?.id, sessionUser?.role, authLoading, selectedYear, retryKey]);
 
   const yearOptions = getYearOptions();
 
@@ -152,6 +158,30 @@ export default function KadesDashboard() {
         <div className="container">
           {yearSelector}
           <CardSkeleton />
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div>
+        {pageHeader}
+        <div className="container">
+          {yearSelector}
+          <div className="glass-panel p-8 text-center">
+            <p className="text-red-600 font-semibold mb-2">Gagal memuat data</p>
+            <p className="text-muted-foreground text-sm mb-4">{error}</p>
+            <button
+              onClick={() => {
+                setError(null);
+                setRetryKey((k) => k + 1);
+              }}
+              className="btn btn-primary btn-sm"
+            >
+              Coba Lagi
+            </button>
+          </div>
         </div>
       </div>
     );

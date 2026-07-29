@@ -43,7 +43,7 @@ export function FieldCard({
       <div className="citizen-detail-row text-muted-foreground text-xs">
         <span>Luas Tanah:</span>
         <strong style={{ color: "var(--color-dark)" }}>
-          {field.landArea ? `${field.landArea} m²` : "-"}
+          {field.landArea != null ? `${field.landArea} m²` : "-"}
         </strong>
       </div>
 

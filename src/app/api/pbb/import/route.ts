@@ -47,7 +47,7 @@ export async function POST(req: NextRequest) {
       "text/plain",
     ];
 
-    if (file.type && !ALLOWED_MIME_TYPES.includes(file.type)) {
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
       return NextResponse.json(
         { error: "Format file tidak didukung." },
         { status: 400 },

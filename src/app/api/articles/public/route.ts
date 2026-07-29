@@ -10,9 +10,9 @@ export async function GET(req: NextRequest) {
     const limitParam = searchParams.get("limit");
     const offsetParam = searchParams.get("offset");
     const take = limitParam
-      ? Math.max(1, Math.min(100, parseInt(limitParam, 10)))
+      ? Math.max(1, Math.min(100, parseInt(limitParam, 10) || 10))
       : 10;
-    const skip = offsetParam ? Math.max(0, parseInt(offsetParam, 10)) : 0;
+    const skip = offsetParam ? Math.max(0, parseInt(offsetParam, 10) || 0) : 0;
 
     const { data: articles, total } = await getAllPublishedArticlesWithMeta(
       take,

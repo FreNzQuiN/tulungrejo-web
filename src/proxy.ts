@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getSessionFromRequestEdge } from "@/lib/auth/edge-session";
 
-const PUBLIC_API_PATHS = [
+const PROXY_PASSTHROUGH_PATHS = [
   "/api/auth/login",
   "/api/auth/logout",
   "/api/auth/me",
@@ -18,7 +18,9 @@ export async function proxy(request: NextRequest) {
   const path = request.nextUrl.pathname;
 
   // Use path-segment matching — prevents prefix bypass (e.g. /api/auth/login-backdoor)
-  if (PUBLIC_API_PATHS.some((p) => path === p || path.startsWith(p + "/"))) {
+  if (
+    PROXY_PASSTHROUGH_PATHS.some((p) => path === p || path.startsWith(p + "/"))
+  ) {
     return NextResponse.next();
   }
 

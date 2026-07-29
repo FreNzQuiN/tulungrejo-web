@@ -109,6 +109,13 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  if (tags !== undefined && !Array.isArray(tags)) {
+    return NextResponse.json(
+      { error: "Tags harus berupa array" },
+      { status: 400 },
+    );
+  }
+
   try {
     const author = auth.session.user?.name ?? "Jurnalis";
     const defaultDate = new Date().toISOString().substring(0, 10);

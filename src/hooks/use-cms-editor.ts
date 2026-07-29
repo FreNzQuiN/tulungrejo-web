@@ -42,6 +42,7 @@ export function useCmsEditor<T>(
   initialData: T,
   loadErrorMsg: string,
   transformResponse?: (raw: unknown) => T,
+  onDirtyChange?: (dirty: boolean) => void,
 ): CmsEditorState<T> {
   const [data, setData] = useState<T>(initialData);
   const [original, setOriginal] = useState<T | null>(null);
@@ -84,6 +85,14 @@ export function useCmsEditor<T>(
     if (!original) return false;
     return !isEqual(data, original);
   }, [data, original]);
+
+  const prevHasChanges = useRef(hasChanges);
+  useEffect(() => {
+    if (prevHasChanges.current !== hasChanges) {
+      onDirtyChange?.(hasChanges);
+      prevHasChanges.current = hasChanges;
+    }
+  }, [hasChanges, onDirtyChange]);
 
   const save = useCallback(
     async (

@@ -91,7 +91,7 @@ export interface RealisasiView {
   sisaSppt: number;
   tanggalAmbil: string;
   importedAt: string;
-  tahun: number | null;
+  tahun: number;
 }
 
 export interface PaymentRecord {

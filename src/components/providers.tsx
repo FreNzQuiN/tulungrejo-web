@@ -62,42 +62,41 @@ export function Providers({ children }: { children: React.ReactNode }) {
     // Skip polling if no session cookie exists (100% of public visitors)
     if (!document.cookie.includes("session-token=")) return;
 
-    let interval = setInterval(
-      async () => {
-        try {
-          const res = await fetch("/api/auth/me");
-          if (!res.ok) {
-            setUser(null);
-          } else {
-            const data = await res.json();
-            if (!data.user) setUser(null);
-          }
-        } catch {
-          // network error — don't sign out on transient failure
-        }
-      },
-      5 * 60 * 1000,
-    );
+    let pollTimeout: ReturnType<typeof setTimeout>;
 
-    function onVisibilityChange() {
-      if (document.hidden) {
-        clearInterval(interval);
-      } else {
-        clearInterval(interval);
-        interval = setInterval(fetchUser, 5 * 60 * 1000);
+    async function pollAuth() {
+      if (!document.cookie.includes("session-token=")) {
+        setUser(null);
+        return;
       }
+      if (document.hidden) {
+        pollTimeout = setTimeout(pollAuth, 5 * 60 * 1000);
+        return;
+      }
+      try {
+        const res = await fetch("/api/auth/me");
+        if (res.status === 401) {
+          setUser(null);
+        } else if (!res.ok) {
+          // Transient server error — don't sign out
+        } else {
+          const data = await res.json();
+          if (!data.user) setUser(null);
+        }
+      } catch {
+        // network error — don't sign out on transient failure
+      }
+      pollTimeout = setTimeout(pollAuth, 5 * 60 * 1000);
     }
-    document.addEventListener("visibilitychange", onVisibilityChange);
 
-    return () => {
-      clearInterval(interval);
-      document.removeEventListener("visibilitychange", onVisibilityChange);
-    };
+    pollAuth();
+
+    return () => clearTimeout(pollTimeout);
   }, [isLoading]);
 
   const refresh = useCallback(async () => {
     const u = await fetchUser();
-    if (u) setUser(u);
+    setUser(u);
   }, []);
 
   const signOut = useCallback(async () => {

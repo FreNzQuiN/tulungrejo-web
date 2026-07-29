@@ -1,5 +1,4 @@
 import { cacheTag, cacheLife } from "next/cache";
-import { cache } from "react";
 import { prisma } from "./prisma";
 import type { Article, ArticleFrontmatter } from "./types";
 import type { Prisma } from "@prisma/client";
@@ -41,7 +40,7 @@ function toFrontmatter(a: {
   };
 }
 
-function toFullArticle(a: {
+export function toFullArticle(a: {
   id: number;
   title: string;
   slug: string;
@@ -64,12 +63,13 @@ function toFullArticle(a: {
 
 async function queryAllPublishedArticles(take?: number, skip?: number) {
   const safeTake = Math.min(take ?? 100, 1000);
+  const safeSkip = Math.min(skip ?? 0, 10000);
   return prisma.article.findMany({
     where: { published: true },
     orderBy: { date: "desc" },
     select: articleListSelect,
     take: safeTake,
-    ...(skip !== undefined ? { skip } : {}),
+    ...(skip !== undefined ? { skip: safeSkip } : {}),
   });
 }
 
@@ -103,14 +103,14 @@ async function getAllPublishedArticlesCached(
   return articles.map(toFrontmatter);
 }
 
-export const getPublishedArticleBySlug = cache(
-  async (slug: string): Promise<Article | null> => {
-    if (process.env.NODE_ENV === "production") {
-      return getPublishedArticleBySlugCached(slug);
-    }
-    return queryPublishedArticleBySlug(slug);
-  },
-);
+export async function getPublishedArticleBySlug(
+  slug: string,
+): Promise<Article | null> {
+  if (process.env.NODE_ENV === "production") {
+    return getPublishedArticleBySlugCached(slug);
+  }
+  return queryPublishedArticleBySlug(slug);
+}
 
 async function getPublishedArticleBySlugCached(
   slug: string,
@@ -126,11 +126,12 @@ export async function getAllArticlesForJournalist(
   skip?: number,
 ): Promise<ArticleFrontmatter[]> {
   const safeTake = Math.min(take ?? 100, 1000);
+  const safeSkip = Math.min(skip ?? 0, 10000);
   const articles = await prisma.article.findMany({
     orderBy: { date: "desc" },
     select: articleListSelect,
     take: safeTake,
-    ...(skip !== undefined ? { skip } : {}),
+    ...(skip !== undefined ? { skip: safeSkip } : {}),
   });
   return articles.map(toFrontmatter);
 }
@@ -229,7 +230,7 @@ export async function createArticle(
 export async function updateArticle(
   slug: string,
   data: Partial<CreateArticleInput>,
-): Promise<void> {
+): Promise<ArticleFrontmatter & { content: string }> {
   const updateData: Prisma.ArticleUpdateInput = {} as Prisma.ArticleUpdateInput;
 
   if (data.title !== undefined) updateData.title = data.title;
@@ -245,12 +246,11 @@ export async function updateArticle(
   }
   if (data.published !== undefined) updateData.published = data.published;
 
-  if (Object.keys(updateData).length === 0) return;
-
-  await prisma.article.update({
+  const updated = await prisma.article.update({
     where: { slug },
     data: updateData,
   });
+  return toFullArticle(updated);
 }
 
 export async function deleteArticle(

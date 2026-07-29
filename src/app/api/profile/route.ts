@@ -77,7 +77,12 @@ export async function PUT(req: NextRequest) {
   const auth = await requireRole(["jurnalis"]);
   if ("error" in auth) return auth.error;
 
-  const body = await req.json();
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Body tidak valid" }, { status: 400 });
+  }
   const {
     visi,
     misi,

@@ -14,6 +14,14 @@ export default function UnauthorizedPage() {
         >
           Kembali ke Beranda
         </Link>
+        <div className="mt-3">
+          <Link
+            href="/login"
+            className="text-sm text-muted-foreground hover:underline"
+          >
+            Login sebagai pengguna lain
+          </Link>
+        </div>
       </div>
     </div>
   );

@@ -14,6 +14,7 @@ export function CountUp({
   prefix?: string;
 }) {
   const ref = useRef<HTMLSpanElement>(null);
+  const rafRef = useRef<number>(0);
   const [started, setStarted] = useState(false);
   const [count, setCount] = useState(0);
 
@@ -47,11 +48,13 @@ export function CountUp({
       setCount(Math.floor(eased * end));
 
       if (progress < 1) {
-        requestAnimationFrame(animate);
+        rafRef.current = requestAnimationFrame(animate);
       }
     };
 
-    requestAnimationFrame(animate);
+    rafRef.current = requestAnimationFrame(animate);
+
+    return () => cancelAnimationFrame(rafRef.current);
   }, [started, end, duration]);
 
   return (

@@ -12,12 +12,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ user: null }, { status: 200 });
     }
 
-    // Cross-check DB role consistency to avoid ghost sessions
+    // Cross-check DB role + tokenVersion to avoid ghost sessions
     const dbUser = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { role: true },
+      select: { role: true, tokenVersion: true },
     });
-    if (!dbUser || dbUser.role !== session.user.role) {
+    if (
+      !dbUser ||
+      dbUser.role !== session.user.role ||
+      (session.user.tokenVersion !== undefined &&
+        dbUser.tokenVersion !== session.user.tokenVersion)
+    ) {
       return NextResponse.json({ user: null }, { status: 200 });
     }
 

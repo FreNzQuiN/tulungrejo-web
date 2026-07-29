@@ -80,7 +80,7 @@ function toVal(f: ReturnType<typeof parseSpopSheet>[number], now: Date) {
     f.buildingCount,
     f.znt,
     f.jenisTanah,
-    f.pendataanAt ?? now,
+    f.pendataanAt ?? null,
     now,
     now,
   ];
@@ -138,37 +138,48 @@ async function importSpop(
       }
     }
 
-    let totalAffected = 0;
-    let totalRows = 0;
+    let insertedCount = 0;
+    let updatedCount = 0;
+
+    // Pre-query existing NOPs to accurately count inserts vs updates
+    const existingNops = new Set<string>();
+    const allNops = scopedFields.map((f) => f.nop);
+    for (let i = 0; i < allNops.length; i += 1000) {
+      const batch = allNops.slice(i, i + 1000);
+      const rows = await prisma.fields.findMany({
+        where: { nop: { in: batch } },
+        select: { nop: true },
+      });
+      for (const row of rows) existingNops.add(row.nop);
+    }
 
     for (let i = 0; i < scopedFields.length; i += BATCH_SIZE) {
       const batch = scopedFields.slice(i, i + BATCH_SIZE);
       try {
         const { sql, params } = buildBatchSql(batch);
-        const affected = await prisma.$executeRawUnsafe(sql, ...params);
-        totalAffected += affected;
-        totalRows += batch.length;
+        await prisma.$executeRawUnsafe(sql, ...params);
+        // Count inserts vs updates from pre-queried NOPs
+        for (const field of batch) {
+          if (existingNops.has(field.nop)) {
+            updatedCount++;
+          } else {
+            insertedCount++;
+            existingNops.add(field.nop);
+          }
+        }
       } catch (err) {
         console.error("Import SPOP batch error:", err);
         summary.errors.push(`Gagal import batch ${i / BATCH_SIZE + 1}.`);
+        if (insertedCount + updatedCount > 0) {
+          summary.warnings.push(
+            "Data tersimpan sebagian. Beberapa batch gagal dan belum di-rollback.",
+          );
+        }
       }
     }
 
-    function computeInserted(rows: number, affected: number) {
-      // MySQL: ON DUPLICATE KEY UPDATE returns 1 per insert, 2 per update
-      return Math.max(0, 2 * rows - affected);
-    }
-    function computeUpdated(rows: number, affected: number) {
-      return Math.max(0, affected - rows);
-    }
-    summary.fields.inserted = computeInserted(totalRows, totalAffected);
-    summary.fields.updated = computeUpdated(totalRows, totalAffected);
-    console.info("Import SPOP selesai:", {
-      totalRows,
-      totalAffected,
-      inserted: summary.fields.inserted,
-      updated: summary.fields.updated,
-    });
+    summary.fields.inserted = insertedCount;
+    summary.fields.updated = updatedCount;
   } catch (err) {
     console.error("Import SPOP error:", err);
     summary.errors.push("Gagal memproses file SPOP.");

@@ -1,14 +1,9 @@
 import { jwtVerify } from "jose";
 import { ALLOWED_ROLES } from "@/lib/types";
 import type { SessionUser } from "@/lib/auth/types";
+import { getJwtSecret } from "./secret";
 
-const SECRET_RAW = process.env.JWT_SECRET ?? process.env.AUTH_SECRET;
-if (!SECRET_RAW) throw new Error("JWT_SECRET or AUTH_SECRET must be set");
-if (SECRET_RAW.length < 32)
-  throw new Error(
-    "JWT_SECRET or AUTH_SECRET must be at least 32 characters long",
-  );
-const SECRET = new TextEncoder().encode(SECRET_RAW);
+const SECRET = getJwtSecret();
 
 export async function verifyToken(token: string): Promise<SessionUser | null> {
   try {

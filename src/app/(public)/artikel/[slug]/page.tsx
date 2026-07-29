@@ -93,7 +93,7 @@ async function ArticleContent({
             alt={article.title}
             fill
             unoptimized
-            loading="lazy"
+            priority
             sizes="100vw"
             className="object-cover"
           />
@@ -105,11 +105,16 @@ async function ArticleContent({
             </span>
             <span className="inline-flex items-center gap-1">
               <Calendar size={12} className="align-middle" />
-              {new Date(article.date).toLocaleDateString("id-ID", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
+              {(() => {
+                const d = new Date(article.date);
+                return isNaN(d.getTime())
+                  ? "\u2014"
+                  : d.toLocaleDateString("id-ID", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    });
+              })()}
             </span>
           </div>
           <h1

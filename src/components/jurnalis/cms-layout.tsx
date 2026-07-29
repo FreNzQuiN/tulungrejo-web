@@ -24,7 +24,11 @@ export function CMSLayout({
   return (
     <div className="dashboard-layout">
       <aside className="cms-sidebar">
-        <nav aria-label="CMS Navigation" role="tablist">
+        <nav
+          aria-label="CMS Navigation"
+          role="tablist"
+          aria-orientation="vertical"
+        >
           {TABS.map((tab) => {
             const Icon = tab.icon;
             return (

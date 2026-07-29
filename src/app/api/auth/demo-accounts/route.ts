@@ -1,5 +1,8 @@
 export async function GET() {
-  if (process.env.NODE_ENV === "production") {
+  if (
+    process.env.NODE_ENV === "production" ||
+    !process.env.DEMO_CREDENTIALS_ENABLED
+  ) {
     return Response.json([]);
   }
 
