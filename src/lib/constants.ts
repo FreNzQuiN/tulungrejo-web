@@ -40,11 +40,13 @@ const VALID_IMAGE_PREFIXES = [
 ] as const;
 
 export function validateArticleImage(image: string): string | null {
-  if (image.length > MAX_IMAGE_SIZE) {
+  const prefix = VALID_IMAGE_PREFIXES.find((p) => image.startsWith(p));
+  const binarySize = prefix
+    ? Math.round((image.length - prefix.length) * 0.75)
+    : image.length;
+  if (binarySize > MAX_IMAGE_SIZE) {
     return "Ukuran gambar terlalu besar (maks 5MB)";
   }
-
-  const prefix = VALID_IMAGE_PREFIXES.find((p) => image.startsWith(p));
   if (!prefix) {
     return "Format gambar tidak didukung. Gunakan webp, jpeg, atau png.";
   }

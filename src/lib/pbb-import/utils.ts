@@ -1,3 +1,5 @@
+import { BLOK_TO_DUSUN } from "@/lib/constants";
+
 export function parseDate(value: unknown): Date | null {
   if (value == null) return null;
   if (typeof value === "number") {
@@ -52,8 +54,6 @@ export function roundLandArea(val: unknown): number | null {
   return Math.round(n * 100) / 100;
 }
 
-import { BLOK_TO_DUSUN } from "@/lib/constants";
-
 export function deriveDusun(blok: string): string {
   return BLOK_TO_DUSUN[blok] ?? "Tulungrejo";
 }
@@ -63,6 +63,7 @@ export function sanitizeBlok(val: unknown): string | null {
   const s = String(val).trim().padStart(3, "0");
   if (!/^\d{3}$/.test(s)) return null;
   if (s === "000") return null;
+  if (!BLOK_TO_DUSUN[s]) return null;
   return s;
 }
 

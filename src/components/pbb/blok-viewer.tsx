@@ -204,6 +204,7 @@ export function BlokViewer({ blok }: BlokViewerProps) {
                 handlePrev();
               }}
               className="absolute left-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 shadow-sm transition-colors hover:bg-white"
+              aria-label="Sebelumnya"
             >
               <ChevronLeft size={20} />
             </button>
@@ -213,6 +214,7 @@ export function BlokViewer({ blok }: BlokViewerProps) {
                 handleNext();
               }}
               className="absolute right-2 top-1/2 z-10 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white/80 shadow-sm transition-colors hover:bg-white"
+              aria-label="Selanjutnya"
             >
               <ChevronRight size={20} />
             </button>
@@ -232,10 +234,14 @@ export function BlokViewer({ blok }: BlokViewerProps) {
             }}
             disabled={zoomLevel! <= 100}
             className="flex h-6 w-6 items-center justify-center rounded text-sm font-bold hover:bg-gray-200 disabled:opacity-30"
+            aria-label="Perkecil"
           >
             −
           </button>
-          <span className="min-w-[38px] text-center text-xs font-semibold tabular-nums">
+          <span
+            className="min-w-[38px] text-center text-xs font-semibold tabular-nums"
+            role="status"
+          >
             {zoomLevel}%
           </span>
           <button
@@ -245,6 +251,7 @@ export function BlokViewer({ blok }: BlokViewerProps) {
             }}
             disabled={zoomLevel! >= 300}
             className="flex h-6 w-6 items-center justify-center rounded text-sm font-bold hover:bg-gray-200 disabled:opacity-30"
+            aria-label="Perbesar"
           >
             +
           </button>

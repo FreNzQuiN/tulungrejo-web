@@ -40,7 +40,7 @@ function toFrontmatter(a: {
   };
 }
 
-function toFullArticle(a: {
+export function toFullArticle(a: {
   id: number;
   title: string;
   slug: string;
@@ -62,12 +62,14 @@ function toFullArticle(a: {
 }
 
 async function queryAllPublishedArticles(take?: number, skip?: number) {
+  const safeTake = Math.min(take ?? 100, 1000);
+  const safeSkip = Math.min(skip ?? 0, 10000);
   return prisma.article.findMany({
     where: { published: true },
     orderBy: { date: "desc" },
     select: articleListSelect,
-    ...(take !== undefined ? { take } : {}),
-    ...(skip !== undefined ? { skip } : {}),
+    take: safeTake,
+    ...(skip !== undefined ? { skip: safeSkip } : {}),
   });
 }
 
@@ -123,21 +125,72 @@ export async function getAllArticlesForJournalist(
   take?: number,
   skip?: number,
 ): Promise<ArticleFrontmatter[]> {
+  const safeTake = Math.min(take ?? 100, 1000);
+  const safeSkip = Math.min(skip ?? 0, 10000);
   const articles = await prisma.article.findMany({
     orderBy: { date: "desc" },
     select: articleListSelect,
-    ...(take !== undefined ? { take } : {}),
-    ...(skip !== undefined ? { skip } : {}),
+    take: safeTake,
+    ...(skip !== undefined ? { skip: safeSkip } : {}),
   });
   return articles.map(toFrontmatter);
 }
 
-export async function getArticleBySlugAll(
-  slug: string,
-): Promise<Article | null> {
-  const article = await prisma.article.findUnique({ where: { slug } });
-  if (!article) return null;
-  return toFullArticle(article);
+async function queryAllPublishedArticlesWithMeta(
+  take?: number,
+  skip?: number,
+): Promise<{ data: ArticleFrontmatter[]; total: number }> {
+  const safeTake = Math.min(take ?? 100, 1000);
+  const safeSkip = Math.min(skip ?? 0, 10000);
+  const [articles, total] = await Promise.all([
+    prisma.article.findMany({
+      where: { published: true },
+      orderBy: { date: "desc" },
+      select: articleListSelect,
+      take: safeTake,
+      skip: safeSkip,
+    }),
+    prisma.article.count({ where: { published: true } }),
+  ]);
+  return { data: articles.map(toFrontmatter), total };
+}
+
+export async function getAllPublishedArticlesWithMeta(
+  take?: number,
+  skip?: number,
+): Promise<{ data: ArticleFrontmatter[]; total: number }> {
+  if (process.env.NODE_ENV === "production") {
+    return getAllPublishedArticlesWithMetaCached(take, skip);
+  }
+  return queryAllPublishedArticlesWithMeta(take, skip);
+}
+
+async function getAllPublishedArticlesWithMetaCached(
+  take?: number,
+  skip?: number,
+): Promise<{ data: ArticleFrontmatter[]; total: number }> {
+  "use cache: remote";
+  cacheTag("articles");
+  cacheLife("hours");
+  return queryAllPublishedArticlesWithMeta(take, skip);
+}
+
+export async function getAllArticlesForJournalistWithMeta(
+  take?: number,
+  skip?: number,
+): Promise<{ data: ArticleFrontmatter[]; total: number }> {
+  const safeTake = Math.min(take ?? 100, 1000);
+  const safeSkip = Math.min(skip ?? 0, 10000);
+  const [articles, total] = await Promise.all([
+    prisma.article.findMany({
+      orderBy: { date: "desc" },
+      select: articleListSelect,
+      take: safeTake,
+      skip: safeSkip,
+    }),
+    prisma.article.count(),
+  ]);
+  return { data: articles.map(toFrontmatter), total };
 }
 
 export async function checkSlugExists(
@@ -189,7 +242,7 @@ export async function createArticle(
 export async function updateArticle(
   slug: string,
   data: Partial<CreateArticleInput>,
-): Promise<void> {
+): Promise<ArticleFrontmatter & { content: string }> {
   const updateData: Prisma.ArticleUpdateInput = {} as Prisma.ArticleUpdateInput;
 
   if (data.title !== undefined) updateData.title = data.title;
@@ -205,20 +258,29 @@ export async function updateArticle(
   }
   if (data.published !== undefined) updateData.published = data.published;
 
-  if (Object.keys(updateData).length === 0) return;
-
-  await prisma.article.update({
+  const updated = await prisma.article.update({
     where: { slug },
     data: updateData,
   });
+  return toFullArticle(updated);
 }
 
-export async function deleteArticle(slug: string): Promise<boolean> {
+export async function deleteArticle(
+  slug: string,
+): Promise<{ success: true } | { success: false; notFound: boolean }> {
   try {
     await prisma.article.delete({ where: { slug } });
-    return true;
+    return { success: true };
   } catch (err) {
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      "code" in (err as Record<string, unknown>) &&
+      (err as Record<string, unknown>).code === "P2025"
+    ) {
+      return { success: false, notFound: true };
+    }
     console.error("deleteArticle error:", err);
-    return false;
+    throw err;
   }
 }

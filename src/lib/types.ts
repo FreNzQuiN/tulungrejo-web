@@ -20,21 +20,6 @@ export const ROLE_DISPLAY: Record<UserRole, string> = {
   jurnalis: "jurnalis",
 };
 
-export interface User {
-  id: number;
-  email: string;
-  name: string;
-  role: UserRole;
-}
-
-export interface VillageStats {
-  jumlahKK: number;
-  jumlahPenduduk: number;
-  lakiLaki: number;
-  perempuan: number;
-  updatedAt: string;
-}
-
 export interface ArticleFrontmatter {
   title: string;
   slug: string;
@@ -77,6 +62,7 @@ export interface VillageProfile {
   visi: string;
   misi: string[];
   strukturOrganisasi: OrgMember[];
+  strukturOrganisasiImage?: string;
   tugasFungsi: TugasFungsi[];
   administratif: Administratif;
 }
@@ -105,7 +91,7 @@ export interface RealisasiView {
   sisaSppt: number;
   tanggalAmbil: string;
   importedAt: string;
-  tahun: number | null;
+  tahun: number;
 }
 
 export interface PaymentRecord {
@@ -118,10 +104,25 @@ export interface PaymentRecord {
   markerName: string | null;
 }
 
-export type Category =
-  | "Kegiatan Desa"
-  | "Pembangunan"
-  | "Pemberdayaan"
-  | "Kesehatan"
-  | "Pertanian"
-  | "Pengumuman";
+export interface SocialMediaLink {
+  platform: string;
+  url: string;
+}
+
+export interface ContactInfo {
+  address: string;
+  phone: string;
+  email: string;
+  jamKerja: string;
+  jamLibur: string;
+  socialMedia: SocialMediaLink[];
+}
+
+export interface HomepageContent {
+  heroTitle: string;
+  heroSubtitle: string;
+  heroDescription: string;
+  aboutTitle: string;
+  aboutParagraphs: string[];
+  googleMapsUrl: string;
+}

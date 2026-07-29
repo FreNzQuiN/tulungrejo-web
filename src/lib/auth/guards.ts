@@ -22,9 +22,13 @@ export async function requireAuth(): Promise<AuthResult> {
 
   const dbUser = await prisma.user.findUnique({
     where: { id: session.user.id },
-    select: { role: true, assignedBlok: true },
+    select: { role: true, assignedBlok: true, tokenVersion: true },
   });
-  if (!dbUser || dbUser.role !== session.user.role) {
+  if (
+    !dbUser ||
+    dbUser.role !== session.user.role ||
+    (dbUser.tokenVersion ?? 0) !== (session.user.tokenVersion ?? 0)
+  ) {
     return {
       error: NextResponse.json({ error: "Unauthorized" }, { status: 401 }),
     };
@@ -39,7 +43,7 @@ export async function requireRole(
   const result = await requireAuth();
   if (isError(result)) return result;
 
-  const role = result.session.user?.role as UserRole | undefined;
+  const role = result.session.user.role as UserRole | undefined;
   if (!role || !allowedRoles.includes(role)) {
     return {
       error: NextResponse.json({ error: "Forbidden" }, { status: 403 }),

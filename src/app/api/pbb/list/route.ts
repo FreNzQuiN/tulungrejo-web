@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
       Number(searchParams.get("take")) || MAX_TAKE,
       MAX_TAKE,
     );
-    const skip = Number(searchParams.get("skip")) || 0;
+    const skip = Math.max(0, Number(searchParams.get("skip")) || 0);
 
     const session = unwrapSession(auth);
     if (session?.user?.role === "pamong_pajak") {
@@ -59,6 +59,19 @@ export async function GET(req: NextRequest) {
         payments: { none: { year, status: PAYMENT_STATUS.LUNAS } },
       };
       statusOverride = PAYMENT_STATUS.BELUM_LUNAS;
+    }
+
+    if (
+      status &&
+      status !== PAYMENT_STATUS.LUNAS &&
+      status !== PAYMENT_STATUS.BELUM_LUNAS
+    ) {
+      return NextResponse.json(
+        {
+          error: `Status tidak valid. Gunakan "${PAYMENT_STATUS.LUNAS}" atau "${PAYMENT_STATUS.BELUM_LUNAS}".`,
+        },
+        { status: 400 },
+      );
     }
 
     const [total, fields] = await Promise.all([
@@ -101,8 +114,8 @@ export async function GET(req: NextRequest) {
       blok: f.blok,
       noBidang: f.noBidang,
       dusun: f.dusun,
-      landArea: f.landArea ? Number(f.landArea) : null,
-      buildingArea: f.buildingArea ? Number(f.buildingArea) : null,
+      landArea: f.landArea != null ? Number(f.landArea) : null,
+      buildingArea: f.buildingArea != null ? Number(f.buildingArea) : null,
       status: statusMap.get(f.id) ?? PAYMENT_STATUS.BELUM_LUNAS,
     }));
 

@@ -3,6 +3,7 @@ import { requireRole, unwrapSession, getAssignedBlok } from "@/lib/auth/guards";
 import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
 import { prisma } from "@/lib/prisma";
 import { getCurrentTaxYear } from "@/lib/pbb-tax-year";
+import { PAYMENT_STATUS } from "@/lib/types";
 
 export async function GET(req: NextRequest) {
   if (!(await checkApiRateLimit(req))) return rateLimitResponse();
@@ -23,28 +24,27 @@ export async function GET(req: NextRequest) {
     let paidCount: number;
 
     if (assignedBlok) {
-      const fieldIds = (
-        await prisma.fields.findMany({
-          where: { blok: assignedBlok },
-          select: { id: true },
-        })
-      ).map((f) => f.id);
+      const fields = await prisma.fields.findMany({
+        where: { blok: assignedBlok },
+        select: { id: true },
+      });
+      const fieldIds = fields.map((f) => f.id);
 
-      [totalFields, paidCount] = await Promise.all([
-        prisma.fields.count({ where: fieldFilter }),
-        prisma.payments.count({
+      [totalFields, paidCount] = [
+        fields.length,
+        await prisma.payments.count({
           where: {
             year: currentYear,
-            status: "lunas",
+            status: PAYMENT_STATUS.LUNAS,
             fieldId: { in: fieldIds },
           },
         }),
-      ]);
+      ];
     } else {
       [totalFields, paidCount] = await Promise.all([
         prisma.fields.count(),
         prisma.payments.count({
-          where: { year: currentYear, status: "lunas" },
+          where: { year: currentYear, status: PAYMENT_STATUS.LUNAS },
         }),
       ]);
     }

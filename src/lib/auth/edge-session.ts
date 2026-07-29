@@ -1,28 +1,7 @@
-import { jwtVerify } from "jose";
-import { ALLOWED_ROLES } from "@/lib/types";
 import type { SessionUser, Session } from "@/lib/auth/types";
-
-const SECRET_RAW = process.env.JWT_SECRET ?? process.env.AUTH_SECRET;
-if (!SECRET_RAW) throw new Error("JWT_SECRET or AUTH_SECRET must be set");
-const SECRET = new TextEncoder().encode(SECRET_RAW);
+import { verifyToken } from "./jwt";
 
 const COOKIE_NAME = "session-token";
-
-async function verifyToken(token: string): Promise<SessionUser | null> {
-  try {
-    const { payload } = await jwtVerify(token, SECRET);
-    const role = payload.role as SessionUser["role"];
-    if (!role || !ALLOWED_ROLES.includes(role)) return null;
-    return {
-      id: Number(payload.sub ?? payload.id),
-      email: payload.email as string,
-      name: payload.name as string,
-      role,
-    };
-  } catch {
-    return null;
-  }
-}
 
 function parseCookie(cookie: string, name: string): string | null {
   for (const part of cookie.split(";")) {

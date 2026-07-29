@@ -5,11 +5,95 @@ import { prisma } from "@/lib/prisma";
 import { PAYMENT_STATUS, type PaymentStatus } from "@/lib/types";
 import { getCurrentTaxYear } from "@/lib/pbb-tax-year";
 
+const TOGGLE_MAX_RETRIES = 3;
+
+async function togglePayment(
+  fieldId: string,
+  year: number,
+  markedBy: number | null,
+  markedAt: Date,
+  session: { user: { id: number } } | null,
+  assignedBlok: string | null,
+): Promise<PaymentStatus> {
+  for (let attempt = 0; attempt < TOGGLE_MAX_RETRIES; attempt++) {
+    try {
+      return await prisma.$transaction(async (tx) => {
+        // Check field existence and blok access inside the transaction
+        const field = await tx.fields.findUnique({ where: { id: fieldId } });
+        if (!field) {
+          throw Object.assign(new Error("Bidang tidak ditemukan."), {
+            statusCode: 404,
+          });
+        }
+        if (assignedBlok && field.blok !== assignedBlok) {
+          throw Object.assign(
+            new Error("Anda tidak memiliki akses ke bidang ini."),
+            { statusCode: 403 },
+          );
+        }
+
+        const existing = await tx.payments.findUnique({
+          where: { fieldId_year: { fieldId, year } },
+        });
+
+        if (!existing) {
+          try {
+            await tx.payments.create({
+              data: {
+                fieldId,
+                year,
+                status: PAYMENT_STATUS.LUNAS,
+                markedBy,
+                markedAt,
+              },
+            });
+            return PAYMENT_STATUS.LUNAS;
+          } catch (createErr: unknown) {
+            const err = createErr as Record<string, unknown>;
+            if (err?.code === "P2002") {
+              // Raced with another create — retry fresh read
+              throw err; // caught by outer try, retried
+            }
+            throw createErr;
+          }
+        }
+
+        const toggled =
+          existing.status === PAYMENT_STATUS.LUNAS
+            ? PAYMENT_STATUS.BELUM_LUNAS
+            : PAYMENT_STATUS.LUNAS;
+        await tx.payments.update({
+          where: { fieldId_year: { fieldId, year }, status: existing.status },
+          data: { status: toggled, markedBy, markedAt },
+        });
+        return toggled;
+      });
+    } catch (createErr: unknown) {
+      const err = createErr as Record<string, unknown>;
+      if (
+        (err?.code === "P2002" || err?.code === "P2025") &&
+        attempt < TOGGLE_MAX_RETRIES - 1
+      ) {
+        await new Promise((r) => setTimeout(r, 50 * (attempt + 1)));
+        continue;
+      }
+      throw createErr;
+    }
+  }
+  throw new Error("togglePayment: unreachable");
+}
+
 export async function POST(req: NextRequest) {
   if (!(await checkApiRateLimit(req))) return rateLimitResponse();
 
   const auth = await requireRole(["pamong_pajak"]);
   if ("error" in auth) return auth.error;
+
+  // CSRF protection: require custom header
+  const csrfHeader = req.headers.get("x-csrf");
+  if (csrfHeader !== "1") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
 
   try {
     const body = await req.json();
@@ -43,59 +127,30 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const field = await prisma.fields.findUnique({ where: { id: fieldId } });
-    if (!field) {
-      return NextResponse.json(
-        { error: "Bidang tidak ditemukan." },
-        { status: 404 },
-      );
-    }
-
-    const assignedBlok = await getAssignedBlok(auth);
-    if (assignedBlok && field.blok !== assignedBlok) {
-      return NextResponse.json(
-        { error: "Anda tidak memiliki akses ke bidang ini." },
-        { status: 403 },
-      );
-    }
-
     const session = unwrapSession(auth);
     const markedBy = session?.user?.id ?? null;
     const markedAt = new Date();
+    const assignedBlok = await getAssignedBlok(auth);
 
-    let actualStatus: PaymentStatus = PAYMENT_STATUS.BELUM_LUNAS;
-
-    await prisma.$transaction(async (tx) => {
-      const existing = await tx.payments.findUnique({
-        where: { fieldId_year: { fieldId, year: parsedYear } },
-      });
-
-      if (!existing) {
-        await tx.payments.create({
-          data: {
-            fieldId,
-            year: parsedYear,
-            status: PAYMENT_STATUS.LUNAS,
-            markedBy,
-            markedAt,
-          },
-        });
-        actualStatus = PAYMENT_STATUS.LUNAS;
-      } else {
-        actualStatus =
-          existing.status === PAYMENT_STATUS.LUNAS
-            ? PAYMENT_STATUS.BELUM_LUNAS
-            : PAYMENT_STATUS.LUNAS;
-        await tx.payments.update({
-          where: { fieldId_year: { fieldId, year: parsedYear } },
-          data: { status: actualStatus, markedBy, markedAt },
-        });
-      }
-    });
+    const actualStatus = await togglePayment(
+      fieldId,
+      parsedYear,
+      markedBy,
+      markedAt,
+      session,
+      assignedBlok,
+    );
 
     return NextResponse.json({ success: true, status: actualStatus });
   } catch (err) {
     console.error("PBB toggle error:", err);
+    const e = err as Record<string, unknown>;
+    if (e.statusCode && typeof e.statusCode === "number") {
+      return NextResponse.json(
+        { error: (e.message as string) || "Gagal mengubah status pembayaran." },
+        { status: e.statusCode },
+      );
+    }
     return NextResponse.json(
       { error: "Gagal mengubah status pembayaran." },
       { status: 500 },

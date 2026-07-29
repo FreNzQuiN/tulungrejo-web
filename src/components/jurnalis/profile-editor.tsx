@@ -1,17 +1,29 @@
 "use client";
 
+import { useState, type ChangeEvent } from "react";
 import { toast } from "sonner";
-import { Save, X } from "lucide-react";
+import {
+  Save,
+  X,
+  Plus,
+  ImageUp,
+  Trash2,
+  Trash as TrashIcon,
+} from "lucide-react";
+import Image from "next/image";
 import type { VillageProfile } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useCmsEditor } from "@/hooks/use-cms-editor";
+import { resizeImage } from "@/lib/client-utils";
+import { MAX_IMAGE_SIZE } from "@/lib/constants";
 
 interface ProfileForm {
   visi: string;
   misi: string;
-  strukturOrganisasi: string;
-  tugasFungsi: string;
+  strukturOrganisasi: { role: string; name: string }[];
+  strukturOrganisasiImage: string | null;
+  tugasFungsi: { jabatan: string; tugas: string }[];
   administratif: {
     koordinat: string;
     batasUtara: string;
@@ -38,18 +50,12 @@ const EMPTY_ADMIN = {
 };
 
 function villageProfileToForm(data: VillageProfile): ProfileForm {
-  const strukturStr = (data.strukturOrganisasi || [])
-    .map((m: { role: string; name: string }) => `${m.role}: ${m.name}`)
-    .join("\n");
-  const tugasFungsiStr = (data.tugasFungsi || [])
-    .map((t: { jabatan: string; tugas: string }) => `${t.jabatan}: ${t.tugas}`)
-    .join("\n");
-
   return {
     visi: data.visi || "",
     misi: (data.misi || []).join("\n"),
-    strukturOrganisasi: strukturStr,
-    tugasFungsi: tugasFungsiStr,
+    strukturOrganisasi: data.strukturOrganisasi || [],
+    strukturOrganisasiImage: data.strukturOrganisasiImage ?? null,
+    tugasFungsi: data.tugasFungsi || [],
     administratif: {
       koordinat: data.administratif?.koordinat || "",
       batasUtara: data.administratif?.batasUtara || "",
@@ -93,18 +99,22 @@ function ProfileEditorSkeleton() {
   );
 }
 
-export function ProfileEditor() {
+export function ProfileEditor({
+  onDirtyChange,
+}: { onDirtyChange?: (dirty: boolean) => void } = {}) {
   const editor = useCmsEditor(
     "/api/profile",
     {
       visi: "",
       misi: "",
-      strukturOrganisasi: "",
-      tugasFungsi: "",
+      strukturOrganisasi: [],
+      strukturOrganisasiImage: null,
+      tugasFungsi: [],
       administratif: EMPTY_ADMIN,
     },
     "Gagal memuat profil desa",
     (raw) => villageProfileToForm(raw as VillageProfile),
+    onDirtyChange,
   );
 
   async function handleSave() {
@@ -118,45 +128,103 @@ export function ProfileEditor() {
       .map((s) => s.trim())
       .filter(Boolean);
 
-    const strukturArray = editor.data.strukturOrganisasi
-      .split("\n")
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .map((line) => {
-        const colonIdx = line.indexOf(":");
-        return colonIdx > 0
-          ? {
-              role: line.slice(0, colonIdx).trim(),
-              name: line.slice(colonIdx + 1).trim(),
-            }
-          : { role: line, name: "" };
-      });
+    const strukturArray = editor.data.strukturOrganisasi.filter(
+      (s) => s.role.trim() || s.name.trim(),
+    );
 
-    const tugasFungsiArray = editor.data.tugasFungsi
-      .split("\n")
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .map((line) => {
-        const colonIdx = line.indexOf(":");
-        return colonIdx > 0
-          ? {
-              jabatan: line.slice(0, colonIdx).trim(),
-              tugas: line.slice(colonIdx + 1).trim(),
-            }
-          : { jabatan: line, tugas: "" };
-      });
+    const tugasFungsiArray = editor.data.tugasFungsi.filter(
+      (t) => t.jabatan.trim() || t.tugas.trim(),
+    );
 
     await editor.save(
       {
         visi: editor.data.visi,
         misi: misiArray,
         strukturOrganisasi: strukturArray,
+        strukturOrganisasiImage: editor.data.strukturOrganisasiImage,
         tugasFungsi: tugasFungsiArray,
         administratif: editor.data.administratif,
       },
       "Profil desa berhasil diperbarui",
       "Gagal memperbarui profil desa",
     );
+  }
+
+  function addStruktur() {
+    editor.setData((p) => ({
+      ...p,
+      strukturOrganisasi: [...p.strukturOrganisasi, { role: "", name: "" }],
+    }));
+  }
+
+  function removeStruktur(idx: number) {
+    editor.setData((p) => ({
+      ...p,
+      strukturOrganisasi: p.strukturOrganisasi.filter((_, i) => i !== idx),
+    }));
+  }
+
+  function updateStruktur(idx: number, field: "role" | "name", value: string) {
+    editor.setData((p) => {
+      const updated = p.strukturOrganisasi.map((item, i) =>
+        i === idx ? { ...item, [field]: value } : item,
+      );
+      return { ...p, strukturOrganisasi: updated };
+    });
+  }
+
+  function addTugas() {
+    editor.setData((p) => ({
+      ...p,
+      tugasFungsi: [...p.tugasFungsi, { jabatan: "", tugas: "" }],
+    }));
+  }
+
+  function removeTugas(idx: number) {
+    editor.setData((p) => ({
+      ...p,
+      tugasFungsi: p.tugasFungsi.filter((_, i) => i !== idx),
+    }));
+  }
+
+  function updateTugas(idx: number, field: "jabatan" | "tugas", value: string) {
+    editor.setData((p) => {
+      const updated = p.tugasFungsi.map((item, i) =>
+        i === idx ? { ...item, [field]: value } : item,
+      );
+      return { ...p, tugasFungsi: updated };
+    });
+  }
+
+  const [orgImageUploading, setOrgImageUploading] = useState(false);
+
+  async function handleOrganisasiImagePick(e: ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (file.size > MAX_IMAGE_SIZE) {
+      toast.error("Ukuran gambar maksimal 5MB");
+      return;
+    }
+    if (!file.type.startsWith("image/")) {
+      toast.error("Hanya file gambar yang diperbolehkan");
+      return;
+    }
+
+    setOrgImageUploading(true);
+    try {
+      const dataUri = await resizeImage(file);
+      editor.setData((p) => ({ ...p, strukturOrganisasiImage: dataUri }));
+    } catch (e) {
+      console.error(e);
+      toast.error("Gagal memproses gambar");
+    } finally {
+      setOrgImageUploading(false);
+    }
+  }
+
+  function handleRemoveOrganisasiImage() {
+    editor.setData((p) => ({ ...p, strukturOrganisasiImage: null }));
   }
 
   const ADMIN_FIELDS: {
@@ -211,34 +279,143 @@ export function ProfileEditor() {
       </div>
 
       <div className="form-group">
-        <label>Struktur Organisasi (satu baris per jabatan: nama)</label>
-        <textarea
-          className="form-textarea"
-          value={editor.data.strukturOrganisasi}
-          onChange={(e) =>
-            editor.setData((p) => ({
-              ...p,
-              strukturOrganisasi: e.target.value,
-            }))
-          }
-          rows={4}
-          placeholder="Kepala Desa: Ir. H. Sulaiman Basri"
-        />
+        <label>Struktur Organisasi (Gambar)</label>
+        <div className="flex gap-3 items-start">
+          <label
+            className={`cursor-pointer inline-flex items-center gap-2 px-4 py-2 rounded-lg border text-sm font-medium transition-colors ${
+              orgImageUploading
+                ? "opacity-50 pointer-events-none border-muted bg-muted text-muted-foreground"
+                : "border-input bg-background hover:bg-accent hover:text-accent-foreground"
+            }`}
+          >
+            <ImageUp size={16} />
+            {orgImageUploading ? "Memproses..." : "Pilih Gambar"}
+            <input
+              type="file"
+              accept="image/*"
+              className="sr-only"
+              onChange={handleOrganisasiImagePick}
+              disabled={orgImageUploading}
+            />
+          </label>
+          {editor.data.strukturOrganisasiImage && (
+            <button
+              type="button"
+              onClick={handleRemoveOrganisasiImage}
+              className="inline-flex items-center gap-1 px-3 py-2 text-sm text-red-600 hover:text-red-700 transition-colors"
+            >
+              <TrashIcon size={14} />
+              Hapus
+            </button>
+          )}
+        </div>
+        {editor.data.strukturOrganisasiImage ? (
+          <div className="mt-3 relative w-full max-w-[600px] rounded-lg overflow-hidden border">
+            <Image
+              src={editor.data.strukturOrganisasiImage}
+              alt="Struktur Organisasi"
+              width={600}
+              height={400}
+              className="w-full h-auto object-contain"
+              unoptimized
+            />
+          </div>
+        ) : (
+          <p className="text-[12px] text-muted-foreground mt-1.5">
+            Format: JPG, PNG, WebP. Maks 5MB. Akan diresize otomatis ke 1920px.
+          </p>
+        )}
       </div>
 
       <div className="form-group">
-        <label>
-          Tugas dan Fungsi (satu baris per jabatan: deskripsi tugas)
+        <label className="flex items-center gap-3">
+          Struktur Organisasi (Nama dan Peran)
+          <button
+            type="button"
+            onClick={addStruktur}
+            className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+          >
+            <Plus size={14} />
+            Tambah
+          </button>
         </label>
-        <textarea
-          className="form-textarea"
-          value={editor.data.tugasFungsi}
-          onChange={(e) =>
-            editor.setData((p) => ({ ...p, tugasFungsi: e.target.value }))
-          }
-          rows={4}
-          placeholder="Kepala Desa: Menyelenggarakan Pemerintahan Desa..."
-        />
+        <div className="space-y-2 mt-2">
+          {editor.data.strukturOrganisasi.length === 0 && (
+            <p className="text-[12px] text-muted-foreground">
+              Belum ada entri struktur organisasi. Klik &ldquo;Tambah&rdquo;
+              untuk menambahkan.
+            </p>
+          )}
+          {editor.data.strukturOrganisasi.map((item, idx) => (
+            <div key={idx} className="flex items-center gap-2">
+              <input
+                className="form-input flex-1"
+                value={item.role}
+                onChange={(e) => updateStruktur(idx, "role", e.target.value)}
+                placeholder="Peran (Kepala Desa...)"
+              />
+              <input
+                className="form-input flex-[2]"
+                value={item.name}
+                onChange={(e) => updateStruktur(idx, "name", e.target.value)}
+                placeholder="Nama"
+              />
+              <button
+                type="button"
+                onClick={() => removeStruktur(idx)}
+                className="p-2 text-red-500 hover:text-red-700 transition-colors"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      <div className="form-group">
+        <label className="flex items-center gap-3">
+          Tugas dan Fungsi
+          <button
+            type="button"
+            onClick={addTugas}
+            className="inline-flex items-center gap-1 text-xs font-medium text-blue-600 hover:text-blue-700 transition-colors"
+          >
+            <Plus size={14} />
+            Tambah
+          </button>
+        </label>
+        <div className="space-y-2 mt-2">
+          {editor.data.tugasFungsi.length === 0 && (
+            <p className="text-[12px] text-muted-foreground">
+              Belum ada entri tugas dan fungsi. Klik &ldquo;Tambah&rdquo; untuk
+              menambahkan.
+            </p>
+          )}
+          {editor.data.tugasFungsi.map((item, idx) => (
+            <div key={idx} className="flex items-start gap-2">
+              <input
+                className="form-input flex-1"
+                value={item.jabatan}
+                onChange={(e) => updateTugas(idx, "jabatan", e.target.value)}
+                placeholder="Jabatan (Kepala Desa...)"
+              />
+              <textarea
+                className="form-textarea flex-[2]"
+                value={item.tugas}
+                onChange={(e) => updateTugas(idx, "tugas", e.target.value)}
+                rows={2}
+                placeholder="Deskripsi tugas"
+              />
+              <button
+                type="button"
+                onClick={() => removeTugas(idx)}
+                className="p-2 text-red-500 hover:text-red-700 transition-colors"
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
 
       <label className="block font-semibold text-sm mb-3 text-dark-brown">

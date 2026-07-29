@@ -5,6 +5,7 @@ export interface SessionUser {
   email: string;
   name: string;
   role: UserRole;
+  tokenVersion?: number;
 }
 
 export interface Session {

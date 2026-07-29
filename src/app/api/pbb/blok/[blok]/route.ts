@@ -1,10 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth/guards";
+import { requireRole, getAssignedBlok } from "@/lib/auth/guards";
 import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
 import { prisma } from "@/lib/prisma";
 import { BLOK_TO_DUSUN } from "@/lib/constants";
-
-const BLOK_REGEX = /^(00[1-9]|01[0-3])$/;
 
 export async function GET(
   req: NextRequest,
@@ -18,10 +16,18 @@ export async function GET(
   try {
     const { blok } = await params;
 
-    if (!BLOK_REGEX.test(blok)) {
+    if (!(blok in BLOK_TO_DUSUN)) {
       return NextResponse.json(
         { error: `Blok ${blok} tidak valid. Gunakan 001-013.` },
         { status: 400 },
+      );
+    }
+
+    const assignedBlok = getAssignedBlok(auth);
+    if (assignedBlok && blok !== assignedBlok) {
+      return NextResponse.json(
+        { error: "Anda tidak memiliki akses ke blok ini." },
+        { status: 403 },
       );
     }
 

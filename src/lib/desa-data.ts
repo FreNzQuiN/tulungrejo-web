@@ -13,18 +13,18 @@ export const VILLAGE_PROFILE_DATA = {
     "Membangun dan mendorong majunya bidang pendidikan baik formal maupun informal yang mudah diakses dan dinikmati seluruh warga masyarakat tanpa terkecuali yang mampu menghasilkan insan intelektual, inovatif dan enterpreneur (wirausahawan) dengan pembangunan sarana dan prasarana yang memadai.",
     "Membangun dan mendorong usaha-usaha untuk pengembangan dan optimalisasi sektor pertanian, perkebunan, peternakan, dan perikanan, baik tahap produksi maupun tahap pengolahan hasilnya.",
   ],
+  strukturOrganisasiImage: null,
   strukturOrganisasi: [
-    { role: "Kepala Desa", name: "Ir. H. Sulaiman Basri" },
-    { role: "Sekretaris Desa", name: "Dewi Anggraini, S.E." },
-    { role: "Kaur Perencanaan", name: "Novi Fitriani" },
-    { role: "Kaur Keuangan", name: "Rahmat Hidayat" },
-    { role: "Kaur Tata Usaha dan Umum", name: "Agus Prasetyo" },
-    { role: "Kasi Pemerintahan", name: "Bambang Triyono" },
-    { role: "Kasi Pelayanan", name: "Siti Kurniati" },
-    { role: "Kasi Kesejahteraan", name: "Fajar Nugroho, S.Pd." },
-    { role: "Kamituwo", name: "Slamet Riyadi" },
-    { role: "Kepala Dusun Tulungrejo", name: "Jatmiko Wibowo" },
-    { role: "Kepala Dusun Sidodadi", name: "Subagyo" },
+    { role: "Kepala Desa", name: "Tarmuji Priono" },
+    { role: "Sekretaris Desa", name: "Sunaryanto" },
+    { role: "Kasi Pemerintahan", name: "Warsi" },
+    { role: "Kasi Pelayanan", name: "Widodo" },
+    { role: "Kasi Kesejahteraan", name: "Subandi" },
+    { role: "Kaur Perencanaan", name: "Eko Arif Mustofa" },
+    { role: "Kaur Keuangan", name: "Rushadi" },
+    { role: "Kaur Tata Usaha dan Umum", name: "Dadang Sulistiono" },
+    { role: "Kamituwo I", name: "Joko Susanto" },
+    { role: "Kamituwo II", name: "Sutik" },
   ],
   tugasFungsi: [
     {
@@ -68,7 +68,12 @@ export const VILLAGE_PROFILE_DATA = {
         "Kepala seksi kesejahteraan mempunyai fungsi melaksanakan pembangunan sarana prasarana perdesaan, pembangunan bidang pendidikan, kesehatan, dan tugas sosialisasi serta motivasi masyarakat di bidang budaya, ekonomi, politik, lingkungan hidup, pemberdayaan keluarga, pemuda, olahraga, dan karang taruna.",
     },
     {
-      jabatan: "Kamituwo",
+      jabatan: "Kamituwo I",
+      tugas:
+        "Kamituwo berkedudukan sebagai unsur satuan tugas kewilayahan yang bertugas membantu Kepala Desa dalam pelaksanaan tugasnya di wilayahnya.",
+    },
+    {
+      jabatan: "Kamituwo II",
       tugas:
         "Kamituwo berkedudukan sebagai unsur satuan tugas kewilayahan yang bertugas membantu Kepala Desa dalam pelaksanaan tugasnya di wilayahnya.",
     },
@@ -97,15 +102,29 @@ export const STATS_SEED = {
   perempuan: 1612,
 };
 
+export const HOMEPAGE_CONTENT = {
+  heroTitle: "Selamat Datang di Desa Tulungrejo",
+  heroSubtitle: "Portal Resmi Pemerintah Desa",
+  heroDescription:
+    "Pusat informasi dan kegiatan kemasyarakatan Desa Tulungrejo, Kecamatan Wates, Kab. Blitar.",
+  aboutTitle: "Mengenal Desa Tulungrejo",
+  aboutParagraphs: [
+    "Desa Tulungrejo secara administratif terletak di Kecamatan Wates, Kabupaten Blitar, Jawa Timur. Dikelilingi oleh perbukitan dan kawasan hutan yang masih asri, desa ini memiliki tanah yang subur dan potensi sumber daya alam yang melimpah untuk dikembangkan.",
+    "Mayoritas penduduk Desa Tulungrejo menggantungkan hidupnya pada sektor pertanian, peternakan, serta pengembangan pariwisata alam berbasis potensi lokal yang terus berkembang pesat dari tahun ke tahun. Beberapa potensi wisata alam seperti hutan pinus dan air terjun menjadi daya tarik utama bagi wisatawan yang berkunjung.",
+    "Melalui komitmen gotong royong, tata pemerintahan desa Tulungrejo senantiasa mengedepankan prinsip keterbukaan informasi, tertib administrasi perpajakan (PBB), serta peningkatan mutu SDM warga demi kemandirian dan kesejahteraan bersama.",
+  ],
+  googleMapsUrl:
+    "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d31582!2d112.329738!3d-8.269371!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sDesa%20Tulungrejo%2C%20Wates%2C%20Blitar%2C%20Jawa%20Timur!5e0!3m2!1sid!2sid!4v1",
+};
+
 export const CONTACT_INFO = {
   address: "Desa Tulungrejo, Kecamatan Wates, Kabupaten Blitar, Jawa Timur",
   phone: "085791371559",
-  email: "tulungrejo.gandusari.pemdes@gmail.com",
+  email: "pemdes.tulungrejo@gmail.com",
   jamKerja: "Senin-Jumat 08:00-16:00",
   jamLibur: "Sabtu-Minggu",
   socialMedia: [
     { platform: "Facebook", url: "#" },
     { platform: "YouTube", url: "#" },
   ],
-  coordinates: [-8.26937, 112.32974] as [number, number],
 };

@@ -13,8 +13,12 @@ export async function GET(req: NextRequest) {
     });
     if (!stats) {
       return NextResponse.json(
-        { error: "Statistik tidak ditemukan" },
-        { status: 404 },
+        { jumlahKK: 0, jumlahPenduduk: 0, lakiLaki: 0, perempuan: 0 },
+        {
+          headers: {
+            "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+          },
+        },
       );
     }
     return NextResponse.json(
@@ -45,7 +49,12 @@ export async function PUT(req: NextRequest) {
   const auth = await requireRole(["jurnalis"]);
   if ("error" in auth) return auth.error;
 
-  const body = await req.json();
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Body tidak valid" }, { status: 400 });
+  }
   const { jumlahKK, jumlahPenduduk, lakiLaki, perempuan } = body;
 
   if (
@@ -61,12 +70,20 @@ export async function PUT(req: NextRequest) {
   }
   if (
     typeof jumlahKK !== "number" ||
+    !Number.isFinite(jumlahKK) ||
+    jumlahKK < 0 ||
     typeof jumlahPenduduk !== "number" ||
+    !Number.isFinite(jumlahPenduduk) ||
+    jumlahPenduduk < 0 ||
     typeof lakiLaki !== "number" ||
-    typeof perempuan !== "number"
+    !Number.isFinite(lakiLaki) ||
+    lakiLaki < 0 ||
+    typeof perempuan !== "number" ||
+    !Number.isFinite(perempuan) ||
+    perempuan < 0
   ) {
     return NextResponse.json(
-      { error: "Semua field harus berupa angka" },
+      { error: "Semua field harus berupa angka valid" },
       { status: 400 },
     );
   }
@@ -76,7 +93,10 @@ export async function PUT(req: NextRequest) {
       orderBy: { id: "asc" },
     });
     if (!existing) {
-      return NextResponse.json({ error: "Stats not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Statistik tidak ditemukan" },
+        { status: 404 },
+      );
     }
 
     const updated = await prisma.villageStats.update({

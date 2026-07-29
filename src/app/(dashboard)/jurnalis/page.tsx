@@ -1,9 +1,10 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback, useEffect } from "react";
 import dynamic from "next/dynamic";
 import { useAuth } from "@/components/providers";
 import { Skeleton } from "@/components/ui/skeleton";
+import { AccessDenied } from "@/components/auth/access-denied";
 import { CMSLayout } from "@/components/jurnalis/cms-layout";
 import { ArticleManagerSkeleton } from "@/components/jurnalis/article-manager";
 
@@ -23,6 +24,20 @@ const StatsEditor = dynamic(
 const ProfileEditor = dynamic(
   () =>
     import("@/components/jurnalis/profile-editor").then((m) => m.ProfileEditor),
+  { loading: () => <Skeleton className="h-64 w-full rounded-lg" /> },
+);
+
+const ContactEditor = dynamic(
+  () =>
+    import("@/components/jurnalis/contact-editor").then((m) => m.ContactEditor),
+  { loading: () => <Skeleton className="h-64 w-full rounded-lg" /> },
+);
+
+const HomepageEditor = dynamic(
+  () =>
+    import("@/components/jurnalis/homepage-editor").then(
+      (m) => m.HomepageEditor,
+    ),
   { loading: () => <Skeleton className="h-64 w-full rounded-lg" /> },
 );
 
@@ -78,22 +93,63 @@ function JurnalisSkeleton() {
 export default function JurnalisPage() {
   const { user: sessionUser, isLoading: statusLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("articles");
+  const [dirtyTabs, setDirtyTabs] = useState<Record<string, boolean>>({});
+  const handleDirtyChange = useCallback(
+    (tab: string) => (dirty: boolean) => {
+      setDirtyTabs((prev) => ({ ...prev, [tab]: dirty }));
+    },
+    [],
+  );
+
+  useEffect(() => {
+    const hasDirty = Object.values(dirtyTabs).some(Boolean);
+    if (hasDirty) {
+      const handler = (e: BeforeUnloadEvent) => {
+        e.preventDefault();
+      };
+      window.addEventListener("beforeunload", handler);
+      return () => window.removeEventListener("beforeunload", handler);
+    }
+  }, [dirtyTabs]);
+
+  function handleTabChange(tab: string) {
+    if (tab === activeTab) return;
+    if (dirtyTabs[activeTab]) {
+      const confirmed = window.confirm(
+        "Anda memiliki perubahan yang belum disimpan. Yakin ingin meninggalkan halaman ini?",
+      );
+      if (!confirmed) return;
+    }
+    setActiveTab(tab);
+  }
 
   const renderContent = () => {
     switch (activeTab) {
       case "articles":
-        return <ArticleManager />;
+        return (
+          <ArticleManager onDirtyStateChange={handleDirtyChange("articles")} />
+        );
+      case "homepage":
+        return <HomepageEditor onDirtyChange={handleDirtyChange("homepage")} />;
       case "stats":
-        return <StatsEditor />;
+        return <StatsEditor onDirtyChange={handleDirtyChange("stats")} />;
       case "profile":
-        return <ProfileEditor />;
+        return <ProfileEditor onDirtyChange={handleDirtyChange("profile")} />;
+      case "contact":
+        return <ContactEditor onDirtyChange={handleDirtyChange("contact")} />;
       default:
-        return <ArticleManager />;
+        return (
+          <ArticleManager onDirtyStateChange={handleDirtyChange("articles")} />
+        );
     }
   };
 
   if (statusLoading) {
     return <JurnalisSkeleton />;
+  }
+
+  if (sessionUser?.role !== "jurnalis") {
+    return <AccessDenied message="Halaman ini hanya untuk Jurnalis." />;
   }
 
   return (
@@ -108,7 +164,7 @@ export default function JurnalisPage() {
         </div>
       </div>
       <div className="container">
-        <CMSLayout activeTab={activeTab} onTabChange={setActiveTab}>
+        <CMSLayout activeTab={activeTab} onTabChange={handleTabChange}>
           {renderContent()}
         </CMSLayout>
       </div>

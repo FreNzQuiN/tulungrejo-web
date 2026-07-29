@@ -1,8 +1,18 @@
 import { cacheTag, cacheLife } from "next/cache";
 import { prisma } from "./prisma";
 import { safeJsonParse } from "./utils";
-import { STATS_SEED, VILLAGE_PROFILE_DATA } from "./desa-data";
-import type { Administratif, VillageProfile } from "./types";
+import {
+  CONTACT_INFO,
+  HOMEPAGE_CONTENT,
+  STATS_SEED,
+  VILLAGE_PROFILE_DATA,
+} from "./desa-data";
+import type {
+  Administratif,
+  ContactInfo,
+  HomepageContent,
+  VillageProfile,
+} from "./types";
 
 export interface VillageStatsData {
   jumlahKK: number;
@@ -53,6 +63,8 @@ async function fetchVillageProfile(): Promise<VillageProfile> {
       visi: VILLAGE_PROFILE_DATA.visi,
       misi: VILLAGE_PROFILE_DATA.misi,
       strukturOrganisasi: VILLAGE_PROFILE_DATA.strukturOrganisasi,
+      strukturOrganisasiImage:
+        VILLAGE_PROFILE_DATA.strukturOrganisasiImage ?? undefined,
       tugasFungsi: VILLAGE_PROFILE_DATA.tugasFungsi,
       administratif: VILLAGE_PROFILE_DATA.administratif,
     };
@@ -64,6 +76,7 @@ async function fetchVillageProfile(): Promise<VillageProfile> {
       dbProfile.strukturOrganisasi,
       VILLAGE_PROFILE_DATA.strukturOrganisasi,
     ),
+    strukturOrganisasiImage: dbProfile.strukturOrganisasiImage ?? undefined,
     tugasFungsi: safeJsonParse<{ jabatan: string; tugas: string }[]>(
       dbProfile.tugasFungsi,
       VILLAGE_PROFILE_DATA.tugasFungsi,
@@ -87,4 +100,78 @@ async function getVillageProfileCached(): Promise<VillageProfile> {
   cacheTag("village-profile");
   cacheLife("hours");
   return fetchVillageProfile();
+}
+
+async function fetchContactInfo(): Promise<ContactInfo> {
+  const db = await prisma.contactInfo.findFirst({
+    orderBy: { id: "asc" },
+  });
+  if (!db) {
+    console.warn(
+      "[desa-queries] getContactInfo: DB kosong, fallback ke CONTACT_INFO",
+    );
+    return CONTACT_INFO;
+  }
+  return {
+    address: db.address,
+    phone: db.phone,
+    email: db.email,
+    jamKerja: db.jamKerja,
+    jamLibur: db.jamLibur,
+    socialMedia: safeJsonParse<{ platform: string; url: string }[]>(
+      db.socialMedia,
+      CONTACT_INFO.socialMedia,
+    ),
+  };
+}
+
+export async function getContactInfo(): Promise<ContactInfo> {
+  if (process.env.NODE_ENV === "production") {
+    return getContactInfoCached();
+  }
+  return fetchContactInfo();
+}
+
+async function getContactInfoCached(): Promise<ContactInfo> {
+  "use cache: remote";
+  cacheTag("contact-info");
+  cacheLife("hours");
+  return fetchContactInfo();
+}
+
+async function fetchHomepageContent(): Promise<HomepageContent> {
+  const db = await prisma.homepageContent.findFirst({
+    orderBy: { id: "asc" },
+  });
+  if (!db) {
+    console.warn(
+      "[desa-queries] getHomepageContent: DB kosong, fallback ke HOMEPAGE_CONTENT",
+    );
+    return HOMEPAGE_CONTENT;
+  }
+  return {
+    heroTitle: db.heroTitle,
+    heroSubtitle: db.heroSubtitle,
+    heroDescription: db.heroDescription,
+    aboutTitle: db.aboutTitle,
+    aboutParagraphs: safeJsonParse<string[]>(
+      db.aboutParagraphs,
+      HOMEPAGE_CONTENT.aboutParagraphs,
+    ),
+    googleMapsUrl: db.googleMapsUrl,
+  };
+}
+
+export async function getHomepageContent(): Promise<HomepageContent> {
+  if (process.env.NODE_ENV === "production") {
+    return getHomepageContentCached();
+  }
+  return fetchHomepageContent();
+}
+
+async function getHomepageContentCached(): Promise<HomepageContent> {
+  "use cache: remote";
+  cacheTag("homepage-content");
+  cacheLife("hours");
+  return fetchHomepageContent();
 }

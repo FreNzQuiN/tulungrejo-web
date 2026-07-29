@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { useAuth } from "@/components/providers";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Search, ChevronLeft, ChevronRight } from "lucide-react";
@@ -61,8 +60,6 @@ export default function PBBPage() {
   const isKades = role === "kepala_desa";
   const canAccess = isPamong || isKades;
 
-  const [selectedBlok, setSelectedBlok] = useState("");
-
   const {
     fields,
     loading,
@@ -80,6 +77,7 @@ export default function PBBPage() {
     setSelectedYear,
     setPage,
     togglePayment,
+    refreshFields,
   } = usePbbFields(canAccess, authLoading);
 
   if (authLoading) {
@@ -112,9 +110,9 @@ export default function PBBPage() {
               <label className="mb-1.5 block text-[11px] font-bold uppercase text-muted-foreground">
                 Pilih Blok
               </label>
-              <BlokSelector value={selectedBlok} onChange={setSelectedBlok} />
+              <BlokSelector value={blokFilter} onChange={setBlokFilter} />
             </div>
-            <BlokViewer blok={selectedBlok} />
+            <BlokViewer blok={blokFilter} />
           </div>
 
           <div className="map-control-panel">
@@ -129,7 +127,7 @@ export default function PBBPage() {
                   Belum
                 </span>
               </div>
-              {isPamong && <ImportButton />}
+              {isPamong && <ImportButton onImportSuccess={refreshFields} />}
             </div>
 
             {selectedYear && (
@@ -229,9 +227,11 @@ export default function PBBPage() {
 
             {totalPages > 1 && (
               <div className="flex items-center justify-between px-1 py-3">
-                <span className="text-xs text-muted-foreground">
-                  {total} bidang
-                </span>
+                {total > 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {total} bidang
+                  </span>
+                )}
                 <div className="flex items-center gap-2">
                   <button
                     onClick={() => setPage(page - 1)}
@@ -253,6 +253,13 @@ export default function PBBPage() {
                     <ChevronRight size={14} />
                   </button>
                 </div>
+              </div>
+            )}
+            {totalPages <= 1 && total > 0 && (
+              <div className="flex items-center justify-between px-1 py-3">
+                <span className="text-xs text-muted-foreground">
+                  {total} bidang
+                </span>
               </div>
             )}
           </div>

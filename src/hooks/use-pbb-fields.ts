@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { type FieldView, PAYMENT_STATUS } from "@/lib/types";
 import { toast } from "sonner";
+import { getCurrentTaxYear } from "@/lib/pbb-tax-year";
 
 const PAGE_SIZE = 50;
 
@@ -15,14 +16,15 @@ export interface UsePbbFieldsReturn {
   search: string;
   blokFilter: string;
   statusFilter: string;
-  selectedYear: number | null;
-  toggling: string | null;
+  selectedYear: number;
+  toggling: Set<string>;
   setSearch: (value: string) => void;
   setBlokFilter: (value: string) => void;
   setStatusFilter: (value: string) => void;
-  setSelectedYear: (value: number | null) => void;
+  setSelectedYear: (value: number) => void;
   setPage: (value: number) => void;
   togglePayment: (fieldId: string) => Promise<void>;
+  refreshFields: () => void;
 }
 
 export function usePbbFields(
@@ -36,8 +38,11 @@ export function usePbbFields(
   const [search, setSearchState] = useState("");
   const [blokFilter, setBlokFilterState] = useState("");
   const [statusFilter, setStatusFilterState] = useState("");
-  const [selectedYear, setSelectedYearState] = useState<number | null>(null);
-  const [toggling, setToggling] = useState<string | null>(null);
+  const [selectedYear, setSelectedYearState] =
+    useState<number>(getCurrentTaxYear());
+  const [toggling, setToggling] = useState<Set<string>>(new Set());
+  const togglingRef = useRef<Set<string>>(new Set());
+  const [refreshKey, setRefreshKey] = useState(0);
   const abortRef = useRef<AbortController | null>(null);
 
   const setSearch = useCallback((value: string) => {
@@ -55,13 +60,17 @@ export function usePbbFields(
     setPageState(0);
   }, []);
 
-  const setSelectedYear = useCallback((value: number | null) => {
+  const setSelectedYear = useCallback((value: number) => {
     setSelectedYearState(value);
     setPageState(0);
   }, []);
 
   const setPage = useCallback((value: number) => {
     setPageState(value);
+  }, []);
+
+  const refreshFields = useCallback(() => {
+    setRefreshKey((k) => k + 1);
   }, []);
 
   const fetchFields = useCallback(async () => {
@@ -84,12 +93,16 @@ export function usePbbFields(
       const res = await fetch(`/api/pbb/list?${params}`, {
         signal: controller.signal,
       });
+      if (!res.ok) {
+        const errBody = await res.json().catch(() => ({}));
+        throw new Error(errBody.error || "Gagal memuat data");
+      }
       const body = await res.json();
       const items = Array.isArray(body) ? (body as FieldView[]) : body.data;
       setFields(Array.isArray(items) ? items : []);
       if (body.total != null) setTotal(body.total);
       if (body.tahun != null) {
-        setSelectedYearState((prev) => prev ?? body.tahun);
+        setSelectedYearState(body.tahun);
       }
     } catch (err) {
       if (err instanceof Error && err.name === "AbortError") return;
@@ -102,20 +115,44 @@ export function usePbbFields(
     }
   }, [blokFilter, search, selectedYear, statusFilter, canAccess, page]);
 
+  const fetchRef = useRef(fetchFields);
+  useEffect(() => {
+    fetchRef.current = fetchFields;
+  }, [fetchFields]);
+
   useEffect(() => {
     if (authLoading || !canAccess) return;
-    const id = setTimeout(() => fetchFields(), 300);
+    fetchRef.current();
+  }, [
+    authLoading,
+    canAccess,
+    blokFilter,
+    statusFilter,
+    selectedYear,
+    page,
+    refreshKey,
+  ]);
+
+  useEffect(() => {
+    if (authLoading || !canAccess) return;
+    const id = setTimeout(() => fetchRef.current(), 300);
     return () => clearTimeout(id);
-  }, [authLoading, canAccess, blokFilter, statusFilter, search, fetchFields]);
+  }, [search, authLoading, canAccess]);
 
   async function togglePayment(fieldId: string) {
-    setToggling(fieldId);
-    const year = selectedYear ?? new Date().getFullYear();
+    if (togglingRef.current.has(fieldId)) return;
+    // Validate year before setting any loading state
+    if (selectedYear !== getCurrentTaxYear()) {
+      toast.error("Hanya tahun berjalan yang dapat diubah.");
+      return;
+    }
+    togglingRef.current.add(fieldId);
+    setToggling((prev) => new Set(prev).add(fieldId));
     try {
       const res = await fetch("/api/pbb/toggle", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fieldId, year }),
+        headers: { "Content-Type": "application/json", "X-CSRF": "1" },
+        body: JSON.stringify({ fieldId, year: selectedYear }),
       });
       if (res.ok) {
         const data = await res.json().catch(() => ({}));
@@ -141,7 +178,12 @@ export function usePbbFields(
       console.error("togglePayment error:", err);
       toast.error("Gagal mengubah status pembayaran.");
     } finally {
-      setToggling(null);
+      togglingRef.current.delete(fieldId);
+      setToggling((prev) => {
+        const next = new Set(prev);
+        next.delete(fieldId);
+        return next;
+      });
     }
   }
 
@@ -164,5 +206,6 @@ export function usePbbFields(
     setSelectedYear,
     setPage,
     togglePayment,
+    refreshFields,
   };
 }

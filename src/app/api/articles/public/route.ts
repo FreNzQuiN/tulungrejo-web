@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAllPublishedArticles } from "@/lib/article-queries";
+import { getAllPublishedArticlesWithMeta } from "@/lib/article-queries";
 import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
 
 export async function GET(req: NextRequest) {
@@ -10,17 +10,32 @@ export async function GET(req: NextRequest) {
     const limitParam = searchParams.get("limit");
     const offsetParam = searchParams.get("offset");
     const take = limitParam
-      ? Math.max(1, Math.min(100, parseInt(limitParam, 10)))
+      ? Math.max(1, Math.min(100, parseInt(limitParam, 10) || 10))
       : 10;
-    const skip = offsetParam ? Math.max(0, parseInt(offsetParam, 10)) : 0;
+    const skip = offsetParam ? Math.max(0, parseInt(offsetParam, 10) || 0) : 0;
 
-    const articles = await getAllPublishedArticles(take, skip);
+    const { data: articles, total } = await getAllPublishedArticlesWithMeta(
+      take,
+      skip,
+    );
+    const page = Math.floor(skip / take) + 1;
 
-    return NextResponse.json(articles, {
-      headers: {
-        "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+    return NextResponse.json(
+      {
+        data: articles,
+        meta: {
+          total,
+          page,
+          pageSize: take,
+          hasMore: skip + take < total,
+        },
       },
-    });
+      {
+        headers: {
+          "Cache-Control": "public, s-maxage=300, stale-while-revalidate=600",
+        },
+      },
+    );
   } catch (err) {
     console.error("Public articles fetch error:", err);
     return NextResponse.json(

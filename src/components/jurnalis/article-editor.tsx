@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { CATEGORIES, MAX_IMAGE_SIZE } from "@/lib/constants";
 import { resizeImage } from "@/lib/client-utils";
 import { MarkdownEditor } from "@/components/jurnalis/markdown-editor";
+import { toKebab } from "@/lib/utils";
 import type { ArticleForm } from "./article-manager";
 
 interface ArticleEditorProps {
@@ -15,6 +16,7 @@ interface ArticleEditorProps {
   imagePreview: string | null;
   saving: boolean;
   editingSlug: string | null;
+  hasChanges: boolean;
   setForm: React.Dispatch<React.SetStateAction<ArticleForm>>;
   setImagePreview: React.Dispatch<React.SetStateAction<string | null>>;
   onTitleChange: (title: string) => void;
@@ -27,6 +29,7 @@ export function ArticleEditor({
   imagePreview,
   saving,
   editingSlug,
+  hasChanges,
   setForm,
   setImagePreview,
   onTitleChange,
@@ -34,6 +37,7 @@ export function ArticleEditor({
   onCancel,
 }: ArticleEditorProps) {
   const [uploading, setUploading] = useState(false);
+  const [slugManuallyEdited, setSlugManuallyEdited] = useState(false);
 
   async function handleImagePick(e: ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -73,12 +77,45 @@ export function ArticleEditor({
         <input
           className="form-input"
           value={form.title}
-          onChange={(e) =>
-            editingSlug
-              ? setForm((p) => ({ ...p, title: e.target.value }))
-              : onTitleChange(e.target.value)
-          }
+          maxLength={255}
+          onChange={(e) => {
+            const title = e.target.value;
+            if (editingSlug) {
+              setForm((p) => ({ ...p, title }));
+            } else {
+              setForm((p) => ({
+                ...p,
+                title,
+                slug: slugManuallyEdited ? p.slug : toKebab(title),
+              }));
+            }
+          }}
           placeholder="Masukkan judul artikel"
+        />
+      </div>
+
+      <div className="form-group">
+        <label>
+          Slug
+          {!slugManuallyEdited && form.title && !editingSlug && (
+            <span className="text-[11px] text-muted-foreground ml-2">
+              (otomatis)
+            </span>
+          )}
+        </label>
+        <input
+          className="form-input font-mono text-sm"
+          value={form.slug}
+          onChange={(e) => {
+            const val = e.target.value;
+            setForm((p) => ({ ...p, slug: val }));
+            if (val) {
+              setSlugManuallyEdited(true);
+            } else {
+              setSlugManuallyEdited(false);
+            }
+          }}
+          placeholder={editingSlug ? form.slug : "slug-artikel"}
         />
       </div>
 
@@ -172,7 +209,7 @@ export function ArticleEditor({
           <X size={16} />
           Batal
         </Button>
-        <Button size="sm" onClick={onSave} disabled={saving}>
+        <Button size="sm" onClick={onSave} disabled={saving || !hasChanges}>
           <Save size={16} />
           {saving ? "Menyimpan..." : editingSlug ? "Perbarui" : "Terbitkan"}
         </Button>

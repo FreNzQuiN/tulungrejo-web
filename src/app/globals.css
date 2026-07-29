@@ -83,29 +83,32 @@
   --color-chart-3: var(--chart-3);
   --color-chart-4: var(--chart-4);
   --color-chart-5: var(--chart-5);
-  --color-primary-bg: var(--color-primary-bg);
-  --color-secondary-tan: var(--color-secondary-tan);
-  --color-dark-brown: var(--color-dark-brown);
-  --color-footer-bg: var(--color-footer-bg);
-  --color-white: var(--color-white);
-  --color-dark: var(--color-dark);
-  --color-success: var(--color-success);
-  --color-success-bg: var(--color-success-bg);
-  --color-danger: var(--color-danger);
-  --color-danger-bg: var(--color-danger-bg);
-  --color-accent-gold: var(--color-accent-gold);
-  --color-chart-blue: var(--color-chart-blue);
-  --color-chart-gold: var(--color-chart-gold);
+  --color-primary-bg: #f0f0f0;
+  --color-secondary-tan: #05595b;
+  --color-dark-brown: #062c30;
+  --color-footer-bg: #062c30;
+  --color-white: var(--color-white, #ffffff);
+  --color-dark: var(--color-dark, #1e1711);
+  --color-success: var(--color-success, #2e7d32);
+  --color-success-bg: var(--color-success-bg, #e8f5e9);
+  --color-danger: var(--color-danger, #c62828);
+  --color-danger-bg: var(--color-danger-bg, #ffebee);
+  --color-accent-gold: var(--color-accent-gold, #d4af37);
+  --color-chart-blue: var(--color-chart-blue, #4f709c);
+  --color-chart-gold: var(--color-chart-gold, #e5d283);
   --radius-sm: calc(var(--radius) - 4px);
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --font-sans: var(--font-body);
+  --font-mono:
+    ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, "Liberation Mono",
+    monospace;
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer base {
+  body {
+    background: var(--background);
+    color: var(--foreground);
+  }
 }

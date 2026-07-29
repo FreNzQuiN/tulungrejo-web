@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/components/providers";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -9,7 +9,7 @@ import type { RealisasiView } from "@/lib/types";
 import { AccessDenied } from "@/components/auth/access-denied";
 import { RealisasiSummaryCard } from "@/components/kades/realisasi-summary-card";
 import { StatCard } from "@/components/kades/stat-card";
-import { getYearOptions } from "@/lib/pbb-tax-year";
+import { getYearOptions, getCurrentTaxYear } from "@/lib/pbb-tax-year";
 import { formatCurrency } from "@/lib/utils";
 
 function formatDate(iso: string): string {
@@ -54,19 +54,25 @@ export default function KadesDashboard() {
   const { user: sessionUser, isLoading: authLoading } = useAuth();
   const [data, setData] = useState<RealisasiView | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedYear, setSelectedYear] = useState<number | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [retryKey, setRetryKey] = useState(0);
+  const [selectedYear, setSelectedYear] = useState<number>(getCurrentTaxYear());
+  const abortRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
     if (sessionUser?.role !== "kepala_desa") return;
 
-    const url = selectedYear
-      ? `/api/pbb/realisasi?tahun=${selectedYear}`
-      : "/api/pbb/realisasi";
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
 
-    fetch(url)
+    const url = `/api/pbb/realisasi?tahun=${selectedYear}`;
+
+    fetch(url, { signal: controller.signal })
       .then((res) => {
         if (res.status === 404) {
+          setError(null);
           setData(null);
           return null;
         }
@@ -75,17 +81,19 @@ export default function KadesDashboard() {
       })
       .then((json: RealisasiView | null) => {
         if (json) {
+          setError(null);
           setData(json);
-          if (json.tahun != null && selectedYear === null) {
-            setSelectedYear(json.tahun);
-          }
         }
       })
       .catch((err) => {
-        toast.error(err.message);
+        if (err instanceof Error && err.name === "AbortError") return;
+        setError(err instanceof Error ? err.message : "Terjadi kesalahan");
+        toast.error(err instanceof Error ? err.message : "Terjadi kesalahan");
       })
-      .finally(() => setLoading(false));
-  }, [sessionUser, authLoading, selectedYear]);
+      .finally(() => {
+        if (!controller.signal.aborted) setLoading(false);
+      });
+  }, [sessionUser?.id, sessionUser?.role, authLoading, selectedYear, retryKey]);
 
   const yearOptions = getYearOptions();
 
@@ -95,7 +103,7 @@ export default function KadesDashboard() {
         Tahun:
       </label>
       <select
-        value={selectedYear ?? ""}
+        value={selectedYear}
         onChange={(e) => {
           const val = e.target.value;
           if (val) setSelectedYear(Number(val));
@@ -155,6 +163,30 @@ export default function KadesDashboard() {
     );
   }
 
+  if (error) {
+    return (
+      <div>
+        {pageHeader}
+        <div className="container">
+          {yearSelector}
+          <div className="glass-panel p-8 text-center">
+            <p className="text-red-600 font-semibold mb-2">Gagal memuat data</p>
+            <p className="text-muted-foreground text-sm mb-4">{error}</p>
+            <button
+              onClick={() => {
+                setError(null);
+                setRetryKey((k) => k + 1);
+              }}
+              className="btn btn-primary btn-sm"
+            >
+              Coba Lagi
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (!data) {
     return (
       <div>
@@ -163,9 +195,7 @@ export default function KadesDashboard() {
           {yearSelector}
           <div className="glass-panel p-8 text-center">
             <p className="text-muted-foreground">
-              {selectedYear
-                ? `Belum ada data realisasi untuk tahun ${selectedYear}.`
-                : "Belum ada data realisasi PBB. Silakan impor data terlebih dahulu."}
+              {`Belum ada data realisasi untuk tahun ${selectedYear}.`}
             </p>
           </div>
         </div>

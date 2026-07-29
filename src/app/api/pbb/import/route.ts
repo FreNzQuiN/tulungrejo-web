@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { requireRole } from "@/lib/auth/guards";
+import { requireRole, getAssignedBlok } from "@/lib/auth/guards";
 import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
 import { importExcel } from "@/lib/pbb-import";
 
@@ -8,6 +8,7 @@ export async function POST(req: NextRequest) {
 
   const auth = await requireRole(["pamong_pajak"]);
   if ("error" in auth) return auth.error;
+  const assignedBlok = getAssignedBlok(auth);
 
   try {
     const formData = await req.formData();
@@ -46,7 +47,7 @@ export async function POST(req: NextRequest) {
       "text/plain",
     ];
 
-    if (file.type && !ALLOWED_MIME_TYPES.includes(file.type)) {
+    if (!ALLOWED_MIME_TYPES.includes(file.type)) {
       return NextResponse.json(
         { error: "Format file tidak didukung." },
         { status: 400 },
@@ -54,7 +55,11 @@ export async function POST(req: NextRequest) {
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-    const result = await importExcel(buffer, file.name);
+    const result = await importExcel(
+      buffer,
+      file.name,
+      assignedBlok ?? undefined,
+    );
 
     return NextResponse.json(result);
   } catch (err) {

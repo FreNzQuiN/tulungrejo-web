@@ -4,12 +4,12 @@ import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
 import { findFields } from "@/lib/pbb-queries";
 import { sanitizeSearch } from "@/lib/utils";
 
-const MAX_TAKE = 2000;
+const MAX_TAKE = 500;
 
 export async function GET(req: NextRequest) {
   if (!(await checkApiRateLimit(req))) return rateLimitResponse();
 
-  const auth = await requireRole(["pamong_pajak"]);
+  const auth = await requireRole(["pamong_pajak", "kepala_desa"]);
   if ("error" in auth) return auth.error;
 
   try {
@@ -21,7 +21,7 @@ export async function GET(req: NextRequest) {
       Number(searchParams.get("take")) || MAX_TAKE,
       MAX_TAKE,
     );
-    const skip = Number(searchParams.get("skip")) || 0;
+    const skip = Math.max(0, Number(searchParams.get("skip")) || 0);
 
     const assignedBlok = await getAssignedBlok(auth);
     if (assignedBlok) blok = assignedBlok;
@@ -41,8 +41,8 @@ export async function GET(req: NextRequest) {
         blok: f.blok,
         noBidang: f.noBidang,
         dusun: f.dusun,
-        landArea: f.landArea ? Number(f.landArea) : null,
-        buildingArea: f.buildingArea ? Number(f.buildingArea) : null,
+        landArea: f.landArea != null ? Number(f.landArea) : null,
+        buildingArea: f.buildingArea != null ? Number(f.buildingArea) : null,
         buildingCount: f.buildingCount,
         znt: f.znt,
         jenisTanah: f.jenisTanah,

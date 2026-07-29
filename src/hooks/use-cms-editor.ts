@@ -42,13 +42,16 @@ export function useCmsEditor<T>(
   initialData: T,
   loadErrorMsg: string,
   transformResponse?: (raw: unknown) => T,
+  onDirtyChange?: (dirty: boolean) => void,
 ): CmsEditorState<T> {
   const [data, setData] = useState<T>(initialData);
   const [original, setOriginal] = useState<T | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const transformRef = useRef(transformResponse);
-  transformRef.current = transformResponse;
+  useEffect(() => {
+    transformRef.current = transformResponse;
+  }, [transformResponse]);
 
   useEffect(() => {
     let cancelled = false;
@@ -83,6 +86,14 @@ export function useCmsEditor<T>(
     return !isEqual(data, original);
   }, [data, original]);
 
+  const prevHasChanges = useRef(hasChanges);
+  useEffect(() => {
+    if (prevHasChanges.current !== hasChanges) {
+      onDirtyChange?.(hasChanges);
+      prevHasChanges.current = hasChanges;
+    }
+  }, [hasChanges, onDirtyChange]);
+
   const save = useCallback(
     async (
       body: unknown,
@@ -97,7 +108,8 @@ export function useCmsEditor<T>(
           body: JSON.stringify(body),
         });
         if (res.ok) {
-          const raw = await res.json();
+          const text = await res.text();
+          const raw = text ? JSON.parse(text) : null;
           const fn = transformRef.current;
           const updated = fn ? fn(raw) : (raw as T);
           setData(updated);

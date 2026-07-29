@@ -17,8 +17,21 @@ function getCached(key: string): RateLimitResult | null {
 }
 
 function setCached(key: string, result: RateLimitResult): void {
-  if (cache.size >= MAX_CACHE_SIZE) cache.clear();
+  if (cache.size >= MAX_CACHE_SIZE) {
+    // Random eviction instead of bulk clear — preserves most cache entries
+    const keys = Array.from(cache.keys());
+    const randomKey = keys[Math.floor(Math.random() * keys.length)]!;
+    cache.delete(randomKey);
+  }
   cache.set(key, { result, expiresAt: Date.now() + CACHE_TTL_MS });
+}
+
+function fingerprint(str: string): string {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = ((h << 5) - h + str.charCodeAt(i)) | 0;
+  }
+  return Math.abs(h).toString(36);
 }
 
 export async function checkApiRateLimit(
@@ -26,13 +39,25 @@ export async function checkApiRateLimit(
   namespace = "api",
 ): Promise<boolean> {
   const ip = getClientIp(req);
-  if (!ip) return true;
 
   const cacheKey = `${namespace}:${ip}`;
+
+  // For unknown IPs, differentiate by User-Agent to prevent shared-exhaustion
+  if (ip === "unknown") {
+    const ua = req.headers.get("user-agent") ?? "";
+    const uaFingerprint = namespace + ":unknown:" + fingerprint(ua);
+    const rl = await checkRateLimit(
+      uaFingerprint,
+      { windowMs: 60_000, maxAttempts: 10 },
+      true,
+    );
+    return rl.allowed;
+  }
+
   const cached = getCached(cacheKey);
   if (cached) return cached.allowed;
 
-  const rl = await checkRateLimit(cacheKey, RATE_LIMIT_PRESETS.api);
+  const rl = await checkRateLimit(cacheKey, RATE_LIMIT_PRESETS.api, true);
   setCached(cacheKey, rl);
   return rl.allowed;
 }

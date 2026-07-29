@@ -3,8 +3,10 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import Image from "next/image";
 import type { Metadata } from "next";
+import { connection } from "next/server";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import rehypeSanitize from "rehype-sanitize";
 import { getPublishedArticleBySlug } from "@/lib/article-queries";
 import { ArrowLeft, Calendar } from "lucide-react";
 import { ARTICLE_IMAGE_FALLBACK, SITE_URL } from "@/lib/constants";
@@ -18,12 +20,13 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const article = await getPublishedArticleBySlug(slug);
-  if (!article) return {};
+  if (!article) return { title: "Artikel Tidak Ditemukan" };
 
   const url = `${SITE_URL}/artikel/${slug}`;
-  const image = article.image
-    ? { url: article.image, width: 1200, height: 630, alt: article.title }
-    : undefined;
+  const image =
+    article.image && article.image.startsWith("http")
+      ? { url: article.image, width: 1200, height: 630, alt: article.title }
+      : undefined;
 
   return {
     title: article.title,
@@ -54,6 +57,7 @@ async function ArticleContent({
 }: {
   params: Promise<{ slug: string }>;
 }) {
+  await connection();
   const { slug } = await params;
 
   const article = await getPublishedArticleBySlug(slug);
@@ -92,7 +96,7 @@ async function ArticleContent({
             alt={article.title}
             fill
             unoptimized
-            loading="eager"
+            priority
             sizes="100vw"
             className="object-cover"
           />
@@ -104,11 +108,16 @@ async function ArticleContent({
             </span>
             <span className="inline-flex items-center gap-1">
               <Calendar size={12} className="align-middle" />
-              {new Date(article.date).toLocaleDateString("id-ID", {
-                day: "numeric",
-                month: "long",
-                year: "numeric",
-              })}
+              {(() => {
+                const d = new Date(article.date);
+                return isNaN(d.getTime())
+                  ? "\u2014"
+                  : d.toLocaleDateString("id-ID", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    });
+              })()}
             </span>
           </div>
           <h1
@@ -118,7 +127,10 @@ async function ArticleContent({
             {article.title}
           </h1>
           <div className="prose max-w-none text-[15px] leading-[1.7] md:text-[16px] md:leading-[1.8]">
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
+              rehypePlugins={[rehypeSanitize]}
+            >
               {article.content}
             </ReactMarkdown>
           </div>
@@ -132,7 +144,7 @@ async function ArticleContent({
 
 function ArticleSkeleton() {
   return (
-    <div className="container py-10 flex-1">
+    <div className="container py-10 flex-1" aria-busy={true}>
       <Skeleton className="mb-6 h-4 w-48" />
       <Skeleton className="mb-8 h-8 w-32" />
       <div className="glass-panel overflow-hidden mb-[60px]">

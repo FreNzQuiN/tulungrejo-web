@@ -55,11 +55,54 @@ export function Providers({ children }: { children: React.ReactNode }) {
       .finally(() => setIsLoading(false));
   }, []);
 
+  // 401 interception — ping auth every 5 min, sign out if expired
+  useEffect(() => {
+    if (isLoading) return;
+
+    // Skip polling if no session cookie exists (100% of public visitors)
+    const hasSessionCookie = document.cookie
+      .split("; ")
+      .some((c) => c.startsWith("session-token="));
+    if (!hasSessionCookie) return;
+
+    let pollTimeout: ReturnType<typeof setTimeout>;
+
+    async function pollAuth() {
+      const hasSessionCookie = document.cookie
+        .split("; ")
+        .some((c) => c.startsWith("session-token="));
+      if (!hasSessionCookie) {
+        setUser(null);
+        return;
+      }
+      if (document.hidden) {
+        pollTimeout = setTimeout(pollAuth, 5 * 60 * 1000);
+        return;
+      }
+      try {
+        const res = await fetch("/api/auth/me");
+        if (res.status === 401) {
+          setUser(null);
+        } else if (!res.ok) {
+          // Transient server error — don't sign out
+        } else {
+          const data = await res.json();
+          if (!data.user) setUser(null);
+        }
+      } catch {
+        // network error — don't sign out on transient failure
+      }
+      pollTimeout = setTimeout(pollAuth, 5 * 60 * 1000);
+    }
+
+    pollAuth();
+
+    return () => clearTimeout(pollTimeout);
+  }, [isLoading]);
+
   const refresh = useCallback(async () => {
-    setIsLoading(true);
     const u = await fetchUser();
     setUser(u);
-    setIsLoading(false);
   }, []);
 
   const signOut = useCallback(async () => {

@@ -4,13 +4,22 @@ import { useRef, useState } from "react";
 import { Upload, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
-export function ImportButton() {
+export function ImportButton({
+  onImportSuccess,
+}: {
+  onImportSuccess?: () => void;
+}) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(false);
 
   async function handleFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
     if (!file) return;
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error("File terlalu besar. Maksimal 10 MB.");
+      e.target.value = "";
+      return;
+    }
 
     setLoading(true);
     const formData = new FormData();
@@ -40,6 +49,7 @@ export function ImportButton() {
       } else {
         toast.success("Import selesai.");
       }
+      onImportSuccess?.();
 
       if (data.errors?.length > 0) {
         toast.warning(`${data.errors.length} error ditemukan.`);

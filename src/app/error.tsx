@@ -1,6 +1,7 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
 import { useEffect } from "react";
 
 export default function Error({
@@ -25,6 +26,19 @@ export default function Error({
         <Button variant="default" className="mt-6" onClick={() => reset()}>
           Coba Lagi
         </Button>
+        {error.digest && (
+          <p className="text-xs text-muted-foreground/50 mt-4">
+            Kode error: {error.digest}
+          </p>
+        )}
+        <div className="mt-3">
+          <Link
+            href="/"
+            className="text-sm text-muted-foreground hover:underline"
+          >
+            Kembali ke Beranda
+          </Link>
+        </div>
       </div>
     </div>
   );

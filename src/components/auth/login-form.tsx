@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useSearchParams } from "next/navigation";
 import { Key, Mail, AlertCircle } from "lucide-react";
 
@@ -10,26 +10,11 @@ const ROLE_REDIRECTS: Record<string, string> = {
   jurnalis: "/jurnalis",
 };
 
-const DEMO_ACCOUNTS =
-  process.env.NODE_ENV !== "production"
-    ? [
-        {
-          label: "Pamong",
-          email: "pamong@tulungrejo.desa.id",
-          password: "pamong123",
-        },
-        {
-          label: "Kades",
-          email: "kades@tulungrejo.desa.id",
-          password: "kades123",
-        },
-        {
-          label: "Jurnalis",
-          email: "jurnalis@tulungrejo.desa.id",
-          password: "jurnalis123",
-        },
-      ]
-    : [];
+interface DemoAccount {
+  label: string;
+  email: string;
+  password: string;
+}
 
 export function LoginForm() {
   const searchParams = useSearchParams();
@@ -38,6 +23,21 @@ export function LoginForm() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [demoAccounts, setDemoAccounts] = useState<DemoAccount[]>([]);
+
+  useEffect(() => {
+    if (process.env.NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS !== "true") return;
+    fetch("/api/auth/demo-accounts")
+      .then((res) => res.json())
+      .then((data) => {
+        if (Array.isArray(data)) {
+          setDemoAccounts(data as DemoAccount[]);
+        }
+      })
+      .catch(() => {
+        setDemoAccounts([]);
+      });
+  }, []);
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -106,9 +106,11 @@ export function LoginForm() {
               onChange={(e) => setEmail(e.target.value)}
               className="form-input form-input--login w-full pl-4 pr-10 py-3"
               required
+              autoComplete="email"
             />
             <Mail
               size={16}
+              aria-hidden="true"
               className="absolute right-4 bottom-[14px] text-muted-foreground"
             />
           </div>
@@ -124,27 +126,32 @@ export function LoginForm() {
               onChange={(e) => setPassword(e.target.value)}
               className="form-input form-input--login w-full pl-4 pr-10 py-3"
               required
+              autoComplete="current-password"
             />
             <Key
               size={16}
+              aria-hidden="true"
               className="absolute right-4 bottom-[14px] text-muted-foreground"
             />
           </div>
 
           {error && (
-            <div className="w-full flex items-center gap-2 rounded px-[14px] py-[10px] mb-5 bg-red-100 text-red-700 text-sm font-semibold">
-              <AlertCircle size={14} />
+            <div
+              role="alert"
+              className="w-full flex items-center gap-2 rounded px-[14px] py-[10px] mb-5 bg-red-100 text-red-700 text-sm font-semibold"
+            >
+              <AlertCircle size={14} aria-hidden="true" />
               <span>{error}</span>
             </div>
           )}
 
-          {process.env.NODE_ENV !== "production" && (
+          {process.env.NEXT_PUBLIC_SHOW_DEMO_ACCOUNTS === "true" && (
             <div className="admin-desc-box">
               <strong className="block mb-2 text-dark-brown">
                 Akun Demo / Prototype:
               </strong>
               <div className="flex flex-col gap-2">
-                {DEMO_ACCOUNTS.map((acc) => (
+                {demoAccounts.map((acc) => (
                   <div
                     key={acc.label}
                     onClick={() => {

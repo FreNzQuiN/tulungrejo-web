@@ -23,8 +23,12 @@ export async function POST(request: Request) {
     const normalizedEmail = email.toLowerCase();
 
     const ip = getClientIp({ headers: request.headers });
-    if (ip) {
-      const ipLimit = await checkRateLimit(`login:ip:${ip}`, undefined, true);
+    {
+      const ipLimit = await checkRateLimit(
+        `login:ip:${ip || "unknown"}`,
+        undefined,
+        true,
+      );
       if (!ipLimit.allowed) {
         return NextResponse.json({ error: "RATE_LIMITED" }, { status: 429 });
       }
@@ -43,32 +47,30 @@ export async function POST(request: Request) {
       where: { email: normalizedEmail },
     });
 
-    if (!user) {
+    // Timing-safe comparison — always run bcrypt to prevent user enumeration
+    const dummyHash =
+      "$2a$10$N9qo8uLOickgx2ZMRZoMyeIjZAgcfl7p92ldGxad68LJZdL17lhWy";
+    const valid = user
+      ? await bcrypt.compare(password, user.passwordHash)
+      : await bcrypt.compare(password, dummyHash);
+
+    if (!user || !valid) {
       return NextResponse.json(
         { error: "Email atau kata sandi salah." },
         { status: 401 },
       );
     }
-
-    const valid = await bcrypt.compare(password, user.passwordHash);
-    if (!valid) {
-      return NextResponse.json(
-        { error: "Email atau kata sandi salah." },
-        { status: 401 },
-      );
-    }
-
-    if (ip) {
-      await resetRateLimit(`login:ip:${ip}`);
-    }
-    await resetRateLimit(`login:email:${normalizedEmail}`);
 
     await setSessionCookie({
       id: user.id,
       email: user.email,
       name: user.name,
       role: user.role,
+      tokenVersion: user.tokenVersion,
     });
+
+    await resetRateLimit(`login:ip:${ip || "unknown"}`);
+    await resetRateLimit(`login:email:${normalizedEmail}`);
 
     return NextResponse.json({ success: true, role: user.role });
   } catch (err) {

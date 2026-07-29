@@ -18,6 +18,7 @@ export function BlokSelector({ value, onChange }: BlokSelectorProps) {
       value={value}
       onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+      aria-label="Pilih blok"
     >
       <option value="">— Pilih Blok —</option>
       {BLOK_OPTIONS.map((opt) => (

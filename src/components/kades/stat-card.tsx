@@ -25,7 +25,7 @@ export function StatCard({
 }: StatCardProps) {
   return (
     <div className="glass-panel p-5">
-      <h4 className="text-[13px] font-bold uppercase text-[var(--color-muted)] tracking-wide mb-1">
+      <h4 className="text-[13px] font-bold uppercase text-[var(--color-text-muted-fe)] tracking-wide mb-1">
         {title}
       </h4>
       <div className="flex items-baseline gap-1.5 mb-3">
@@ -36,7 +36,7 @@ export function StatCard({
           {value}
         </span>
         {valueUnit && (
-          <span className="text-[12px] text-[var(--color-muted)] font-medium">
+          <span className="text-[12px] text-[var(--color-text-muted-fe)] font-medium">
             {valueUnit}
           </span>
         )}
@@ -44,8 +44,12 @@ export function StatCard({
       <div className="h-2 bg-gray-200 rounded-full overflow-hidden mb-1.5">
         <div
           className="h-full rounded-full"
+          role="progressbar"
+          aria-valuenow={isNaN(progressPercent) ? 0 : progressPercent}
+          aria-valuemin={0}
+          aria-valuemax={100}
           style={{
-            width: `${progressPercent}%`,
+            width: `${isNaN(progressPercent) ? 0 : progressPercent}%`,
             backgroundColor: progressColor,
           }}
         />
@@ -57,7 +61,9 @@ export function StatCard({
         >
           {sublabel}
         </span>
-        <span className="text-[var(--color-muted)]">{sublabelRight}</span>
+        <span className="text-[var(--color-text-muted-fe)]">
+          {sublabelRight}
+        </span>
       </div>
     </div>
   );

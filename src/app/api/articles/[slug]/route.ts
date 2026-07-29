@@ -2,14 +2,38 @@ import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { requireRole } from "@/lib/auth/guards";
+import type { Article } from "@/lib/types";
 import {
-  getArticleBySlugAll,
+  toFullArticle,
   updateArticle,
   deleteArticle,
   checkSlugExists,
 } from "@/lib/article-queries";
 import { CATEGORIES, validateArticleImage } from "@/lib/constants";
 import { checkApiRateLimit, rateLimitResponse } from "@/lib/api-rate-limit";
+
+async function getOwnedArticle(
+  slug: string,
+  userId: number,
+): Promise<{ article: Article | null; error: NextResponse | null }> {
+  const article = await prisma.article.findUnique({ where: { slug } });
+  if (!article) {
+    return {
+      article: null,
+      error: NextResponse.json(
+        { error: "Artikel tidak ditemukan" },
+        { status: 404 },
+      ),
+    };
+  }
+  if (article.authorId !== userId) {
+    return {
+      article: null,
+      error: NextResponse.json({ error: "Forbidden" }, { status: 403 }),
+    };
+  }
+  return { article: toFullArticle(article), error: null };
+}
 
 export async function GET(
   req: NextRequest,
@@ -21,34 +45,11 @@ export async function GET(
   if ("error" in auth) return auth.error;
 
   const { slug } = await params;
-  const article = await getArticleBySlugAll(slug);
-  if (!article) {
-    return NextResponse.json(
-      { error: "Artikel tidak ditemukan" },
-      { status: 404 },
-    );
-  }
-  return NextResponse.json(article);
-}
 
-async function ensureArticleOwnership(
-  slug: string,
-  userId: number,
-): Promise<NextResponse | null> {
-  const existing = await prisma.article.findUnique({
-    where: { slug },
-    select: { authorId: true },
-  });
-  if (!existing) {
-    return NextResponse.json(
-      { error: "Artikel tidak ditemukan" },
-      { status: 404 },
-    );
-  }
-  if (existing.authorId === null || existing.authorId !== userId) {
-    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
-  }
-  return null;
+  const { article, error } = await getOwnedArticle(slug, auth.session.user.id);
+  if (error) return error;
+
+  return NextResponse.json(article);
 }
 
 export async function PUT(
@@ -62,13 +63,19 @@ export async function PUT(
 
   const { slug } = await params;
 
-  const ownershipError = await ensureArticleOwnership(
+  // Ownership check before any mutation
+  const { error: ownershipError } = await getOwnedArticle(
     slug,
     auth.session.user.id,
   );
   if (ownershipError) return ownershipError;
 
-  const body = await req.json();
+  let body: Record<string, unknown>;
+  try {
+    body = await req.json();
+  } catch {
+    return NextResponse.json({ error: "Body tidak valid" }, { status: 400 });
+  }
   const {
     title,
     slug: newSlug,
@@ -78,7 +85,18 @@ export async function PUT(
     image,
     tags,
     published,
-  } = body;
+    date,
+  } = body as {
+    title?: string;
+    slug?: string;
+    category?: string;
+    summary?: string;
+    content?: string;
+    image?: string;
+    tags?: string[];
+    published?: boolean;
+    date?: string;
+  };
 
   if (title !== undefined && (!title || title.length > 255)) {
     return NextResponse.json({ error: "Judul tidak valid" }, { status: 400 });
@@ -112,15 +130,39 @@ export async function PUT(
   if (content !== undefined && (typeof content !== "string" || !content)) {
     return NextResponse.json({ error: "Konten tidak valid" }, { status: 400 });
   }
-  if (image !== undefined && typeof image === "string") {
+  if (content !== undefined && content.length > 100000) {
+    return NextResponse.json(
+      { error: "Konten terlalu panjang (maks 100.000 karakter)" },
+      { status: 400 },
+    );
+  }
+  if (image !== undefined && typeof image === "string" && image) {
     const imgErr = validateArticleImage(image);
     if (imgErr) {
       return NextResponse.json({ error: imgErr }, { status: 400 });
     }
   }
 
+  if (date !== undefined) {
+    const parsed = new Date(date);
+    if (Number.isNaN(parsed.getTime())) {
+      return NextResponse.json(
+        { error: "Format tanggal tidak valid" },
+        { status: 400 },
+      );
+    }
+  }
+
+  if (tags !== undefined && !Array.isArray(tags)) {
+    return NextResponse.json(
+      { error: "Tags harus berupa array" },
+      { status: 400 },
+    );
+  }
+
   try {
-    await updateArticle(slug, {
+    const finalSlug = newSlug ?? slug;
+    const updated = await updateArticle(slug, {
       ...(title !== undefined && { title }),
       ...(newSlug !== undefined && { slug: newSlug }),
       ...(category !== undefined && { category }),
@@ -129,10 +171,9 @@ export async function PUT(
       ...(image !== undefined && { image }),
       ...(tags !== undefined && { tags }),
       ...(published !== undefined && { published }),
+      ...(date !== undefined && { date }),
     });
 
-    const finalSlug = newSlug ?? slug;
-    const updated = await getArticleBySlugAll(finalSlug);
     revalidateTag("articles", "max");
     if (finalSlug !== slug) revalidateTag(`article-${slug}`, "max");
     revalidateTag(`article-${finalSlug}`, "max");
@@ -157,19 +198,21 @@ export async function DELETE(
 
   const { slug } = await params;
 
-  const ownershipError = await ensureArticleOwnership(
+  const { error: ownershipError } = await getOwnedArticle(
     slug,
     auth.session.user.id,
   );
   if (ownershipError) return ownershipError;
 
   try {
-    const deleted = await deleteArticle(slug);
-    if (!deleted) {
-      return NextResponse.json(
-        { error: "Artikel tidak ditemukan" },
-        { status: 404 },
-      );
+    const result = await deleteArticle(slug);
+    if (!result.success) {
+      if (result.notFound) {
+        return NextResponse.json(
+          { error: "Artikel tidak ditemukan" },
+          { status: 404 },
+        );
+      }
     }
     revalidateTag("articles", "max");
     revalidateTag(`article-${slug}`, "max");

@@ -1,11 +1,16 @@
 import { Suspense } from "react";
+import { connection } from "next/server";
 import { Compass, School, HeartPulse, Award, Loader2 } from "lucide-react";
 import { getVillageProfile, getVillageStats } from "@/lib/desa-queries";
+import { OrgChartImage } from "@/components/org-chart-image";
 import type { Administratif } from "@/lib/types";
 
 async function ProfileContent() {
-  const profile = await getVillageProfile();
-  const stats = await getVillageStats();
+  await connection();
+  const [profile, stats] = await Promise.all([
+    getVillageProfile(),
+    getVillageStats(),
+  ]);
 
   return <ProfileDisplay profile={profile} stats={stats} />;
 }
@@ -18,6 +23,7 @@ async function ProfileDisplay({
     visi: string;
     misi: string[];
     strukturOrganisasi: { role: string; name: string }[];
+    strukturOrganisasiImage?: string;
     tugasFungsi: { jabatan: string; tugas: string }[];
     administratif: Administratif;
   };
@@ -40,9 +46,10 @@ async function ProfileDisplay({
   const kaurs = profile.strukturOrganisasi.filter((p) =>
     p.role.toLowerCase().startsWith("kaur"),
   );
-  const kadus = profile.strukturOrganisasi.filter((p) =>
-    p.role.toLowerCase().startsWith("kepala dusun"),
-  );
+  const kadus = profile.strukturOrganisasi.filter((p) => {
+    const r = p.role.toLowerCase();
+    return r.startsWith("kepala dusun") || r.startsWith("kamituwo");
+  });
 
   return (
     <div className="container">
@@ -65,46 +72,55 @@ async function ProfileDisplay({
         <div className="section-header">
           <h2>Struktur Organisasi Pemerintah Desa</h2>
         </div>
-        <div className="org-chart-wrapper">
-          <div className="org-tree">
-            <div className="org-level-2">
-              {kades && (
-                <div className="org-node">
-                  <div className="org-role">{kades.role}</div>
-                  <div className="org-name">{kades.name}</div>
-                </div>
-              )}
-              {sekdes && (
-                <div className="org-node org-node--sekdes">
-                  <div className="org-role">{sekdes.role}</div>
-                  <div className="org-name">{sekdes.name}</div>
-                </div>
-              )}
-            </div>
-            <div className="org-level-3">
-              {kasis.map((kasi, idx) => (
-                <div key={idx} className="org-node">
-                  <div className="org-role">{kasi.role}</div>
-                  <div className="org-name text-[13px]">{kasi.name}</div>
-                </div>
-              ))}
-              {kaurs.map((kaur, idx) => (
-                <div key={idx} className="org-node">
-                  <div className="org-role">{kaur.role}</div>
-                  <div className="org-name text-[13px]">{kaur.name}</div>
-                </div>
-              ))}
-            </div>
-            <div className="org-level-4">
-              {kadus.map((kd, idx) => (
-                <div key={idx} className="org-node border-dashed">
-                  <div className="org-role">{kd.role}</div>
-                  <div className="org-name">{kd.name}</div>
-                </div>
-              ))}
+        {profile.strukturOrganisasiImage ? (
+          <div className="org-chart-wrapper">
+            <OrgChartImage
+              src={profile.strukturOrganisasiImage}
+              alt="Struktur Organisasi Pemerintah Desa Tulungrejo"
+            />
+          </div>
+        ) : (
+          <div className="org-chart-wrapper">
+            <div className="org-tree">
+              <div className="org-level-2">
+                {kades && (
+                  <div className="org-node">
+                    <div className="org-role">{kades.role}</div>
+                    <div className="org-name">{kades.name}</div>
+                  </div>
+                )}
+                {sekdes && (
+                  <div className="org-node org-node--sekdes">
+                    <div className="org-role">{sekdes.role}</div>
+                    <div className="org-name">{sekdes.name}</div>
+                  </div>
+                )}
+              </div>
+              <div className="org-level-3">
+                {kasis.map((kasi, idx) => (
+                  <div key={idx} className="org-node">
+                    <div className="org-role">{kasi.role}</div>
+                    <div className="org-name text-[13px]">{kasi.name}</div>
+                  </div>
+                ))}
+                {kaurs.map((kaur, idx) => (
+                  <div key={idx} className="org-node">
+                    <div className="org-role">{kaur.role}</div>
+                    <div className="org-name text-[13px]">{kaur.name}</div>
+                  </div>
+                ))}
+              </div>
+              <div className="org-level-4">
+                {kadus.map((kd, idx) => (
+                  <div key={idx} className="org-node border-dashed">
+                    <div className="org-role">{kd.role}</div>
+                    <div className="org-name">{kd.name}</div>
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
-        </div>
+        )}
       </section>
 
       <section className="mb-[60px]">

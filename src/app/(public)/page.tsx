@@ -4,13 +4,79 @@ import { CountUp } from "@/components/shared/count-up";
 import { HeroScrollButton } from "@/components/shared/hero-scroll-button";
 import { HomeArticles } from "@/components/articles/home-articles";
 import { Users, Home as HomeIcon } from "lucide-react";
+import { connection } from "next/server";
 
 import { getVillageStats } from "@/lib/desa-queries";
+import { getHomepageContent } from "@/lib/desa-queries";
 import { getAllPublishedArticles } from "@/lib/article-queries";
 import { ArticlesError } from "@/components/articles/articles-error";
 
+async function HomePageContent() {
+  await connection();
+  let content;
+  try {
+    content = await getHomepageContent();
+  } catch {
+    return (
+      <header className="hero-section">
+        <div className="container">
+          <h1 className="hero-title">Desa Tulungrejo</h1>
+          <p className="hero-desc">
+            Selamat datang di portal resmi Pemerintah Desa Tulungrejo
+          </p>
+        </div>
+      </header>
+    );
+  }
+
+  return (
+    <>
+      <header className="hero-section">
+        <div className="container">
+          <p className="hero-subtitle">{content.heroSubtitle}</p>
+          <h1 className="hero-title">{content.heroTitle}</h1>
+          <p className="hero-desc">{content.heroDescription}</p>
+          <div className="hero-actions">
+            <HeroScrollButton />
+          </div>
+        </div>
+      </header>
+
+      <section id="about-section" className="home-about-section" tabIndex={-1}>
+        <div className="container about-map-grid">
+          <div className="about-content">
+            <h2>{content.aboutTitle}</h2>
+            {content.aboutParagraphs.map((p, i) => (
+              <p key={i}>{p}</p>
+            ))}
+          </div>
+          <div className="map-container">
+            <iframe
+              title="Peta Lokasi Desa Tulungrejo"
+              src={content.googleMapsUrl}
+              width="100%"
+              height="100%"
+              className="border-0"
+              allowFullScreen
+              loading="lazy"
+              referrerPolicy="no-referrer-when-downgrade"
+            />
+          </div>
+        </div>
+      </section>
+    </>
+  );
+}
+
 async function StatsSection() {
-  const stats = await getVillageStats();
+  await connection();
+  let stats;
+  try {
+    stats = await getVillageStats();
+  } catch {
+    console.error("Gagal memuat statistik desa");
+    return null;
+  }
 
   return (
     <section className="stats-section">
@@ -66,6 +132,7 @@ async function StatsSection() {
 }
 
 async function ArticlesSection() {
+  await connection();
   let articles;
   try {
     articles = await getAllPublishedArticles(6);
@@ -73,13 +140,26 @@ async function ArticlesSection() {
     console.error("Gagal memuat artikel:", e);
     return <ArticlesError />;
   }
-  if (articles.length === 0) return null;
+  if (!articles || articles.length === 0) {
+    return (
+      <section className="home-articles-section">
+        <div className="container">
+          <div className="section-header">
+            <h2>Kabar & Artikel Desa</h2>
+          </div>
+          <p className="text-center text-muted-foreground py-12">
+            Belum ada artikel untuk ditampilkan.
+          </p>
+        </div>
+      </section>
+    );
+  }
   return <HomeArticles articles={articles} />;
 }
 
 function StatsSkeleton() {
   return (
-    <section className="stats-section">
+    <section className="stats-section" aria-busy={true}>
       <div className="container">
         <div className="section-header">
           <Skeleton className="mx-auto mb-2 h-8 w-56" />
@@ -89,8 +169,8 @@ function StatsSkeleton() {
           {Array.from({ length: 4 }).map((_, i) => (
             <div key={i} className="stat-card">
               <Skeleton className="mx-auto mb-4 h-12 w-12 rounded-full" />
-              <Skeleton className="mx-auto mb-2 h-8 w-24" />
-              <Skeleton className="mx-auto h-4 w-32" />
+              <Skeleton className="mx-auto mb-2 h-8 w-32" />
+              <Skeleton className="mx-auto h-4 w-40" />
             </div>
           ))}
         </div>
@@ -101,7 +181,7 @@ function StatsSkeleton() {
 
 function ArticlesSkeleton() {
   return (
-    <section className="home-articles-section">
+    <section className="home-articles-section" aria-busy={true}>
       <div className="container">
         <div className="section-header">
           <Skeleton className="mx-auto mb-2 h-8 w-56" />
@@ -113,11 +193,11 @@ function ArticlesSkeleton() {
               <Skeleton className="h-48 w-full rounded-none" />
               <div className="article-body">
                 <Skeleton className="mb-3 h-5 w-16" />
-                <Skeleton className="mb-2 h-6 w-full" />
-                <Skeleton className="mb-4 h-6 w-3/4" />
+                <Skeleton className="mb-2 h-5 w-3/4" />
+                <Skeleton className="mb-2 h-5 w-full" />
                 <Skeleton className="mb-1 h-4 w-full" />
                 <Skeleton className="mb-1 h-4 w-5/6" />
-                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-4 w-1/2" />
               </div>
             </div>
           ))}
@@ -130,58 +210,19 @@ function ArticlesSkeleton() {
 export default function HomePage() {
   return (
     <div className="animate-fade-in">
-      <header className="hero-section">
-        <div className="container">
-          <p className="hero-subtitle">Portal Resmi Pemerintah Desa</p>
-          <h1 className="hero-title">Selamat Datang di Desa Tulungrejo</h1>
-          <p className="hero-desc">
-            Pusat informasi dan kegiatan kemasyarakatan Desa Tulungrejo,
-            Kecamatan Wates, Kab. Blitar.
-          </p>
-          <div className="hero-actions">
-            <HeroScrollButton />
-          </div>
-        </div>
-      </header>
-
-      <section id="about-section" className="home-about-section">
-        <div className="container about-map-grid">
-          <div className="about-content">
-            <h2>Mengenal Desa Tulungrejo</h2>
-            <p>
-              Desa Tulungrejo secara administratif terletak di Kecamatan Wates,
-              Kabupaten Blitar, Jawa Timur. Dikelilingi oleh perbukitan dan
-              kawasan hutan yang masih asri, desa ini memiliki tanah yang subur
-              dan potensi sumber daya alam yang melimpah untuk dikembangkan.
-            </p>
-            <p>
-              Mayoritas penduduk Desa Tulungrejo menggantungkan hidupnya pada
-              sektor pertanian, peternakan, serta pengembangan pariwisata alam
-              berbasis potensi lokal yang terus berkembang pesat dari tahun ke
-              tahun. Beberapa potensi wisata alam seperti hutan pinus dan air
-              terjun menjadi daya tarik utama bagi wisatawan yang berkunjung.
-            </p>
-            <p>
-              Melalui komitmen gotong royong, tata pemerintahan desa Tulungrejo
-              senantiasa mengedepankan prinsip keterbukaan informasi, tertib
-              administrasi perpajakan (PBB), serta peningkatan mutu SDM warga
-              demi kemandirian dan kesejahteraan bersama.
-            </p>
-          </div>
-          <div className="map-container">
-            <iframe
-              title="Peta Lokasi Desa Tulungrejo"
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d31582!2d112.329738!3d-8.269371!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2sDesa%20Tulungrejo%2C%20Wates%2C%20Blitar%2C%20Jawa%20Timur!5e0!3m2!1sid!2sid!4v1"
-              width="100%"
-              height="100%"
-              className="border-0"
-              allowFullScreen
-              loading="lazy"
-              referrerPolicy="no-referrer-when-downgrade"
-            />
-          </div>
-        </div>
-      </section>
+      <Suspense
+        fallback={
+          <header className="hero-section">
+            <div className="container">
+              <Skeleton className="mx-auto mb-4 h-4 w-48" />
+              <Skeleton className="mx-auto mb-6 h-10 w-[500px] max-w-full" />
+              <Skeleton className="mx-auto h-5 w-96 max-w-full" />
+            </div>
+          </header>
+        }
+      >
+        <HomePageContent />
+      </Suspense>
 
       <Suspense fallback={<StatsSkeleton />}>
         <StatsSection />

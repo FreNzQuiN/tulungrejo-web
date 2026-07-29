@@ -1,8 +1,10 @@
+import { connection } from "next/server";
 import { getAllPublishedArticles } from "@/lib/article-queries";
 import { ArticlesError } from "@/components/articles/articles-error";
 import { ArtikelClient } from "./artikel-client";
 
 export default async function ArticlesPage() {
+  await connection();
   let articles;
   try {
     articles = await getAllPublishedArticles();

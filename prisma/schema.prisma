@@ -23,6 +23,7 @@ model User {
   passwordHash String   @map("password_hash")
   name         String
   role         Role     @default(pamong_pajak)
+  tokenVersion Int      @default(0) @map("token_version")
   assignedBlok   String?   @map("assigned_blok")
   createdAt      DateTime  @default(now()) @map("created_at")
   updatedAt      DateTime  @updatedAt @map("updated_at")
@@ -57,10 +58,11 @@ model VillageStats {
 model VillageProfile {
   id                 Int      @id @default(autoincrement())
   visi               String   @default("")
-  misi               String   @db.Text                    // JSON array of strings, default "[]" handled in app
-  strukturOrganisasi String   @db.Text                    // JSON array of {role, name}, default "[]" handled in app
-  tugasFungsi        String   @db.Text                    // JSON array of {jabatan, tugas}, default "[]" handled in app
-  administratif      String   @db.Text                    // JSON object, default "{}" handled in app
+  misi               String   @db.Text
+  strukturOrganisasi       String   @db.Text
+  strukturOrganisasiImage String?  @db.MediumText
+  tugasFungsi              String   @db.Text
+  administratif      String   @db.Text
   updatedAt          DateTime @updatedAt @map("updated_at")
 
   @@map("village_profile")
@@ -89,6 +91,7 @@ model Fields {
   payments      Payments[]
 
   @@unique([blok, noBidang])
+  @@index([dusun])
   @@map("fields")
 }
 
@@ -124,9 +127,10 @@ model Realisasi {
   dibayar      Int
   sisaSppt     Int      @map("sisa_sppt")
   tanggalAmbil DateTime @map("tanggal_ambil")
-  tahun        Int?
+  tahun        Int
   importedAt   DateTime @default(now()) @map("imported_at")
 
+  @@unique([kodeDesa, tahun])
   @@index([importedAt])
   @@map("realisasi")
 }
@@ -140,6 +144,32 @@ model BlockImage {
 
   @@unique([blok, subBlok])
   @@map("block_images")
+}
+
+model ContactInfo {
+  id          Int      @id @default(autoincrement())
+  address     String   @default("")
+  phone       String   @default("")
+  email       String   @default("")
+  jamKerja    String   @default("") @map("jam_kerja")
+  jamLibur    String   @default("") @map("jam_libur")
+  socialMedia String   @db.Text   // JSON array of {platform, url}
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  @@map("contact_info")
+}
+
+model HomepageContent {
+  id        Int      @id @default(autoincrement())
+  heroTitle String   @default("") @map("hero_title")
+  heroSubtitle String @default("") @map("hero_subtitle")
+  heroDescription String @default("") @map("hero_description")
+  aboutTitle     String   @default("") @map("about_title")
+  aboutParagraphs String  @db.Text   // JSON array of strings
+  googleMapsUrl  String   @db.Text @map("google_maps_url")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("homepage_content")
 }
 
 model Article {
@@ -159,5 +189,8 @@ model Article {
   createdAt DateTime @default(now()) @map("created_at")
   updatedAt DateTime @updatedAt @map("updated_at")
 
+  @@index([authorId])
+  @@index([published, date])
+  @@index([category])
   @@map("articles")
 }
