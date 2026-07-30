@@ -141,7 +141,6 @@ async function importSpop(
     let insertedCount = 0;
     let updatedCount = 0;
 
-    // Pre-query existing NOPs to accurately count inserts vs updates
     const existingNops = new Set<string>();
     const allNops = scopedFields.map((f) => f.nop);
     for (let i = 0; i < allNops.length; i += 1000) {

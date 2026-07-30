@@ -12,7 +12,6 @@ async function togglePayment(
   year: number,
   markedBy: number | null,
   markedAt: Date,
-  session: { user: { id: number } } | null,
   assignedBlok: string | null,
 ): Promise<PaymentStatus> {
   for (let attempt = 0; attempt < TOGGLE_MAX_RETRIES; attempt++) {
@@ -137,7 +136,6 @@ export async function POST(req: NextRequest) {
       parsedYear,
       markedBy,
       markedAt,
-      session,
       assignedBlok,
     );
 

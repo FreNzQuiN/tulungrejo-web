@@ -50,6 +50,11 @@ export function parsePbbP2(workbook: XLSX.WorkBook): RealisasiRecord | null {
       if (!Number.isNaN(id)) return id;
     }
 
+    if (/^\d{1,3}(\.\d{3})+$/.test(s)) {
+      const n = Number(s.replace(/\./g, ""));
+      if (!Number.isNaN(n)) return n;
+    }
+
     // Fallback: strip all commas (US/European thousands separator)
     const cleaned = s.replace(/,/g, "");
     const n = Number(cleaned);
