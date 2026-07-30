@@ -94,7 +94,7 @@ async function checkRateLimitTransaction(
   return prisma.$transaction(async (tx) => {
     const now = new Date();
 
-    // Acquire row-level lock for TiDB/MySQL — prevents concurrent ceiling breaches
+    // Read inside transaction — conditional UPDATE serializes concurrent increments
     const locked = await tx.rateLimit.findUnique({
       where: { id: key },
     });

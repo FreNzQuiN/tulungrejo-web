@@ -101,7 +101,7 @@ async function ArticleContent({
             className="object-cover"
           />
         </div>
-        <div className="detail-article-body p-5 md:p-10">
+        <div className="detail-article-body p-5 md:p-10 break-words">
           <div className="flex gap-4 text-[13px] text-muted-foreground mb-4 items-center">
             <span className="inline-block px-[10px] py-[4px] text-[11px] font-bold uppercase tracking-wider rounded-full bg-green-100 text-green-700">
               {article.category}

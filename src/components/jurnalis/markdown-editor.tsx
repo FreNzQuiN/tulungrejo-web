@@ -230,7 +230,10 @@ export function MarkdownEditor({ value, onChange }: MarkdownEditorProps) {
       )}
 
       {mode === "preview" && (
-        <div className="md-editor-preview prose max-w-none" aria-live="polite">
+        <div
+          className="md-editor-preview prose max-w-none break-words"
+          aria-live="polite"
+        >
           <ReactMarkdown
             remarkPlugins={[remarkGfm]}
             rehypePlugins={[rehypeSanitize]}
