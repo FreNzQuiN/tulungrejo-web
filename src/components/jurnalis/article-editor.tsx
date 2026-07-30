@@ -58,7 +58,7 @@ export function ArticleEditor({
       setForm((p) => ({ ...p, image: dataUri }));
       setImagePreview(dataUri);
     } catch (e) {
-      console.error(e);
+      console.error("handleImage error:", e);
       toast.error("Gagal memproses gambar");
     } finally {
       setUploading(false);

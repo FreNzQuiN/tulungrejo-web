@@ -1,0 +1,4 @@
+# Ignore semua file kecuali README.md dan .gitignore
+*
+!.gitignore
+!README.md

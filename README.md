@@ -1,119 +1,76 @@
-# Portal Resmi Desa Tulungrejo (Kec. Wates, Kab. Blitar)
+# Portal Resmi Desa Tulungrejo
 
-Website Portal Layanan Publik dan Transparansi Administrasi Pemerintahan Desa Tulungrejo, Kecamatan Wates, Kabupaten Blitar.
+Website portal layanan publik dan transparansi administrasi Pemerintahan Desa Tulungrejo, Kecamatan Wates, Kabupaten Blitar.
 
 Dikembangkan oleh **Tim MMD Filkom Kelompok 19, Universitas Brawijaya**.
 
 ---
 
-## Fitur
+## Ringkasan
 
-### Portal Publik
+Dua area:
 
-- **Beranda**: Profil desa, peta, statistik kependudukan, berita terbaru.
-- **Profil Desa**: Visi, misi, struktur organisasi, tugas fungsi, batas wilayah.
-- **Artikel**: Publikasi berita dan pengumuman resmi.
+- **Portal Publik** — profil desa, statistik kependudukan, artikel/pengumuman, peta.
+- **Portal Internal** (role-based) — dashboard PBB, analitik kepala desa, CMS jurnalis.
 
-### Portal Internal (Role-based)
-
-- **Pamong PBB**: Peta spasial wajib pajak, filter/search, toggle status bayar.
-- **Kepala Desa**: Dashboard analitik PBB (pie chart, dusun report).
-- **Jurnalis**: CMS artikel + edit profil desa + edit statistik.
+> Detail arsitektur, keputusan teknis, dan dokumentasi internal ada di `docs/` dan `AGENTS.md`.
 
 ---
 
 ## Tech Stack
 
-Inti: Next.js 16 + TypeScript + Prisma + TiDB Cloud + Tailwind v4 + shadcn/ui.
-
-Daftar dependency lengkap — lihat `package.json`.
+Next.js 16 · TypeScript · Prisma · TiDB Cloud (MySQL) · Tailwind v4 · shadcn/ui.
 
 ---
 
-## Persyaratan Sistem
-
-- **Node.js** 18+ (recommended: 20 LTS atau 22 LTS)
-- **npm** 9+
-- **TiDB Cloud / MySQL** — lihat `DATABASE_URL` di `.env`
-
----
-
-## Cara Jalankan (Local Development)
-
-### 1. Clone & masuk direktori
+## Quick Start
 
 ```bash
 git clone <repo-url> tulungrejo-next
 cd tulungrejo-next
-```
-
-### 2. Install dependencies
-
-```bash
 npm install
-```
-
-### 3. Setup environment
-
-```bash
 cp .env.example .env
 ```
 
-Isi `DATABASE_URL` dan `AUTH_SECRET` di `.env`. Lihat `.env.example` untuk required vars.
-
-### 4. Setup database
+Isi `DATABASE_URL` dan `JWT_SECRET`/`AUTH_SECRET` di `.env`.
 
 ```bash
-npx prisma generate    # Generate Prisma client
-npx prisma db push     # Push schema ke database
-```
-
-### 5. Seeder data awal
-
-```bash
+npx prisma generate
+npx prisma db push
 npm run seed
-```
-
-### 6. Jalankan dev server
-
-```bash
 npm run dev
 ```
 
-Buka **http://localhost:3000** di browser.
-
-> **Testing:** Belum ada test suite. Validasi manual via `npm run dev`.
+Buka `http://localhost:3000`.
 
 ---
 
-## Build Produksi
+## Build & Deploy
 
 ```bash
 npm run build
 ```
 
-Hasil build siap dideploy (konfigurasi Netlify di `netlify.toml`).
+Konfigurasi Netlify di `netlify.toml`.
 
 ---
 
-## Kredensial Demo
+## Scripts
 
-| Role     | Email                         | Password      | Halaman        |
-| -------- | ----------------------------- | ------------- | -------------- |
-| Pamong   | `pamong@tulungrejo.desa.id`   | `pamong123`   | `/pbb`         |
-| Kades    | `kades@tulungrejo.desa.id`    | `kades123`    | `/kepala-desa` |
-| Jurnalis | `jurnalis@tulungrejo.desa.id` | `jurnalis123` | `/jurnalis`    |
+| Perintah             | Fungsi                      |
+| -------------------- | --------------------------- |
+| `npm run dev`        | Dev server                  |
+| `npm run build`      | Build production            |
+| `npm run seed`       | Seeder data awal            |
+| `npm run lint`       | ESLint check                |
+| `npx prisma db push` | Sinkronisasi skema database |
 
 ---
 
-## Scripts Penting
+## Keamanan
 
-| Perintah             | Fungsi                           |
-| -------------------- | -------------------------------- |
-| `npm run dev`        | Jalankan dev server              |
-| `npm run dev:clean`  | Bersihkan `.next` + jalankan dev |
-| `npm run build`      | Build produksi                   |
-| `npm run start`      | Jalankan production server       |
-| `npm run seed`       | Isi data awal ke database        |
-| `npm run lint`       | Cek kode dengan ESLint           |
-| `npx prisma db push` | Sinkronisasi skema ke database   |
+- Semua kredensial dan secret dikelola via environment variables — lihat `.env.example` untuk daftar variabel yang dibutuhkan.
+- Session token JWT, httpOnly, sameSite=Lax.
+- Role-based access control untuk halaman internal.
+- File `.env`, `.secret/`, dan direktori internal tidak masuk version control (lihat `.gitignore`).
+- Untuk pelaporan kerentanan, hubungi pengelola langsung.

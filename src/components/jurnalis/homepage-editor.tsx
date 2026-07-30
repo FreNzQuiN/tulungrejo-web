@@ -107,7 +107,7 @@ export function HomepageEditor({
       const dataUri = await resizeImage(file);
       editor.setData((p) => ({ ...p, heroImage: dataUri }));
     } catch (e) {
-      console.error(e);
+      console.error("handleHeroImage error:", e);
       toast.error("Gagal memproses gambar");
     } finally {
       setHeroImageUploading(false);

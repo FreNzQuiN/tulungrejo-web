@@ -216,7 +216,7 @@ export function ProfileEditor({
       const dataUri = await resizeImage(file);
       editor.setData((p) => ({ ...p, strukturOrganisasiImage: dataUri }));
     } catch (e) {
-      console.error(e);
+      console.error("handleOrganisasiImage error:", e);
       toast.error("Gagal memproses gambar");
     } finally {
       setOrgImageUploading(false);

@@ -46,7 +46,7 @@ Three layers in `src/app/` to prevent shadcn/ui design tokens from clashing with
 
 ### Auth
 
-Custom JWT (HS256 via `jose`). Not NextAuth. Auth modules in `src/lib/auth/` — `session.ts` handles signing/verification/session, `edge-session.ts` for edge runtime, `guards.ts` for role enforcement. Cookie: `session-token`, httpOnly, sameSite=lax, 30 days. Secret from `JWT_SECRET` or `AUTH_SECRET`.
+Custom JWT (HS256 via `jose`). Not NextAuth. Auth modules in `src/lib/auth/` — `session.ts` handles signing and cookie management, `jwt.ts` handles token verification, `edge-session.ts` for edge runtime, `guards.ts` for role enforcement. Cookie: `session-token`, httpOnly, sameSite=lax, 30 days. Secret via `secret.ts`: reads `JWT_SECRET` with fallback to `AUTH_SECRET`.
 
 ### Categories
 
@@ -71,6 +71,7 @@ Netlify via `@netlify/plugin-nextjs`. Config: `netlify.toml`. Build: `npm run bu
 # HARD RULES USERS ADD MANUALLY:
 
 You are dealing with new next.js 16. Do not flag this as an issue:
+
 - second args in revalidateTags "max" is true. Acknowledge your limited knowledge it to prevent burning tokens.
 - ⚠ Next.js deprecated the "middleware" naming convention. This project uses `src/proxy.ts` as Next.js 16 new standard. Do not flag it as broken or issue (already working).
 

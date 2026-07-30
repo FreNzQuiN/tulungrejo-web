@@ -10,8 +10,8 @@ build/
 
 # env files
 .env
-.env.local
-.env.*.local
+.env.*local
+.env.*production
 
 # prisma
 prisma/migrations/
@@ -35,5 +35,4 @@ next-env.d.ts
 .DS_Store
 *.pem
 tsconfig.tsbuildinfo
-.secret
 nul

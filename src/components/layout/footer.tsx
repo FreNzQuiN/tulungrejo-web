@@ -49,7 +49,9 @@ export function Footer() {
           sessionStorage.setItem("footer-contact-time", String(Date.now()));
         }
       })
-      .catch(() => {});
+      .catch((err) => {
+        console.error("footer fetchContact error:", err);
+      });
 
     return () => abortController.abort();
   }, [contact]);
