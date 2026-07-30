@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import dynamic from "next/dynamic";
 import { useAuth } from "@/components/providers";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -94,12 +94,16 @@ export default function JurnalisPage() {
   const { user: sessionUser, isLoading: statusLoading } = useAuth();
   const [activeTab, setActiveTab] = useState("articles");
   const [dirtyTabs, setDirtyTabs] = useState<Record<string, boolean>>({});
-  const handleDirtyChange = useCallback(
-    (tab: string) => (dirty: boolean) => {
-      setDirtyTabs((prev) => ({ ...prev, [tab]: dirty }));
-    },
-    [],
-  );
+  const tabHandlers = useMemo(() => {
+    const tabs = ["articles", "homepage", "stats", "profile", "contact"];
+    const handlers: Record<string, (dirty: boolean) => void> = {};
+    for (const tab of tabs) {
+      handlers[tab] = (dirty: boolean) => {
+        setDirtyTabs((prev) => ({ ...prev, [tab]: dirty }));
+      };
+    }
+    return handlers;
+  }, []);
 
   useEffect(() => {
     const hasDirty = Object.values(dirtyTabs).some(Boolean);
@@ -126,21 +130,17 @@ export default function JurnalisPage() {
   const renderContent = () => {
     switch (activeTab) {
       case "articles":
-        return (
-          <ArticleManager onDirtyStateChange={handleDirtyChange("articles")} />
-        );
+        return <ArticleManager onDirtyStateChange={tabHandlers.articles} />;
       case "homepage":
-        return <HomepageEditor onDirtyChange={handleDirtyChange("homepage")} />;
+        return <HomepageEditor onDirtyChange={tabHandlers.homepage} />;
       case "stats":
-        return <StatsEditor onDirtyChange={handleDirtyChange("stats")} />;
+        return <StatsEditor onDirtyChange={tabHandlers.stats} />;
       case "profile":
-        return <ProfileEditor onDirtyChange={handleDirtyChange("profile")} />;
+        return <ProfileEditor onDirtyChange={tabHandlers.profile} />;
       case "contact":
-        return <ContactEditor onDirtyChange={handleDirtyChange("contact")} />;
+        return <ContactEditor onDirtyChange={tabHandlers.contact} />;
       default:
-        return (
-          <ArticleManager onDirtyStateChange={handleDirtyChange("articles")} />
-        );
+        return <ArticleManager onDirtyStateChange={tabHandlers.articles} />;
     }
   };
 

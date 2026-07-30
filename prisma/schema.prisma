@@ -167,6 +167,7 @@ model HomepageContent {
   aboutTitle     String   @default("") @map("about_title")
   aboutParagraphs String  @db.Text   // JSON array of strings
   googleMapsUrl  String   @db.Text @map("google_maps_url")
+  heroImage      String?  @db.MediumText @map("hero_image")
   updatedAt DateTime @updatedAt @map("updated_at")
 
   @@map("homepage_content")
