@@ -211,13 +211,11 @@ export function ArticleManager({
         setForm(readyForm);
         setOriginalForm(readyForm);
       } else {
-        setForm(initialForm);
-        setOriginalForm(initialForm);
+        setEditingSlug(null);
         toast.error("Gagal memuat konten artikel");
       }
     } catch (err) {
-      setForm(initialForm);
-      setOriginalForm(initialForm);
+      setEditingSlug(null);
       console.error("handleEdit error:", err);
       toast.error("Gagal memuat konten artikel");
     }
