@@ -202,6 +202,8 @@ export function ArticleManager({
       content: "",
       image: article.image || "",
     };
+    setForm(initialForm);
+    setOriginalForm(initialForm);
 
     try {
       const res = await fetch(`/api/articles/${article.slug}`);
@@ -282,7 +284,9 @@ export function ArticleManager({
             size="sm"
             onClick={() => {
               setIsAdding(true);
+              setForm(EMPTY_FORM);
               setOriginalForm(EMPTY_FORM);
+              setImagePreview(null);
             }}
             disabled={refreshing}
           >
