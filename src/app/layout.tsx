@@ -40,9 +40,9 @@ export default function RootLayout({
         className="min-h-full flex flex-col"
         style={{ fontFamily: "var(--font-body)" }}
       >
-        <Providers>
-          <Suspense fallback={null}>{children}</Suspense>
-        </Providers>
+        <Suspense fallback={null}>
+          <Providers>{children}</Providers>
+        </Suspense>
       </body>
     </html>
   );
